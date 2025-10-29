@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Prediksi HDP & O/U — v70_fixed2 (Stable)</title>
+<style>
+:root{
+  --bg:#041018; --panel:#071826; --card:#0b1a22; --muted:#9fb3c5; --accent:#0b74de;
+  --good:#2ecc71; --warn:#ffd166; --bad:#ef476f; --text:#dff3ff;
+  --neutral:#6b7f89;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.container{max-width:980px;margin:18px auto;padding:18px}
+h1{margin:0 0 8px;font-size:22px;color:#cfe9ff}
+.panel{background:var(--panel);border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.03)}
+label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
+input[type="text"], input[type="number"], input[type="date"], select, textarea {width:100%;padding:8px;border-radius:8px;border:1px solid #22333f;background:#08131a;color:#fff;font-size:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.col{flex:1 1 260px;min-width:220px}
+button{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+button.ghost{background:transparent;border:1px solid #233645;color:#cfe9ff;padding:6px 8px;border-radius:6px;cursor:pointer}
+.small{font-size:12px;color:var(--muted)}
+.result{background:#06121a;padding:12px;border-radius:8px;border:1px dashed rgba(255,255,255,0.03);font-family:monospace;white-space:pre-wrap}
+.card{display:flex;justify-content:space-between;padding:10px;border-radius:8px;background:#061922;margin-bottom:8px}
+canvas{background:transparent;border-radius:6px}
+.progress-wrap{background:#07202a;border-radius:10px;padding:6px;margin-top:8px}
+.progress-fill{height:18px;border-radius:8px;width:0%;transition:width .6s ease}
+.strength-bar { height:14px;border-radius:8px;background:#0a2230;overflow:hidden; margin-top:6px;}
+.strength-fill { height:14px;border-radius:8px 0 0 8px;background:var(--accent);width:0%;transition:width .6s ease; }
+.small-note{font-size:12px;color:#9eb9c9;margin-top:6px}
+.value-pill{display:inline-block;padding:6px 10px;border-radius:8px;font-weight:700}
+#saveBtn { position: fixed; right: 18px; bottom: 18px; z-index: 9999; background: #0b74de; border-radius: 8px; padding: 8px 12px; color: white; cursor:pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.5);}
+#saveBtn.ghost { background: transparent; border:1px solid #233645; color: var(--text) }
+.notice { font-size:12px; color:var(--neutral); margin-top:6px }
+@media (max-width:720px){.col{flex-basis:100%}}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Prediksi HDP & O/U — v70_fixed2 (Stable)</h1>
+  <p class="small">One-column focus • dark theme • campuran bahasa (ID/EN). Isi manual lalu klik <b>Analisis</b>. Semua tombol dicek & berfungsi.</p>
+
+  <!-- Match -->
+  <div class="panel">
+    <div class="row">
+      <div class="col"><label>Mode</label>
+        <select id="modeSelect"><option value="league">League</option><option value="cup">Cup</option><option value="custom">Custom</option></select></div>
+      <div class="col"><label>Date</label><input id="matchDate" type="date"></div>
+    </div>
+    <label>Match (Home vs Away)</label>
+    <input id="matchName" type="text" placeholder="Contoh: Atalanta vs Lazio">
+  </div>
+
+  <!-- Teams -->
+  <div class="panel">
+    <h3 style="margin:0">Team Data (inti minimal)</h3>
+    <div class="row">
+      <div class="col">
+        <label>Home Team</label><input id="teamHome" type="text" placeholder="Home FC">
+        <label>Avg SofaScore / Rating</label><input id="ratingHome" type="number" step="0.01" placeholder="6.9">
+        <label>Form Last5 (0-1)</label><input id="formHome" type="number" step="0.01" placeholder="0.68">
+        <label>H2H string (W,D,L,..) — kosong jika tidak ada</label><input id="h2hInput" type="text" placeholder="W,D,W,D,L">
+      </div>
+      <div class="col">
+        <label>Away Team</label><input id="teamAway" type="text" placeholder="Away FC">
+        <label>Avg SofaScore / Rating</label><input id="ratingAway" type="number" step="0.01" placeholder="6.4">
+        <label>Form Last5 (0-1)</label><input id="formAway" type="number" step="0.01" placeholder="0.55">
+        <label>H2H home-win rate (optional)</label><input id="h2hRate" type="number" step="0.01" placeholder="">
+      </div>
+    </div>
+
+    <div style="margin-top:10px">
+      <button id="btnAutoH2H" class="ghost">Auto H2H → isi rate</button>
+      <button id="btnAutoCR" class="ghost">Auto Conversion Rate</button>
+      <button id="btnAutoTI" class="ghost">Auto TI (calc from tackles+inter)</button>
+      <div class="small-note">Isi tackles & interceptions pada bagian Stats untuk Auto TI.</div>
+    </div>
+
+    <h4 style="margin-top:10px">Statistik inti (isi untuk akurasi)</h4>
+    <div class="row">
+      <div class="col"><label>xG per game (Home)</label><input id="xgHome" type="number" step="0.01" placeholder="1.25"></div>
+      <div class="col"><label>xG per game (Away)</label><input id="xgAway" type="number" step="0.01" placeholder="1.05"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="col"><label>SOT / game (Home)</label><input id="sotHome" type="number" step="0.01" placeholder="4.2"></div>
+      <div class="col"><label>SOT / game (Away)</label><input id="sotAway" type="number" step="0.01" placeholder="3.4"></div>
+    </div>
+
+    <h4 style="margin-top:10px">Tackles & Interceptions (use Auto TI)</h4>
+    <div class="row">
+      <div class="col"><label>Home Tackles (total per match)</label><input id="tackleHome" type="number" step="0.1" placeholder="18.3"></div>
+      <div class="col"><label>Home Interceptions</label><input id="interHome" type="number" step="0.1" placeholder="8.7"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="col"><label>Away Tackles</label><input id="tackleAway" type="number" step="0.1" placeholder="15.1"></div>
+      <div class="col"><label>Away Interceptions</label><input id="interAway" type="number" step="0.1" placeholder="7.2"></div>
+    </div>
+
+    <div style="margin-top:8px">
+      <label>TI Home (auto) — Tackles + Interceptions</label><input id="tiHome" type="number" readonly>
+      <label>TI Away (auto)</label><input id="tiAway" type="number" readonly>
+    </div>
+
+    <h4 style="margin-top:10px">Absences (isi jumlah, tanpa nama)</h4>
+    <div class="row">
+      <div class="col">
+        <label>Home — DF absent</label><input id="absDfHome" type="number" step="1" value="0">
+        <label>Home — MF absent</label><input id="absMfHome" type="number" step="1" value="0">
+        <label>Home — FW absent</label><input id="absFwHome" type="number" step="1" value="0">
+      </div>
+      <div class="col">
+        <label>Away — DF absent</label><input id="absDfAway" type="number" step="1" value="0">
+        <label>Away — MF absent</label><input id="absMfAway" type="number" step="1" value="0">
+        <label>Away — FW absent</label><input id="absFwAway" type="number" step="1" value="0">
+      </div>
+    </div>
+
+    <h4 style="margin-top:10px">Clean Sheet Ratio & GA (klik hitung)</h4>
+    <div class="row">
+      <div class="col">
+        <label>CS count (Home)</label><input id="csCountHome" type="number" step="1" placeholder="3">
+        <label>Matches (Home)</label><input id="csMatchesHome" type="number" step="1" placeholder="10">
+        <label>CSR (Home) (0-1)</label><input id="csHome" type="number" step="0.01" readonly>
+        <button id="btnCalcCSHome" class="ghost">Hitung CSR Home</button>
+      </div>
+      <div class="col">
+        <label>CS count (Away)</label><input id="csCountAway" type="number" step="1" placeholder="2">
+        <label>Matches (Away)</label><input id="csMatchesAway" type="number" step="1" placeholder="10">
+        <label>CSR (Away) (0-1)</label><input id="csAway" type="number" step="0.01" readonly>
+        <button id="btnCalcCSAway" class="ghost">Hitung CSR Away</button>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <div class="col">
+        <label>Goals conceded (Home)</label><input id="gcHomeCount" type="number" placeholder="12">
+        <label>Matches (Home) for GA</label><input id="gcMatchesHome" type="number" placeholder="10">
+        <label>GA / game (Home)</label><input id="gcHome" type="number" readonly>
+        <button id="btnCalcGAHome" class="ghost">Hitung GA Home</button>
+      </div>
+      <div class="col">
+        <label>Goals conceded (Away)</label><input id="gcAwayCount" type="number" placeholder="14">
+        <label>Matches (Away) for GA</label><input id="gcMatchesAway" type="number" placeholder="10">
+        <label>GA / game (Away)</label><input id="gcAway" type="number" readonly>
+        <button id="btnCalcGAAway" class="ghost">Hitung GA Away</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Odds & params -->
+  <div class="panel">
+    <h3 style="margin:0">Odds & Model Parameters</h3>
+    <div class="row">
+      <div class="col"><label>HDP Line</label><input id="hdpLine" type="number" step="0.25" value="0.25"></div>
+      <div class="col"><label>OU Line</label><input id="ouLine" type="number" step="0.25" value="2.5"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="col"><label>HDP Home Open (odds)</label><input id="hdpHomeOpen" type="number" step="0.01"></div>
+      <div class="col"><label>HDP Home Now</label><input id="hdpHomeNow" type="number" step="0.01"></div>
+      <div class="col"><label>HDP Away Open</label><input id="hdpAwayOpen" type="number" step="0.01"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="col"><label>HDP Away Now</label><input id="hdpAwayNow" type="number" step="0.01"></div>
+      <div class="col"><label>OU Over Open</label><input id="ouOverOpen" type="number" step="0.01"></div>
+      <div class="col"><label>OU Over Now</label><input id="ouOverNow" type="number" step="0.01"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="col"><label>OU Under Open</label><input id="ouUnderOpen" type="number" step="0.01"></div>
+      <div class="col"><label>OU Under Now</label><input id="ouUnderNow" type="number" step="0.01"></div>
+      <div class="col"><label>MC runs</label><input id="mcRuns" type="number" step="1000" value="40000"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="col"><label>ρ (rho)</label><input id="rho" type="number" step="0.01" value="0.12"></div>
+      <div class="col"><label>Alpha shrink</label><input id="alpha" type="number" step="0.01" value="0.12"></div>
+      <div class="col"><label>Preset</label>
+        <select id="presetMode"><option value="auto">Auto</option><option value="league">League</option><option value="cup">Cup</option><option value="custom">Custom</option></select>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <button id="btnAnalyze">Analisis</button>
+      <button id="btnReset" class="ghost">Reset Semua</button>
+      <button id="btnDownload" class="ghost">Download CSV</button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="panel">
+    <h3 style="margin:0">Hasil & Rekomendasi</h3>
+    <div id="summary" class="result" style="margin-top:8px">Isi input lalu klik Analisis. Tidak ada demo otomatis.</div>
+
+    <div style="margin-top:10px">
+      <h4 style="margin:0">Strength Map</h4>
+      <div style="margin-top:8px"><b>Home Attack</b> <span id="atkHomeVal" style="float:right">-</span></div>
+      <div class="strength-bar"><div id="atkHomeBar" class="strength-fill" style="width:0%"></div></div>
+      <div style="margin-top:8px"><b>Home Defense</b> <span id="defHomeVal" style="float:right">-</span></div>
+      <div class="strength-bar"><div id="defHomeBar" class="strength-fill" style="width:0%"></div></div>
+
+      <div style="height:8px"></div>
+
+      <div style="margin-top:8px"><b>Away Attack</b> <span id="atkAwayVal" style="float:right">-</span></div>
+      <div class="strength-bar"><div id="atkAwayBar" class="strength-fill" style="width:0%"></div></div>
+      <div style="margin-top:8px"><b>Away Defense</b> <span id="defAwayVal" style="float:right">-</span></div>
+      <div class="strength-bar"><div id="defAwayBar" class="strength-fill" style="width:0%"></div></div>
+    </div>
+
+    <div style="margin-top:12px">
+      <label class="small">Confidence</label>
+      <div class="progress-wrap"><div id="confFill" class="progress-fill" style="width:0%"></div></div>
+      <div id="confText" class="small" style="text-align:right">Confidence: 0%</div>
+    </div>
+
+    <div id="valueIndicator" style="margin-top:12px;display:flex;gap:10px;align-items:center">
+      <div id="valuePill" class="value-pill" style="background:#23333b">Value: N/A</div>
+      <div id="valueText" class="small">Indicator will appear after analysis.</div>
+    </div>
+
+    <div id="trapBox" class="result" style="margin-top:10px;display:none"></div>
+
+    <div id="recs" style="margin-top:8px"></div>
+
+    <div id="chartContainer" style="margin-top:12px">
+      <canvas id="hist" width="760" height="160"></canvas>
+    </div>
+
+    <div id="debug" class="result" style="margin-top:8px;background:#07121b"></div>
+  </div>
+
+  <p class="small muted">Tip: isi CSR/GA/xG/SOT/TI & absences untuk hasil paling akurat. Preset Auto menyesuaikan alpha/ρ berdasarkan keseimbangan tim.</p>
+</div>
+
+<!-- Save Input button (visible, bottom-right) -->
+<button id="saveBtn" title="Save inputs locally">💾 Save Input</button>
+
+<script>
+/* ===== Utilities ===== */
+function dom(id){ return document.getElementById(id); }
+function safe(v,d=NaN){ const x=parseFloat(v); return (isNaN(x)?d:x); }
+function clamp(v,a,b){ if(v<a) return a; if(v>b) return b; return v; }
+function pct(v){ if(isNaN(v)) return '-'; return (100*v).toFixed(1) + '%'; }
+function poisson(lambda){ let L=Math.exp(-lambda), p=1, k=0; while(p>L){ k++; p*=Math.random(); if(k>10000) break; } return k-1; }
+
+/* ===== Init handlers ===== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  // core buttons
+  dom('btnCalcCSHome')?.addEventListener('click', calcCSHome);
+  dom('btnCalcCSAway')?.addEventListener('click', calcCSAway);
+  dom('btnCalcGAHome')?.addEventListener('click', calcGAHome);
+  dom('btnCalcGAAway')?.addEventListener('click', calcGAAway);
+  dom('btnAutoH2H')?.addEventListener('click', autoH2H);
+  dom('btnAutoCR')?.addEventListener('click', autoCR);
+  dom('btnAutoTI')?.addEventListener('click', autoTI);
+  dom('btnAnalyze')?.addEventListener('click', analyzeMatch);
+  dom('btnReset')?.addEventListener('click', resetAll);
+  dom('btnDownload')?.addEventListener('click', downloadCSV);
+  dom('presetMode')?.addEventListener('change', presetManual);
+  // save/load
+  dom('saveBtn')?.addEventListener('click', saveInputs);
+  loadInputs(); // load on start if exists
+  // canvas fallback
+  const canvas = dom('hist');
+  if(!canvas || !canvas.getContext){ const ctn = dom('chartContainer'); if(ctn) ctn.innerText = '⚠️ Histogram not available — please use a modern browser.'; }
+});
+
+/* ===== Auto calculations ===== */
+function calcCSHome(){ const cs=safe(dom('csCountHome').value,0), m=safe(dom('csMatchesHome').value,0); if(m<=0){alert('Masukkan Matches (Home)');return;} dom('csHome').value = (clamp(cs/m,0,1)).toFixed(2); saveInputs();}
+function calcCSAway(){ const cs=safe(dom('csCountAway').value,0), m=safe(dom('csMatchesAway').value,0); if(m<=0){alert('Masukkan Matches (Away)');return;} dom('csAway').value = (clamp(cs/m,0,1)).toFixed(2); saveInputs();}
+function calcGAHome(){ const g=safe(dom('gcHomeCount').value,0), m=safe(dom('gcMatchesHome').value,0); if(m<=0){alert('Masukkan Matches (Home)');return;} dom('gcHome').value = (g/m).toFixed(2); saveInputs();}
+function calcGAAway(){ const g=safe(dom('gcAwayCount').value,0), m=safe(dom('gcMatchesAway').value,0); if(m<=0){alert('Masukkan Matches (Away)');return;} dom('gcAway').value = (g/m).toFixed(2); saveInputs();}
+
+/* ===== Auto helpers ===== */
+function autoH2H(){
+  const s = dom('h2hInput').value || '';
+  const parts = s.toUpperCase().replace(/[^WDL, ]/g,'').split(/[, ]+/).filter(Boolean);
+  if(parts.length===0){ alert('Isi H2H string (W,D,L,..)'); return; }
+  const wins = parts.filter(p=>p==='W').length;
+  dom('h2hRate').value = (wins/parts.length).toFixed(2);
+  alert('H2H rate terisi otomatis.');
+  saveInputs();
+}
+function autoCR(){
+  const gh = safe(dom('xgHome').value, NaN), sh = safe(dom('sotHome').value, NaN);
+  const ga = safe(dom('xgAway').value, NaN), sa = safe(dom('sotAway').value, NaN);
+  let msg = '';
+  if(sh>0 && !isNaN(gh)) msg += 'Conversion Rate Home ≈ ' + (gh/sh).toFixed(2) + '\n';
+  if(sa>0 && !isNaN(ga)) msg += 'Conversion Rate Away ≈ ' + (ga/sa).toFixed(2);
+  if(msg==='') msg = 'Tidak cukup data (xG atau SOT).';
+  alert(msg);
+}
+function autoTI(){
+  // compute TI = tackles + interceptions (displayed as sum)
+  const tH = safe(dom('tackleHome').value,0), iH = safe(dom('interHome').value,0);
+  const tA = safe(dom('tackleAway').value,0), iA = safe(dom('interAway').value,0);
+  const tiH = +(tH + iH).toFixed(1); const tiA = +(tA + iA).toFixed(1);
+  dom('tiHome').value = tiH;
+  dom('tiAway').value = tiA;
+  alert('TI Home: ' + tiH + ' | TI Away: ' + tiA);
+  saveInputs();
+}
+
+/* ===== Model building blocks ===== */
+function computeAttackIndex(xg,sot,form,rating,absFw,absMf){
+  const base = 0.45*(xg||1.0) + 0.20*((sot||3)/5) + 0.12*(form||0.5) + 0.08*(rating?((rating-6)/1.5):0);
+  const penalty = Math.max(0.6, 1 - 0.06*(absFw||0) - 0.03*(absMf||0));
+  return Math.max(0.12, base * penalty);
+}
+function computeDefenseIndex(cs,ga,absDf,ti){
+  // include TI as defensive factor: higher TI => better defense (lower value)
+  const csAdj = 1 - clamp((cs||0)*0.35, 0, 0.6);
+  const gaAdj = 1 + 0.22*(ga||1.2);
+  const absAdj = 1 + 0.08*(absDf||0);
+  const tiAdj = 1 - clamp((ti||0)/60, 0, 0.25); // TI reduces defensive vulnerability
+  return clamp(csAdj * gaAdj * absAdj * tiAdj, 0.45, 3.0);
+}
+function balanceLambda(lh, la){
+  const avg = (lh + la) / 2;
+  const adjust = avg > 2.8 ? 0.87 : avg > 2.2 ? 0.93 : 1.0;
+  return [lh * adjust, la * adjust];
+}
+function sampleBivariate(lambdaH,lambdaA,rho){
+  const shared = Math.max(0, rho * Math.min(lambdaH, lambdaA));
+  const hPart = Math.max(0, lambdaH - shared);
+  const aPart = Math.max(0, lambdaA - shared);
+  const sh = poisson(shared);
+  return [sh + poisson(hPart), sh + poisson(aPart)];
+}
+
+/* ===== Prob helpers ===== */
+function probCoverFromScores(scoreFreq,handicap,runs){
+  let win=0,push=0,lose=0;
+  for(const sc in scoreFreq){
+    const v=scoreFreq[sc]; const [gh,ga]=sc.split('-').map(x=>parseInt(x));
+    const diff = gh - ga - handicap;
+    if(diff>0) win+=v; else if(diff===0) push+=v; else lose+=v;
+  }
+  return (win + 0.5*push)/runs;
+}
+function probOUFromTotals(totals,line,runs){
+  let over=0,under=0; const isInt=Number.isInteger(line);
+  for(const t in totals){ const g=parseInt(t), v=totals[t];
+    if(isInt){ if(g>line) over+=v; else if(g<line) under+=v; else {over+=0.5*v; under+=0.5*v;} }
+    else { if(g>line) over+=v; else under+=v; }
+  }
+  return {over: over/runs, under: under/runs};
+}
+function impliedProb(odds){ if(!odds||odds<=0) return null; return 1/odds; }
+
+/* ===== Auto adjust params ===== */
+function autoAdjustParams(xgH,xgA,formH,formA,preset){
+  const xgDiff = Math.abs(xgH - xgA);
+  const formDiff = Math.abs((formH||0.5) - (formA||0.5));
+  let alpha = clamp(0.10 + (xgDiff*0.08) + (formDiff*0.06), 0.06, 0.22);
+  let rho = clamp(0.08 + Math.min(0.25, (1 - Math.exp(-Math.max(0,xgDiff*1.5))) * 0.20), 0.05, 0.28);
+  if(preset==='cup'){ alpha = Math.min(0.20, alpha+0.03); rho = Math.min(0.32, rho+0.03); }
+  if(preset==='custom'){ alpha = parseFloat(dom('alpha').value) || alpha; rho = parseFloat(dom('rho').value) || rho; }
+  return {alpha,rho};
+}
+
+/* ===== Analyze main (v70_fixed2) ===== */
+
+let lastCSV = '';
+
+function analyzeMatch(){
+
+  try{
+
+    const home = (dom('teamHome').value||'').trim(); const away = (dom('teamAway').value||'').trim();
+
+    if(!home || !away){ alert('Isi nama tim Home & Away terlebih dahulu.'); return; }
+
+
+
+    // read inputs
+
+    const ratingH = safe(dom('ratingHome').value,6.5), ratingA = safe(dom('ratingAway').value,6.3);
+
+    let formH = safe(dom('formHome').value,NaN), formA = safe(dom('formAway').value,NaN);
+
+    if(!Number.isFinite(formH)) formH = 0.5; if(!Number.isFinite(formA)) formA = 0.5;
+
+    let h2hRate = safe(dom('h2hRate').value, NaN);
+
+    if(!Number.isFinite(h2hRate)){ const parts = (dom('h2hInput').value||'').toUpperCase().replace(/[^WDL, ]/g,'').split(/[, ]+/).filter(Boolean); if(parts.length>0) h2hRate = parts.filter(p=>p==='W').length/parts.length; }
+
+    if(!Number.isFinite(h2hRate)) h2hRate = 0.5;
+
+
+
+    const xgH = safe(dom('xgHome').value, ratingH/5), xgA = safe(dom('xgAway').value, ratingA/5);
+
+    const sotH = safe(dom('sotHome').value,4), sotA = safe(dom('sotAway').value,3);
+
+    const csH = safe(dom('csHome').value,0.28), csA = safe(dom('csAway').value,0.26);
+
+    const gaH = safe(dom('gcHome').value,1.15), gaA = safe(dom('gcAway').value,1.30);
+
+    const absDfH = Math.max(0, safe(dom('absDfHome').value,0)), absMfH = Math.max(0,safe(dom('absMfHome').value,0)), absFwH = Math.max(0,safe(dom('absFwHome').value,0));
+
+    const absDfA = Math.max(0, safe(dom('absDfAway').value,0)), absMfA = Math.max(0,safe(dom('absMfAway').value,0)), absFwA = Math.max(0,safe(dom('absFwAway').value,0));
+
+
+
+    const tiH = safe(dom('tiHome').value, safe(dom('tackleHome').value,0)+safe(dom('interHome').value,0));
+
+    const tiA = safe(dom('tiAway').value, safe(dom('tackleAway').value,0)+safe(dom('interAway').value,0));
+
+
+
+    const preset = dom('presetMode').value || 'auto';
+
+    const auto = autoAdjustParams(xgH,xgA,formH,formA,preset);
+
+    const alpha = (preset==='auto') ? auto.alpha : (safe(dom('alpha').value,auto.alpha));
+
+    const rho   = (preset==='auto') ? auto.rho   : (safe(dom('rho').value,auto.rho));
+
+    const runs  = Math.max(2000, parseInt(dom('mcRuns').value||40000));
+
+
+
+    // compute indices
+
+    const atkH = computeAttackIndex(xgH,sotH,formH,ratingH,absFwH,absMfH);
+
+    const atkA = computeAttackIndex(xgA,sotA,formA,ratingA,absFwA,absMfA);
+
+    const defH = computeDefenseIndex(csH,gaH,absDfH,tiH);
+
+    const defA = computeDefenseIndex(csA,gaA,absDfA,tiA);
+
+
+
+    // lambdas
+
+    const leagueAvg = Math.max(0.55, (xgH + xgA)/2);
+
+    let lambdaH = leagueAvg * (atkH / Math.max(0.3, leagueAvg)) * (1/defA);
+
+    let lambdaA = leagueAvg * (atkA / Math.max(0.3, leagueAvg)) * (1/defH);
+
+    const ratingBaseH = (ratingH/5) * leagueAvg; const ratingBaseA = (ratingA/5) * leagueAvg;
+
+    lambdaH = alpha * ratingBaseH + (1-alpha) * lambdaH;
+
+    lambdaA = alpha * ratingBaseA + (1-alpha) * lambdaA;
+
+    const h2hBoost = clamp((h2hRate - 0.5) * 0.16, -0.10, 0.10);
+
+    lambdaH = Math.max(0.03, lambdaH * (1 + h2hBoost));
+
+    lambdaA = Math.max(0.03, lambdaA * (1 - h2hBoost));
+
+
+
+    // balance lambda to avoid overbias
+
+    [lambdaH, lambdaA] = balanceLambda(lambdaH, lambdaA);
+
+
+
+    // Monte Carlo
+
+    const scoreFreq = {}; const totals = {}; let homeWins=0, draws=0, awayWins=0;
+
+    for(let i=0;i<runs;i++){
+
+      const [gh,ga] = sampleBivariate(lambdaH,lambdaA,rho);
+
+      const k = `${gh}-${ga}`; scoreFreq[k] = (scoreFreq[k]||0) + 1;
+
+      totals[gh+ga] = (totals[gh+ga]||0) + 1;
+
+      if(gh>ga) homeWins++; else if(gh===ga) draws++; else awayWins++;
+
+    }
+
+    const pHome = homeWins / runs, pDraw = draws / runs, pAway = awayWins / runs;
+
+    const avgH = Object.entries(scoreFreq).reduce((s,[sc,v])=> s + parseInt(sc.split('-')[0])*v,0)/runs;
+
+    const avgA = Object.entries(scoreFreq).reduce((s,[sc,v])=> s + parseInt(sc.split('-')[1])*v,0)/runs;
+
+
+
+    // OU & HDP
+
+    const ouLine = safe(dom('ouLine').value,2.5);
+
+    const ouProbs = probOUFromTotals(totals,ouLine,runs);
+
+    const hdpLine = safe(dom('hdpLine').value,0.25);
+
+    const coverHome = probCoverFromScores(scoreFreq, hdpLine, runs);
+
+    const coverAway = 1 - coverHome;
+
+
+
+    // market implied
+
+    const imp = {
+
+      hdpHome: impliedProb(safe(dom('hdpHomeNow').value,NaN)),
+
+      hdpAway: impliedProb(safe(dom('hdpAwayNow').value,NaN)),
+
+      ouOver: impliedProb(safe(dom('ouOverNow').value,NaN)),
+
+      ouUnder: impliedProb(safe(dom('ouUnderNow').value,NaN))
+
+    };
+
+
+
+    // compute edges & combined value index (weighted)
+
+    function edge(mProb, impProb){ if(!impProb || !isFinite(impProb)) return null; return mProb - impProb; }
+
+    const eH = edge(coverHome, imp.hdpHome); const eA = edge(coverAway, imp.hdpAway);
+
+    const eOver = edge(ouProbs.over, imp.ouOver); const eUnder = edge(ouProbs.under, imp.ouUnder);
+
+    const wHDP = 0.6, wOU = 0.4;
+
+    const avgEdgeHDP = ( (eH===null?0:eH) + (eA===null?0:eA) )/2;
+
+    const avgEdgeOU = ( (eOver===null?0:eOver) + (eUnder===null?0:eUnder) )/2;
+
+    const combinedIndex = (wHDP * avgEdgeHDP) + (wOU * avgEdgeOU);
+
+// interpret combined index
+
+    let valueLabel='N/A', valueColor='#23333b', valueText='Market odds missing / incomplete.';
+
+    if(!isFinite(combinedIndex)){ valueLabel='N/A'; valueText='Market odds missing'; }
+
+    else {
+
+      const vpc = combinedIndex * 100;
+
+      if(vpc > 3){ valueLabel='VALUE (Model > Market)'; valueColor='#114b2b'; valueText=`Model stronger than market by ${(vpc).toFixed(2)}% → potential value.`; }
+
+      else if(vpc < -3){ valueLabel='NO VALUE (Market > Model)'; valueColor='#5a0b16'; valueText=`Market stronger by ${(-vpc).toFixed(2)}% → avoid`; }
+
+      else { valueLabel='FAIR (Market ≈ Model)'; valueColor='#574a12'; valueText=`Market and model close (${(vpc).toFixed(2)}%).`; }
+
+    }
+
+
+
+    // confidence
+
+    const topProb = Math.max(pHome, pAway, ouProbs.over, ouProbs.under);
+
+    const conf = Math.round(topProb * 100);
+
+    dom('confFill').style.width = conf + '%';
+
+    dom('confFill').style.background = conf < 45 ? '#ef476f' : (conf < 65 ? '#ffd166' : '#00ff9d');
+
+    dom('confText').textContent = 'Confidence: ' + conf + '%';
+
+
+
+    // summary
+
+    let summary = `Match: ${home} vs ${away}\n`;
+
+    summary += `λ (sharp): Home ${lambdaH.toFixed(2)} | Away ${lambdaA.toFixed(2)}\n`;
+
+    summary += `Attack idx H:${atkH.toFixed(2)} A:${atkA.toFixed(2)} | Def idx H:${defH.toFixed(2)} A:${defA.toFixed(2)}\n`;
+
+    summary += `Exp goals (sim): H ${avgH.toFixed(2)} | A ${avgA.toFixed(2)}\n`;
+
+    summary += `1X2 Model → Home ${pct(pHome)} Draw ${pct(pDraw)} Away ${pct(pAway)}\n`;
+
+    summary += `OU(${ouLine}) → Over ${pct(ouProbs.over)} | Under ${pct(ouProbs.under)}\n`;
+
+    summary += `HDP(${hdpLine}) → Home cover ${pct(coverHome)} | Away cover ${pct(coverAway)}\n`;
+
+    summary += `Alpha:${alpha.toFixed(2)} | Rho:${rho.toFixed(2)} | Runs:${runs}\n`;
+
+    summary += `Combined Value Index: ${(combinedIndex*100).toFixed(2)}% → ${valueLabel}\n`;
+
+    summary += `${valueText}\n`;
+
+    summary += `Absent Home (DF/MF/FW): ${absDfH}/${absMfH}/${absFwH} • Away: ${absDfA}/${absMfA}/${absFwA}\n`;
+
+    summary += `TI Home:${tiH} TI Away:${tiA}\n`;
+
+    summary += `Confidence: ${conf}%`;
+
+    dom('summary').textContent = summary;
+
+
+
+    // strength bars
+
+    updateStrength('atkHomeBar','atkHomeVal',atkH);
+
+    updateStrength('defHomeBar','defHomeVal',(1/defH)*10);
+
+    updateStrength('atkAwayBar','atkAwayVal',atkA);
+
+    updateStrength('defAwayBar','defAwayVal',(1/defA)*10);
+
+
+
+    // value pill UI
+
+    const pill = dom('valuePill'); pill.style.background = valueColor; pill.textContent = valueLabel;
+
+    dom('valueText').textContent = valueText;
+
+
+
+    // trap & recs
+
+    const trap = dom('trapBox'); trap.style.display='block';
+
+    trap.textContent = `Market diagnostic (HDP & OU edges combined): ${(combinedIndex*100).toFixed(2)}% — ${valueLabel}`;
+
+
+
+    const candidates = [];
+
+    function edgeVal(mProb, impProb){ if(!impProb) return null; return mProb - impProb; }
+
+    candidates.push({tag:`HDP Home ${hdpLine}`,prob:coverHome,edge:edgeVal(coverHome,imp.hdpHome)});
+
+    candidates.push({tag:`HDP Away ${-hdpLine}`,prob:coverAway,edge:edgeVal(coverAway,imp.hdpAway)});
+
+    candidates.push({tag:`OU Over ${ouLine}`,prob:ouProbs.over,edge:edgeVal(ouProbs.over,imp.ouOver)});
+
+    candidates.push({tag:`OU Under ${ouLine}`,prob:ouProbs.under,edge:edgeVal(ouProbs.under,imp.ouUnder)});
+
+    candidates.forEach(c=>{ c.score = (c.prob * 0.7) + ((c.edge!==null)?(c.edge * 0.3):0); });
+
+    candidates.sort((a,b)=>b.score - a.score);
+
+    const top = candidates.slice(0,2);
+
+    let recHtml = '';
+
+    top.forEach(t=>{ recHtml += `<div class="card"><div style="font-weight:700">${t.tag}</div><div style="text-align:right">${pct(t.prob)}<div class="small">${t.edge===null? 'No market odds':('edge '+(t.edge*100).toFixed(2)+'%')}</div></div></div>`; });
+
+    dom('recs').innerHTML = recHtml;
+
+
+
+    // histogram
+
+    renderHistogram(totals);
+
+
+
+    // debug & csv
+
+    dom('debug').textContent = `avgGoals H:${avgH.toFixed(2)} A:${avgA.toFixed(2)} | lambdaH:${lambdaH.toFixed(2)} lambdaA:${lambdaA.toFixed(2)}`;
+
+    let csv = 'score,count,prob\n';
+
+    Object.keys(scoreFreq).sort().forEach(k=>{ const c=scoreFreq[k]; csv += `${k},${c},${(c/runs).toFixed(6)}\n`; });
+
+    lastCSV = csv;
+
+  // save inputs automatically snapshot (but user can still press Save Input)
+
+    saveInputsSnapshot();
+
+  } catch(err){
+
+    console.error('Analyze error:', err);
+
+    alert('Terjadi error saat Analisis. Cek console atau kirim screenshot ke saya.');
+
+  }
+
+}
+
+
+
+/* ===== UI helpers ===== */
+
+function updateStrength(barId,valId,score){
+
+  const pctv = Math.max(4, Math.min(95, (score / 2.5) * 100));
+
+  dom(barId).style.width = pctv + '%';
+
+  dom(valId).textContent = score.toFixed(2);
+
+}
+
+function renderHistogram(totals){
+
+  const c = dom('hist'); if(!c || !c.getContext) return;
+
+  const ctx = c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
+
+  const keys = Object.keys(totals).map(x=>parseInt(x)).sort((a,b)=>a-b); if(keys.length===0) return;
+
+  const maxV = Math.max(...Object.values(totals));
+
+  const pad=30; const barW = Math.max(12, (c.width - pad*2) / keys.length - 4);
+
+  keys.forEach((k,i)=>{ const v=totals[k]; const h = (v/maxV) * (c.height-40); ctx.fillStyle='#0b74de'; ctx.fillRect(pad + i*(barW+4), c.height-30 - h, barW, h); ctx.fillStyle='#9fb3c5'; ctx.font='11px Arial'; ctx.fillText(String(k), pad + i*(barW+4), c.height-10); });
+
+}
+
+
+
+/* ===== Download & Reset ===== */
+
+function downloadCSV(){ if(!lastCSV){ alert('Jalankan Analisis dulu.'); return; } const match = (dom('matchName').value||dom('teamHome').value+'_vs_'+dom('teamAway').value).replace(/\s+/g,'_'); const filename=`${match}_v70_fixed2_mc.csv`; const blob=new Blob([lastCSV],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+
+function resetAll(){ document.querySelectorAll('input').forEach(i=>{ if(i.type!=='button') i.value=''; }); dom('summary').textContent='Isi input lalu klik Analisis. Tidak ada demo otomatis.'; dom('recs').innerHTML=''; dom('trapBox').style.display='none'; dom('confFill').style.width='0%'; dom('confText').textContent='Confidence: 0%'; const ctx=dom('hist')?.getContext?.('2d'); if(ctx) ctx.clearRect(0,0,dom('hist').width,dom('hist').height); lastCSV=''; dom('debug').textContent=''; alert('Reset selesai.'); }
+
+
+
+/* ===== Save / Load Inputs (localStorage) ===== */
+
+function saveInputs(){
+
+  const data = {}; document.querySelectorAll('input,select').forEach(el=>{ if(el.id) data[el.id]=el.value; });
+
+  localStorage.setItem('v70_fixed2_inputs', JSON.stringify(data));
+
+  alert('Inputs saved locally.');
+
+}
+
+function loadInputs(){
+
+  try{
+
+    const data = JSON.parse(localStorage.getItem('v70_fixed2_inputs') || '{}');
+
+    Object.entries(data).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) el.value=val; });
+
+  }catch(e){ /* ignore */ }
+
+}
+
+function saveInputsSnapshot(){
+
+  // lightweight snapshot (no alert) to preserve last used in case of accidental refresh
+
+  try{
+
+    const snapshot = {}; ['teamHome','teamAway','matchName','xgHome','xgAway','mcRuns','presetMode'].forEach(k=>{ const el=document.getElementById(k); if(el) snapshot[k]=el.value; });
+
+    localStorage.setItem('v70_fixed2_snapshot', JSON.stringify(snapshot));
+
+  }catch(e){}
+
+}
+
+/* ===== Preset manual hook ===== */
+
+function presetManual(){
+
+  const p = dom('presetMode').value;
+
+  if(p==='league'){ dom('alpha').value='0.12'; dom('rho').value='0.12'; dom('mcRuns').value='40000'; }
+
+  else if(p==='cup'){ dom('alpha').value='0.14'; dom('rho').value='0.18'; dom('mcRuns').value='80000'; }
+
+}
+
+/* ===== Load previously saved inputs (on start) ===== */
+
+function loadInputsOnStart(){ loadInputs(); const snap=JSON.parse(localStorage.getItem('v70_fixed2_snapshot')||'{}'); if(snap.teamHome && !dom('teamHome').value) { Object.keys(snap).forEach(k=>{ if(dom(k)) dom(k).value = snap[k]; }); } }
+
+loadInputsOnStart();
+
+</script>
+</body>
+</html>
+
+
+
