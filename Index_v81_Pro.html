@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Index v81 — Pro (Final Precision)</title>
+<style>
+:root{
+  --bg:#041022;
+  --panel:#07121a;
+  --accent:#0ea5ff;
+  --muted:#9aaeb8;
+  --good:#22c55e;
+  --warn:#f59e0b;
+  --bad:#ef4444;
+  --text:#e6f6ff;
+  --toast-success:#16a34a;
+  --toast-error:#dc2626;
+  --toast-warning:#f59e0b;
+  --toast-info:#2563eb;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter,Segoe UI,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  padding:18px;
+}
+.container{max-width:1000px;margin:8px auto;padding:12px}
+h1{font-size:20px;margin:0 0 8px;color:var(--accent)}
+.panel{
+  background:var(--panel);
+  padding:12px;
+  border-radius:10px;
+  margin-bottom:12px;
+  border:1px solid rgba(255,255,255,0.03)
+}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.col{flex:1 1 260px;min-width:220px}
+label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
+input,select,textarea{
+  width:100%;
+  padding:8px;
+  border-radius:8px;
+  border:1px solid #112426;
+  background:#061018;
+  color:#fff;
+  font-size:14px
+}
+button{
+  padding:8px 12px;
+  border-radius:8px;
+  border:0;
+  background:var(--accent);
+  color:#000;
+  cursor:pointer
+}
+button.ghost{
+  background:transparent;
+  border:1px solid #112426;
+  color:var(--text);
+  padding:6px 8px;
+  border-radius:6px
+}
+.small{font-size:12px;color:var(--muted)}
+.result{
+  background:#061216;
+  padding:10px;
+  border-radius:8px;
+  border:1px dashed rgba(255,255,255,0.03);
+  font-family:monospace;
+  white-space:pre-wrap
+}
+.card{
+  display:flex;
+  justify-content:space-between;
+  padding:10px;
+  border-radius:8px;
+  background:#07141a;
+  margin-bottom:8px
+}
+canvas{background:transparent;border-radius:6px}
+.progress-wrap{
+  background:#07161a;
+  border-radius:10px;
+  padding:6px;
+  margin-top:8px
+}
+.progress-fill{
+  height:18px;
+  border-radius:8px;
+  width:0%;
+  transition:width .35s;
+  background:var(--good)
+}
+.strength-bar{
+  height:14px;
+  border-radius:8px;
+  background:#081a20;
+  overflow:hidden;
+  margin-top:6px
+}
+.strength-fill{
+  height:14px;
+  border-radius:8px 0 0 8px;
+  background:var(--accent);
+  width:0%;
+  transition:width .35s
+}
+#saveBtn{
+  position:fixed;
+  right:16px;
+  bottom:16px;
+  z-index:999;
+  background:var(--accent);
+  border-radius:8px;
+  padding:8px 12px;
+  color:#000;
+  cursor:pointer
+}
+/* toast styles */
+.toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: #fff;
+  font-weight:600;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  z-index: 99999;
+  transform: translateY(20px);
+  opacity: 0;
+  transition: opacity .25s ease, transform .25s ease;
+  min-width:160px;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.info{background:var(--toast-info)}
+.toast.success{background:var(--toast-success)}
+.toast.error{background:var(--toast-error)}
+.toast.warn{background:var(--toast-warning)}
+@media (max-width:720px){.col{flex-basis:100%}}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Index v81 — Pro (Final Precision)</h1>
+  <p class="small">
+    Dark premium UI • mixed language (ID + EN) • Auto-fetch API-Football (RapidAPI) • Toasts & sound.
+  </p>
+
+  <div class="panel">
+    <div class="row">
+      <div class="col"><label>Mode</label>
+        <select id="presetMode">
+          <option value="auto">Auto</option>
+          <option value="league">League</option>
+          <option value="cup">Cup</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="col"><label>Date</label><input id="matchDate" type="date"></div>
+      <div class="col"><label>Match</label><input id="matchName" type="text" placeholder="Brighton vs Brentford"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin:0">Core team inputs</h3>
+    <div class="row">
+      <div class="col">
+        <label>Home Team</label>
+        <input id="teamHome" type="text" placeholder="Brighton">
+        <label>Elo Rating (1000–2400)</label>
+        <input id="ratingHome" type="number" min="1000" max="2400" step="1" placeholder="1700">
+        <label>Form Last5 (0–1)</label>
+        <input id="formHome" type="number" min="0" max="1" step="0.01" placeholder="0.78">
+        <label>Avg Goals Scored (Home)</label>
+        <input id="avgGHome" type="number" step="0.01" placeholder="1.6">
+      </div>
+
+      <div class="col">
+        <label>Away Team</label>
+        <input id="teamAway" type="text" placeholder="Brentford">
+        <label>Elo Rating (1000–2400)</label>
+        <input id="ratingAway" type="number" min="1000" max="2400" step="1" placeholder="1650">
+        <label>Form Last5 (0–1)</label>
+        <input id="formAway" type="number" min="0" max="1" step="0.01" placeholder="0.62">
+        <label>Avg Goals Scored (Away)</label>
+        <input id="avgGAway" type="number" step="0.01" placeholder="1.2">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin:0">Advanced Stats (optional)</h3>
+
+    <div class="row">
+      <div class="col">
+        <label>xG (Home)</label>
+        <input id="xgHome" type="number" step="0.01" placeholder="1.65">
+        <label>xGA (Home)</label>
+        <input id="xgaHome" type="number" step="0.01" placeholder="1.12">
+        <label>xGOT (Home)</label>
+        <input id="xgotHome" type="number" step="0.01" placeholder="0.95">
+      </div>
+
+      <div class="col">
+        <label>xG (Away)</label>
+        <input id="xgAway" type="number" step="0.01" placeholder="1.22">
+        <label>xGA (Away)</label>
+        <input id="xgaAway" type="number" step="0.01" placeholder="1.30">
+        <label>xGOT (Away)</label>
+        <input id="xgotAway" type="number" step="0.01" placeholder="0.78">
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <div class="col">
+        <label>PPDA (Home)</label>
+        <input id="ppdaHome" type="number" step="0.1" placeholder="8.5">
+        <label>PPDA (Away)</label>
+        <input id="ppdaAway" type="number" step="0.1" placeholder="10.2">
+      </div>
+
+      <div class="col">
+        <label>Shots on Target (Home)</label>
+        <input id="sotHome" type="number" step="0.1" placeholder="4.2">
+        <label>SOT (Away)</label>
+        <input id="sotAway" type="number" step="0.1" placeholder="3.4">
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <div class="col">
+        <label>Possession % (Home)</label>
+        <input id="posHome" type="number" step="0.1" placeholder="52">
+        <label>Possession % (Away)</label>
+        <input id="posAway" type="number" step="0.1" placeholder="48">
+      </div>
+
+      <div class="col">
+        <label>Corners per Game (Home)</label>
+        <input id="cornHome" type="number" step="0.1" placeholder="5.2">
+        <label>Corners per Game (Away)</label>
+        <input id="cornAway" type="number" step="0.1" placeholder="4.1">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin:0">Auto Fetch (API-Football / RapidAPI)</h3>
+    <div class="row">
+      <div class="col"><label>X-RapidAPI-Key</label>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input id="apiKey" type="password" placeholder="Masukkan API key pribadi kamu" style="flex:1;" />
+          <span id="apiStatus" class="small" style="color:#9aaeb8;">❌ Belum tersimpan</span>
+        </div>
+      </div>
+      <div class="col"><label>Home Team ID (API-Football)</label>
+        <input id="homeTeamId" type="number" placeholder="e.g. 33 (Arsenal)">
+      </div>
+      <div class="col"><label>Away Team ID (API-Football)</label>
+        <input id="awayTeamId" type="number" placeholder="e.g. 49 (Chelsea)">
+      </div>
+    </div>
+    <div style="margin-top:8px">
+      <button id="fetchStatsBtn" class="ghost">Ambil Data Otomatis</button>
+      <span id="fetchStatus" class="small" style="margin-left:10px;color:var(--muted)"></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin:0">Odds & Model</h3>
+    <div class="row">
+      <div class="col">
+        <label>Odds Home</label>
+        <input id="oddsHome" type="number" step="0.01" placeholder="1.95">
+      </div>
+      <div class="col">
+        <label>Odds Draw</label>
+        <input id="oddsDraw" type="number" step="0.01" placeholder="3.25">
+      </div>
+      <div class="col">
+        <label>Odds Away</label>
+        <input id="oddsAway" type="number" step="0.01" placeholder="4.10">
+      </div>
+      <div class="col">
+        <label>Over/Under Line</label>
+        <input id="ouLine" type="number" step="0.25" placeholder="2.5">
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <button id="analyzeBtn">Analisis</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin:0">Hasil Prediksi</h3>
+    <div id="result" class="result">Belum ada hasil.</div>
+    <div class="progress-wrap">
+      <div id="confBar" class="progress-fill"></div>
+    </div>
+    <div class="strength-bar">
+      <div id="strengthFill" class="strength-fill"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const dom = id => document.getElementById(id);
+
+/* ========== NOTIFICATION (TOAST) WITH SOUND ========== */
+function playBeep(type='info'){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    if(type==='success'){ o.type='sine'; o.frequency.value=880; g.gain.value=0.03; }
+    else if(type==='error'){ o.type='sawtooth'; o.frequency.value=220; g.gain.value=0.05; }
+    else if(type==='warning'){ o.type='triangle'; o.frequency.value=440; g.gain.value=0.04; }
+    else { o.type='sine'; o.frequency.value=660; g.gain.value=0.02; }
+    o.start();
+    setTimeout(()=>{ o.stop(); ctx.close(); }, 160);
+  }catch(e){ /* audio may be blocked by browser autoplay policies */ }
+}
+function showToast(message, type='info'){
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type==='error'?'error': type==='success'?'success': type==='warning'?'warn':'info');
+  t.textContent = message;
+  document.body.appendChild(t);
+  // apply color explicitly for contrast-bright
+  if(type==='success') t.style.background = getComputedStyle(document.documentElement).getPropertyValue('--toast-success') || '#16a34a';
+  if(type==='error') t.style.background = getComputedStyle(document.documentElement).getPropertyValue('--toast-error') || '#dc2626';
+  if(type==='warning') t.style.background = getComputedStyle(document.documentElement).getPropertyValue('--toast-warning') || '#f59e0b';
+  if(type==='info') t.style.background = getComputedStyle(document.documentElement).getPropertyValue('--toast-info') || '#2563eb';
+  setTimeout(()=> t.classList.add('show'), 20);
+  playBeep(type);
+  setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=> t.remove(),320); }, 3500);
+}
+
+/* ========== AUTO-SAVE & API KEY STATUS ========== */
+const apiInput = dom('apiKey');
+const apiStatus = dom('apiStatus');
+
+// load saved key and fields on load
+window.addEventListener('load', () => {
+  const savedKey = localStorage.getItem('rapidApiKey');
+  if(savedKey && savedKey.length>10){
+    apiInput.value = savedKey;
+    apiStatus.textContent = '✅ Tersimpan';
+    apiStatus.style.color = 'var(--good)';
+  } else {
+    apiStatus.textContent = '❌ Belum tersimpan';
+    apiStatus.style.color = 'var(--bad)';
+  }
+
+  // load other fields
+  const fields = ['teamHome','teamAway','homeTeamId','awayTeamId','presetMode','ouLine','ratingHome','ratingAway','formHome','formAway'];
+  fields.forEach(id=>{
+    const el = dom(id);
+    if(el){
+      const v = localStorage.getItem(id);
+      if(v !== null) el.value = v;
+    }
+  });
+});
+
+apiInput.addEventListener('input', ()=>{
+  const val = apiInput.value.trim();
+  if(val.length>10){
+    localStorage.setItem('rapidApiKey', val);
+    apiStatus.textContent = '✅ Tersimpan';
+    apiStatus.style.color = 'var(--good)';
+    showToast('API key tersimpan', 'success');
+  } else {
+    apiStatus.textContent = '❌ Belum tersimpan';
+    apiStatus.style.color = 'var(--bad)';
+  }
+});
+
+// auto-save other fields
+['teamHome','teamAway','homeTeamId','awayTeamId','presetMode','ouLine','ratingHome','ratingAway','formHome','formAway'].forEach(id=>{
+  const el = dom(id);
+  if(!el) return;
+  el.addEventListener('input', ()=> localStorage.setItem(id, el.value.trim()));
+  el.addEventListener('change', ()=> localStorage.setItem(id, el.value.trim()));
+});
+
+// clear storage button
+const clearBtn = document.createElement('button');
+clearBtn.textContent = '🗑️ Hapus Data Tersimpan';
+clearBtn.className = 'ghost';
+clearBtn.style.marginTop = '8px';
+clearBtn.onclick = ()=> {
+  if(confirm('Hapus semua data tersimpan di browser?')){
+    localStorage.clear();
+    showToast('Semua data tersimpan dihapus', 'warning');
+    setTimeout(()=> location.reload(), 250);
+  }
+};
+dom('fetchStatsBtn').parentNode.appendChild(clearBtn);
+
+/* ========== API CONNECTION STATUS ========== */
+const apiConnectStatus = document.createElement('div');
+apiConnectStatus.className = 'small';
+apiConnectStatus.style.marginTop = '6px';
+apiConnectStatus.style.color = 'var(--muted)';
+apiConnectStatus.textContent = '🌐 Status koneksi belum dicek';
+dom('fetchStatsBtn').parentNode.appendChild(apiConnectStatus);
+
+/* ========== AUTO FETCH API-FOOTBALL (RapidAPI) ========== */
+dom('fetchStatsBtn').addEventListener('click', async ()=>{
+  const key = dom('apiKey').value.trim();
+  const homeId = dom('homeTeamId').value.trim();
+  const awayId = dom('awayTeamId').value.trim();
+  const status = dom('fetchStatus');
+  const season = 2024;
+
+  if(!key || !homeId || !awayId){
+    showToast('Masukkan API key dan ID tim terlebih dahulu.', 'warning');
+    return;
+  }
+
+  status.textContent = '🔄 Mengambil data...';
+  apiConnectStatus.textContent = '🌐 Menghubungkan ke API...';
+  apiConnectStatus.style.color = 'var(--muted)';
+
+  try{
+    const res = await fetch(`https://api-football-v1.p.rapidapi.com/v3/fixtures/headtohead?h2h=${homeId}-${awayId}&season=${season}`,{
+      headers: {
+        "x-rapidapi-key": key,
+        "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
+      }
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    apiConnectStatus.textContent = '🟢 Terhubung ke API-Football';
+    apiConnectStatus.style.color = 'var(--good)';
+    showToast('Terhubung ke API-Football', 'success');
+
+    const data = await res.json();
+    let fixId = data.response?.[0]?.fixture?.id;
+
+    if(!fixId){
+      status.textContent = 'Tidak ditemukan fixture head-to-head, mencari pertandingan terakhir tim Home...';
+      const latest = await fetch(`https://api-football-v1.p.rapidapi.com/v3/fixtures?team=${homeId}&last=1`,{
+        headers: {
+          "x-rapidapi-key": key,
+          "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
+        }
+      });
+      const latestData = await latest.json();
+      fixId = latestData.response?.[0]?.fixture?.id;
+      if(fixId){
+        status.textContent = '✅ Menggunakan fixture terakhir (fallback).';
+      } else {
+        status.textContent = '❌ Fixture tetap tidak ditemukan.';
+        showToast('Fixture tidak ditemukan', 'warning');
+        return;
+      }
+    }
+
+    // fetch stats
+    const statsRes = await fetch(`https://api-football-v1.p.rapidapi.com/v3/fixtures/statistics?fixture=${fixId}`,{
+      headers: {
+        "x-rapidapi-key": key,
+        "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
+      }
+    });
+    const statsData = await statsRes.json();
+    if(!statsData.response || statsData.response.length===0){
+      status.textContent = '❌ Tidak ada data statistik.';
+      showToast('Tidak ada data statistik untuk fixture ini', 'warning');
+      return;
+    }
+
+    // fill fields
+    statsData.response.forEach(t=>{
+      const nm = (t.team.name||'').toLowerCase();
+      const isHome = nm.includes(dom('teamHome').value.toLowerCase());
+      const prefix = isHome ? 'Home' : 'Away';
+      t.statistics.forEach(s=>{
+        const val = parseFloat((s.value+'').replace('%','')) || 0;
+        if(s.type.includes('Expected Goals')) dom('xg'+prefix).value = val.toFixed(2);
+        if(s.type.includes('Shots on Target')) dom('sot'+prefix).value = val;
+        if(s.type.includes('Possession')) dom('pos'+prefix).value = val;
+        if(s.type.includes('Corners')) dom('corn'+prefix).value = val;
+      });
+    });
+
+    status.textContent = '✅ Data berhasil diisi otomatis!';
+    showToast('Data berhasil diambil dari API', 'success');
+
+  }catch(err){
+    console.error(err);
+    apiConnectStatus.textContent = '🔴 Gagal konek ke API';
+    apiConnectStatus.style.color = 'var(--bad)';
+    dom('fetchStatus').textContent = '❌ Gagal memuat data dari API.';
+    showToast('Gagal terhubung ke API', 'error');
+  }
+});
+
+/* ========== PREDICTION (POISSON) ========== */
+dom('analyzeBtn').addEventListener('click', ()=>{
+  const teamH = dom('teamHome').value || 'Home';
+  const teamA = dom('teamAway').value || 'Away';
+  const eloH = parseFloat(dom('ratingHome').value) || 1600;
+  const eloA = parseFloat(dom('ratingAway').value) || 1600;
+  const xgH = parseFloat(dom('xgHome').value) || 1.4;
+  const xgA = parseFloat(dom('xgAway').value) || 1.2;
+  const formH = parseFloat(dom('formHome').value) || 0.7;
+  const formA = parseFloat(dom('formAway').value) || 0.7;
+  const line = parseFloat(dom('ouLine').value) || 2.5;
+  const mode = dom('presetMode').value;
+
+  const diffElo = (eloH - eloA) / 400;
+  const eloFactor = 1 / (1 + Math.pow(10, -diffElo));
+  const adjHome = xgH * (1 + (formH - formA) * 0.2);
+  const adjAway = xgA * (1 - (formH - formA) * 0.2);
+  const adjElo = (eloFactor - 0.5) * 0.8;
+  let lambdaH = Math.max(0.3, adjHome + adjElo);
+  let lambdaA = Math.max(0.3, adjAway - adjElo);
+
+  if (mode === 'cup') { lambdaH *= 1.08; lambdaA *= 1.08; }
+  else if (mode === 'league') { lambdaH *= 0.96; lambdaA *= 0.96; }
+
+  const maxGoals = 6;
+  let pHome = 0, pDraw = 0, pAway = 0, avgHome = 0, avgAway = 0;
+  for (let h = 0; h <= maxGoals; h++) {
+    for (let a = 0; a <= maxGoals; a++) {
+      const p = Math.exp(-lambdaH) * Math.pow(lambdaH, h) / factorial(h)
+              * Math.exp(-lambdaA) * Math.pow(lambdaA, a) / factorial(a);
+      avgHome += h * p; avgAway += a * p;
+      if (h > a) pHome += p;
+      else if (h === a) pDraw += p;
+      else pAway += p;
+    }
+  }
+
+  const ouLine = line;
+  let pOver = 0, pUnder = 0;
+  for (let total = 0; total <= maxGoals * 2; total++) {
+    const prob = poissonTotal(lambdaH, lambdaA, total);
+    if (total > ouLine) pOver += prob;
+    else pUnder += prob;
+  }
+
+  const topProb = Math.max(pHome, pDraw, pAway, pOver, pUnder);
+  const confPct = Math.min(100, (topProb * 100).toFixed(1));
+
+  const res = `
+<b>${teamH}</b> vs <b>${teamA}</b>
+Mode: <b>${mode.toUpperCase()}</b>
+λHome: ${lambdaH.toFixed(2)} | λAway: ${lambdaA.toFixed(2)}
+1X2 → H: ${(pHome*100).toFixed(1)}%  D: ${(pDraw*100).toFixed(1)}%  A: ${(pAway*100).toFixed(1)}%
+O/U(${ouLine}) → Over ${(pOver*100).toFixed(1)}% | Under ${(pUnder*100).toFixed(1)}%
+Avg Goals → H: ${avgHome.toFixed(2)} | A: ${avgAway.toFixed(2)}
+Confidence → ${confPct}%
+`;
+  dom('result').innerHTML = res;
+  dom('confBar').style.width = confPct + '%';
+  dom('strengthFill').style.width = Math.min(100, (eloFactor*100).toFixed(1)) + '%';
+  showToast('Analisis selesai', 'success');
+});
+
+function factorial(n){return n<=1?1:n*factorial(n-1);}
+function poisson(lambda,k){return Math.exp(-lambda)*Math.pow(lambda,k)/factorial(k);}
+function poissonTotal(lambdaH,lambdaA,total){
+  let sum=0;
+  for(let h=0;h<=total;h++){
+    const a=total-h;
+    sum+=poisson(lambdaH,h)*poisson(lambdaA,a);
+  }
+  return sum;
+}
+</script>
+</body>
+</html>
