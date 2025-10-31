@@ -347,114 +347,201 @@ canvas{background:transparent;border-radius:6px}
 
   <!-- Mulai bagian Script -->
   <script>
-  const dom = id => document.getElementById(id);
+const dom = id => document.getElementById(id);
 
-  // Fungsi Auto Fetch API-Football
-  document.getElementById('fetchStatsBtn').addEventListener('click', async () => {
-    const key = dom('apiKey').value.trim();
-    const homeId = dom('homeTeamId').value.trim();
-    const awayId = dom('awayTeamId').value.trim();
-    const status = dom('fetchStatus');
-    if(!key || !homeId || !awayId){
-      alert('Masukkan API Key dan ID tim terlebih dahulu.');
-      return;
-    }
-    status.textContent = 'Mengambil data...';
-    try {
-      const res = await fetch(`https://api-football-v1.p.rapidapi.com/v3/fixtures/headtohead?h2h=${homeId}-${awayId}`, {
-        headers: {
-          "x-rapidapi-key": key,
-          "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
-        }
-      });
-      const data = await res.json();
-      const fixId = data.response?.[0]?.fixture?.id;
-      if(!fixId){status.textContent='Gagal: fixture tidak ditemukan';return;}
-      const statsRes = await fetch(`https://api-football-v1.p.rapidapi.com/v3/fixtures/statistics?fixture=${fixId}`, {
-        headers: {
-          "x-rapidapi-key": key,
-          "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
-        }
-      });
-      const statsData = await statsRes.json();
-      statsData.response.forEach(t=>{
-        const nm=t.team.name.toLowerCase();
-        const isHome = nm.includes(dom('teamHome').value.toLowerCase());
-        const prefix=isHome?'Home':'Away';
-        t.statistics.forEach(s=>{
-          const val=parseFloat((s.value+'').replace('%',''))||0;
-          if(s.type.includes('Expected Goals')) dom('xg'+prefix).value=val.toFixed(2);
-          if(s.type.includes('Shots on Target')) dom('sot'+prefix).value=val;
-          if(s.type.includes('Possession')) dom('pos'+prefix).value=val;
-          if(s.type.includes('Corners')) dom('corn'+prefix).value=val;
-        });
-      });
-      status.textContent='✅ Data berhasil diisi otomatis!';
-    } catch(e){
-      console.error(e);
-      status.textContent='Gagal memuat data.';
-    }
+/* =====================================================
+   AUTO-SAVE & AUTO-LOAD SEMUA INPUT
+===================================================== */
+// Simpan & muat otomatis API key
+const apiInput = dom('apiKey');
+window.addEventListener('load', () => {
+  const savedKey = localStorage.getItem('rapidApiKey');
+  if (savedKey) apiInput.value = savedKey;
+});
+apiInput.addEventListener('input', () => {
+  const keyVal = apiInput.value.trim();
+  if (keyVal.length > 10) localStorage.setItem('rapidApiKey', keyVal);
+});
+
+// Simpan otomatis semua input penting
+const fieldsToSave = [
+  'teamHome','teamAway','homeTeamId','awayTeamId',
+  'presetMode','ouLine','ratingHome','ratingAway',
+  'formHome','formAway'
+];
+window.addEventListener('load', () => {
+  fieldsToSave.forEach(id => {
+    const el = dom(id);
+    const saved = localStorage.getItem(id);
+    if (el && saved) el.value = saved;
   });
+});
+fieldsToSave.forEach(id => {
+  const el = dom(id);
+  if (el) {
+    el.addEventListener('input', () => localStorage.setItem(id, el.value.trim()));
+    el.addEventListener('change', () => localStorage.setItem(id, el.value.trim()));
+  }
+});
 
-  // Fungsi utama perhitungan prediksi
-  dom('analyzeBtn').addEventListener('click',()=>{
-    const teamH=dom('teamHome').value||'Home';
-    const teamA=dom('teamAway').value||'Away';
-    const eloH=parseFloat(dom('ratingHome').value)||1600;
-    const eloA=parseFloat(dom('ratingAway').value)||1600;
-    const xgH=parseFloat(dom('xgHome').value)||1.4;
-    const xgA=parseFloat(dom('xgAway').value)||1.2;
-    const formH=parseFloat(dom('formHome').value)||0.7;
-    const formA=parseFloat(dom('formAway').value)||0.7;
-    const line=parseFloat(dom('ouLine').value)||2.5;
-    const mode=dom('presetMode').value;
-    /* ---- Bagian Lanjutan: Perhitungan Prediksi ---- */
-    const diffElo = (eloH - eloA) / 400;
-    const eloFactor = 1 / (1 + Math.pow(10, -diffElo));
-    const adjHome = xgH * (1 + (formH - formA) * 0.2);
-    const adjAway = xgA * (1 - (formH - formA) * 0.2);
-    const adjElo = (eloFactor - 0.5) * 0.8;
-    let lambdaH = Math.max(0.3, adjHome + adjElo);
-    let lambdaA = Math.max(0.3, adjAway - adjElo);
+// Tombol hapus semua data tersimpan
+const clearBtn = document.createElement('button');
+clearBtn.textContent = '🗑️ Hapus Data Tersimpan';
+clearBtn.className = 'ghost';
+clearBtn.style.marginTop = '8px';
+clearBtn.onclick = () => {
+  if (confirm('Hapus semua data tersimpan di browser?')) {
+    localStorage.clear();
+    alert('Data lokal sudah dihapus. Silakan muat ulang halaman.');
+    location.reload();
+  }
+};
+dom('fetchStatsBtn').parentNode.appendChild(clearBtn);
 
-    // Mode khusus (League / Cup)
-    if (mode === 'cup') {
-      lambdaH *= 1.08; // Cup: faktor tekanan tinggi, peluang gol naik
-      lambdaA *= 1.08;
-    } else if (mode === 'league') {
-      lambdaH *= 0.96; // Liga: sedikit konservatif
-      lambdaA *= 0.96;
-    }
+/* =====================================================
+   AUTO FETCH API-FOOTBALL (V2 - dengan season & fallback)
+===================================================== */
+document.getElementById('fetchStatsBtn').addEventListener('click', async () => {
+  const key = dom('apiKey').value.trim();
+  const homeId = dom('homeTeamId').value.trim();
+  const awayId = dom('awayTeamId').value.trim();
+  const status = dom('fetchStatus');
+  const season = 2024; // ubah jika ingin musim lain
 
-    // Poisson distribution simple simulation
-    const maxGoals = 6;
-    let pHome = 0, pDraw = 0, pAway = 0, avgHome = 0, avgAway = 0;
-    for (let h = 0; h <= maxGoals; h++) {
-      for (let a = 0; a <= maxGoals; a++) {
-        const p = Math.exp(-lambdaH) * Math.pow(lambdaH, h) / factorial(h)
-                * Math.exp(-lambdaA) * Math.pow(lambdaA, a) / factorial(a);
-        avgHome += h * p; avgAway += a * p;
-        if (h > a) pHome += p;
-        else if (h === a) pDraw += p;
-        else pAway += p;
+  if (!key || !homeId || !awayId) {
+    alert('Masukkan API Key dan ID tim terlebih dahulu.');
+    return;
+  }
+
+  status.textContent = 'Mengambil data...';
+
+  try {
+    // Langkah 1: cari fixture head-to-head
+    const res = await fetch(
+      `https://api-football-v1.p.rapidapi.com/v3/fixtures/headtohead?h2h=${homeId}-${awayId}&season=${season}`,
+      {
+        headers: {
+          "x-rapidapi-key": key,
+          "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
+        }
+      }
+    );
+    const data = await res.json();
+    let fixId = data.response?.[0]?.fixture?.id;
+
+    // Langkah 2: fallback jika tidak ditemukan
+    if (!fixId) {
+      status.textContent = 'Tidak ditemukan fixture langsung, mencari pertandingan terakhir tim Home...';
+      const latest = await fetch(
+        `https://api-football-v1.p.rapidapi.com/v3/fixtures?team=${homeId}&last=1`,
+        {
+          headers: {
+            "x-rapidapi-key": key,
+            "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
+          }
+        }
+      );
+      const latestData = await latest.json();
+      fixId = latestData.response?.[0]?.fixture?.id;
+      if (fixId) {
+        status.textContent = '✅ Menggunakan fixture terakhir (fallback).';
+      } else {
+        status.textContent = '❌ Fixture tetap tidak ditemukan.';
+        return;
       }
     }
 
-    // Over/Under
-    const ouLine = line;
-    let pOver = 0, pUnder = 0;
-    for (let total = 0; total <= maxGoals * 2; total++) {
-      const prob = poissonTotal(lambdaH, lambdaA, total);
-      if (total > ouLine) pOver += prob;
-      else pUnder += prob;
+    // Langkah 3: ambil statistik fixture
+    const statsRes = await fetch(
+      `https://api-football-v1.p.rapidapi.com/v3/fixtures/statistics?fixture=${fixId}`,
+      {
+        headers: {
+          "x-rapidapi-key": 6c8a94f417mshef25a62313f9f95p177c21jsne0e603690003,
+          "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
+        }
+      }
+    );
+    const statsData = await statsRes.json();
+    if (!statsData.response || statsData.response.length === 0) {
+      status.textContent = '❌ Tidak ada data statistik untuk fixture ini.';
+      return;
     }
 
-    // Confidence calculation
-    const topProb = Math.max(pHome, pDraw, pAway, pOver, pUnder);
-    const confPct = Math.min(100, (topProb * 100).toFixed(1));
+    // Langkah 4: isi otomatis ke kolom
+    statsData.response.forEach(t => {
+      const nm = t.team.name.toLowerCase();
+      const isHome = nm.includes(dom('teamHome').value.toLowerCase());
+      const prefix = isHome ? 'Home' : 'Away';
+      t.statistics.forEach(s => {
+        const val = parseFloat((s.value + '').replace('%','')) || 0;
+        if (s.type.includes('Expected Goals')) dom('xg' + prefix).value = val.toFixed(2);
+        if (s.type.includes('Shots on Target')) dom('sot' + prefix).value = val;
+        if (s.type.includes('Possession')) dom('pos' + prefix).value = val;
+        if (s.type.includes('Corners')) dom('corn' + prefix).value = val;
+      });
+    });
 
-    // Output summary
-    const res = `
+    status.textContent = '✅ Data berhasil diisi otomatis!';
+  } catch (e) {
+    console.error(e);
+    status.textContent = '❌ Gagal memuat data dari API.';
+  }
+});
+
+/* =====================================================
+   PERHITUNGAN PREDIKSI (TIDAK DIUBAH)
+===================================================== */
+dom('analyzeBtn').addEventListener('click', () => {
+  const teamH = dom('teamHome').value || 'Home';
+  const teamA = dom('teamAway').value || 'Away';
+  const eloH = parseFloat(dom('ratingHome').value) || 1600;
+  const eloA = parseFloat(dom('ratingAway').value) || 1600;
+  const xgH = parseFloat(dom('xgHome').value) || 1.4;
+  const xgA = parseFloat(dom('xgAway').value) || 1.2;
+  const formH = parseFloat(dom('formHome').value) || 0.7;
+  const formA = parseFloat(dom('formAway').value) || 0.7;
+  const line = parseFloat(dom('ouLine').value) || 2.5;
+  const mode = dom('presetMode').value;
+
+  const diffElo = (eloH - eloA) / 400;
+  const eloFactor = 1 / (1 + Math.pow(10, -diffElo));
+  const adjHome = xgH * (1 + (formH - formA) * 0.2);
+  const adjAway = xgA * (1 - (formH - formA) * 0.2);
+  const adjElo = (eloFactor - 0.5) * 0.8;
+  let lambdaH = Math.max(0.3, adjHome + adjElo);
+  let lambdaA = Math.max(0.3, adjAway - adjElo);
+
+  if (mode === 'cup') {
+    lambdaH *= 1.08; lambdaA *= 1.08;
+  } else if (mode === 'league') {
+    lambdaH *= 0.96; lambdaA *= 0.96;
+  }
+
+  const maxGoals = 6;
+  let pHome = 0, pDraw = 0, pAway = 0, avgHome = 0, avgAway = 0;
+  for (let h = 0; h <= maxGoals; h++) {
+    for (let a = 0; a <= maxGoals; a++) {
+      const p = Math.exp(-lambdaH) * Math.pow(lambdaH, h) / factorial(h)
+              * Math.exp(-lambdaA) * Math.pow(lambdaA, a) / factorial(a);
+      avgHome += h * p; avgAway += a * p;
+      if (h > a) pHome += p;
+      else if (h === a) pDraw += p;
+      else pAway += p;
+    }
+  }
+
+  const ouLine = line;
+  let pOver = 0, pUnder = 0;
+  for (let total = 0; total <= maxGoals * 2; total++) {
+    const prob = poissonTotal(lambdaH, lambdaA, total);
+    if (total > ouLine) pOver += prob;
+    else pUnder += prob;
+  }
+
+  const topProb = Math.max(pHome, pDraw, pAway, pOver, pUnder);
+  const confPct = Math.min(100, (topProb * 100).toFixed(1));
+
+  const res = `
 <b>${teamH}</b> vs <b>${teamA}</b>
 Mode: <b>${mode.toUpperCase()}</b>
 λHome: ${lambdaH.toFixed(2)} | λAway: ${lambdaA.toFixed(2)}
@@ -463,22 +550,21 @@ O/U(${ouLine}) → Over ${(pOver*100).toFixed(1)}% | Under ${(pUnder*100).toFixe
 Avg Goals → H: ${avgHome.toFixed(2)} | A: ${avgAway.toFixed(2)}
 Confidence → ${confPct}%
 `;
-    dom('result').innerHTML = res;
-    dom('confBar').style.width = confPct + '%';
-    dom('strengthFill').style.width = Math.min(100, (eloFactor*100).toFixed(1)) + '%';
-  });
+  dom('result').innerHTML = res;
+  dom('confBar').style.width = confPct + '%';
+  dom('strengthFill').style.width = Math.min(100, (eloFactor*100).toFixed(1)) + '%';
+});
 
-  // Poisson helper functions
-  function factorial(n){return n<=1?1:n*factorial(n-1);}
-  function poisson(lambda,k){return Math.exp(-lambda)*Math.pow(lambda,k)/factorial(k);}
-  function poissonTotal(lambdaH,lambdaA,total){
-    let sum=0;
-    for(let h=0;h<=total;h++){
-      const a=total-h;
-      sum+=poisson(lambdaH,h)*poisson(lambdaA,a);
-    }
-    return sum;
+function factorial(n){return n<=1?1:n*factorial(n-1);}
+function poisson(lambda,k){return Math.exp(-lambda)*Math.pow(lambda,k)/factorial(k);}
+function poissonTotal(lambdaH,lambdaA,total){
+  let sum=0;
+  for(let h=0;h<=total;h++){
+    const a=total-h;
+    sum+=poisson(lambdaH,h)*poisson(lambdaA,a);
   }
+  return sum;
+}
   </script>
 </div>
 </body>
