@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Index v78 — Quantum Precision Engine</title>
+<style>
+:root{
+  --bg:#041018; --panel:#071826; --accent:#0b74de; --muted:#8faab7;
+  --good:#2ecc71; --warn:#ffd166; --bad:#ef476f; --text:#dff3ff;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.container{max-width:980px;margin:18px auto;padding:18px}
+h1{font-size:20px;margin:0 0 6px}
+.panel{background:var(--panel);padding:12px;border-radius:10px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.03)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.col{flex:1 1 260px;min-width:220px}
+label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
+input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #22333f;background:#08131a;color:#fff;font-size:14px}
+button{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+button.ghost{background:transparent;border:1px solid #233645;color:var(--text);padding:6px 8px;border-radius:6px}
+.small{font-size:12px;color:var(--muted)}
+.result{background:#06121a;padding:10px;border-radius:8px;border:1px dashed rgba(255,255,255,0.03);font-family:monospace;white-space:pre-wrap}
+.card{display:flex;justify-content:space-between;padding:10px;border-radius:8px;background:#061922;margin-bottom:8px}
+canvas{background:transparent;border-radius:6px}
+.progress-wrap{background:#07202a;border-radius:10px;padding:6px;margin-top:8px}
+.progress-fill{height:18px;border-radius:8px;width:0%;transition:width .5s}
+.strength-bar{height:14px;border-radius:8px;background:#0a2230;overflow:hidden;margin-top:6px}
+.strength-fill{height:14px;border-radius:8px 0 0 8px;background:var(--accent);width:0%;transition:width .5s}
+.indicator{display:flex;align-items:center;gap:8px}
+.indicator .dot{width:12px;height:12px;border-radius:50%}
+.ind-green{background:var(--good)}.ind-amber{background:var(--warn)}.ind-red{background:var(--bad)}
+.value-pill{padding:8px 12px;border-radius:8px;color:#fff;font-weight:700}
+.muted{color:#8faab7}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Index v78 — Quantum Precision Engine</h1>
+  <p class="small">v78: dynamic calibration, KL confidence, dual trap, H-Index, consensus scoring. UI familier — isi input & klik Analisis.</p>
+
+  <!-- Inputs -->
+  <div class="panel">
+    <div class="row">
+      <div class="col">
+        <label>Home Team</label><input id="teamHome" type="text">
+        <label>Rating (SofaScore avg)</label><input id="ratingHome" type="number" step="0.01">
+        <label>Form Last5 (0-1)</label><input id="formHome" type="number" step="0.01">
+      </div>
+      <div class="col">
+        <label>Away Team</label><input id="teamAway" type="text">
+        <label>Rating (SofaScore avg)</label><input id="ratingAway" type="number" step="0.01">
+        <label>Form Last5 (0-1)</label><input id="formAway" type="number" step="0.01">
+      </div>
+      <div class="col">
+        <label>Preset Mode</label>
+        <select id="presetMode"><option value="auto">Auto</option><option value="league">League</option><option value="cup">Cup</option><option value="custom">Custom</option></select>
+        <label>Date</label><input id="matchDate" type="date">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin:0">Advanced stats & context</h3>
+    <div class="row">
+      <div class="col">
+        <label>xG / game (Home)</label><input id="xgHome" type="number" step="0.01">
+        <label>SOT / game (Home)</label><input id="sotHome" type="number" step="0.01">
+        <label>CS rate (Home)</label><input id="csHome" type="number" step="0.01">
+        <label>Absences (DF/MF/FW) Home (format 1/0/2)</label><input id="absHome" type="text">
+      </div>
+      <div class="col">
+        <label>xG / game (Away)</label><input id="xgAway" type="number" step="0.01">
+        <label>SOT / game (Away)</label><input id="sotAway" type="number" step="0.01">
+        <label>CS rate (Away)</label><input id="csAway" type="number" step="0.01">
+        <label>Absences (DF/MF/FW) Away</label><input id="absAway" type="text">
+      </div>
+      <div class="col">
+        <label>H2H recent (string W/D/L)</label><input id="h2hInput" type="text">
+        <label>H2H weight (0-1)</label><input id="h2hWeight" type="number" step="0.01" value="0.12">
+        <label>League avg total goals</label><input id="leagueAvg" type="number" step="0.01">
+        <label>Lineup Delta (%) Home relative</label><input id="lineupDelta" type="number" step="0.1" value="0">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin:0">Odds & Engine settings</h3>
+    <div class="row">
+      <div class="col"><label>HDP Line</label><input id="hdpLine" type="number" step="0.25" value="0.25"></div>
+      <div class="col"><label>OU Line</label><input id="ouLine" type="number" step="0.25" value="2.5"></div>
+      <div class="col"><label>MC runs</label><input id="mcRuns" type="number" value="40000"></div>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <div class="col"><label>Home Odds (open / now)</label><input id="homeOdds" type="text"></div>
+      <div class="col"><label>Away Odds (open / now)</label><input id="awayOdds" type="text"></div>
+      <div class="col"><label>O/U Over odds (open / now)</label><input id="ouOverOdds" type="text"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="col"><label>O/U Under odds (open / now)</label><input id="ouUnderOdds" type="text"></div>
+      <div class="col"><label>alpha (start)</label><input id="alpha" type="number" step="0.01" value="0.12"></div>
+      <div class="col"><label>rho (start)</label><input id="rho" type="number" step="0.01" value="0.12"></div>
+    </div>
+
+    <div style="margin-top:10px">
+      <button id="btnAnalyze">Analisis (v78)</button>
+      <button id="btnReset" class="ghost">Reset</button>
+      <button id="btnDownload" class="ghost">Download CSV</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin:0">Result & recommendations (neutral)</h3>
+    <div id="summary" class="result" style="margin-top:8px">Isi input lalu klik Analisis.</div>
+
+    <div style="margin-top:10px">
+      <div><b>Attack / Defense (visual)</b></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+        <div class="card"> <div>Home Attack <span id="atkHomeVal" style="float:right">-</span></div> <div class="strength-bar"><div id="atkHomeBar" class="strength-fill"></div></div></div>
+        <div class="card"> <div>Away Attack <span id="atkAwayVal" style="float:right">-</span></div> <div class="strength-bar"><div id="atkAwayBar" class="strength-fill"></div></div></div>
+        <div class="card"> <div>Home Defense <span id="defHomeVal" style="float:right">-</span></div> <div class="strength-bar"><div id="defHomeBar" class="strength-fill"></div></div></div>
+        <div class="card"> <div>Away Defense <span id="defAwayVal" style="float:right">-</span></div> <div class="strength-bar"><div id="defAwayBar" class="strength-fill"></div></div></div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px">
+      <label class="small">Confidence (entropy × KL)</label>
+      <div class="progress-wrap"><div id="confFill" class="progress-fill"></div></div>
+      <div id="confText" class="small" style="text-align:right">Confidence: 0%</div>
+    </div>
+
+    <div id="valueIndicator" style="margin-top:12px;display:flex;gap:10px;align-items:center">
+      <div id="valuePill" class="value-pill" style="background:#23333b">Value: N/A</div>
+      <div id="valueText" class="small">Indicator after analysis</div>
+    </div>
+
+    <div id="trapBox" class="result" style="margin-top:10px;display:none"></div>
+    <div id="recs" style="margin-top:8px"></div>
+    <div style="margin-top:12px"><canvas id="hist" width="900" height="160"></canvas></div>
+    <div id="debug" class="result" style="margin-top:8px;background:#07121b"></div>
+  </div>
+
+</div>
+
+<script>
+/* =================== Utilities =================== */
+function dom(id){return document.getElementById(id)}
+function toNum(v,def=NaN){ if(v===undefined||v===null||v==='') return def; const x=parseFloat(String(v).replace(',','.')); return isFinite(x)?x:def; }
+function splitPair(s){ if(!s) return [NaN,NaN]; const parts = String(s).split('/').map(x=>x.trim()).filter(Boolean); if(parts.length===0) return [NaN,NaN]; const a=toNum(parts[0],NaN), b=parts[1]?toNum(parts[1],a):a; return [a,b]; }
+function implied(od){ return od>0?1/od:NaN; }
+function clamp(v,a,b){ return isNaN(v)?a:Math.max(a,Math.min(b,v)); }
+
+/* poisson random (Knuth) */
+function poissonRand(lambda){
+  if(!(lambda>0)) return 0;
+  let L=Math.exp(-lambda), p=1, k=0;
+  while(p>L){ k++; p *= Math.random(); if(k>10000) break; }
+  return Math.max(0, k-1);
+}
+/* bivariate Poisson sampling (shared part) */
+function sampleBivariate(lambdaH, lambdaA, rho){
+  const shared = Math.max(0, rho * Math.min(lambdaH, lambdaA));
+  const partH = Math.max(0, lambdaH - shared);
+  const partA = Math.max(0, lambdaA - shared);
+  const s = poissonRand(shared);
+  const h = s + poissonRand(partH);
+  const a = s + poissonRand(partA);
+  return [h, a];
+}
+
+/* entropy from counts */
+function entropyFromCounts(counts, total){
+  if(!counts || total<=0) return 0;
+  let ent = 0;
+  for(const k in counts){
+    const p = counts[k]/total;
+    if(p>0) ent -= p * Math.log2(p);
+  }
+  return ent;
+}
+
+/* KL divergence discrete: D_KL(P||Q) where both given as distributions arrays aligned by index */
+function klDivergence(P, Q){
+  let d = 0;
+  for(let i=0;i<P.length;i++){
+    const p = P[i] || 0;
+    const q = Q[i] || 1e-12; // avoid zero
+    if(p>0) d += p * Math.log2(p/q);
+  }
+  return d;
+}
+
+/* normalize two values removing vig (two-way) */
+function removeVig(a,b){
+  if(!isFinite(a) || !isFinite(b)) return [NaN,NaN];
+  const s = a + b;
+  return s>0 ? [a/s, b/s] : [NaN, NaN];
+}
+
+/* infer market total from over/under odds (approx) */
+function inferMarketTotalFromOU(line, overOdds, underOdds){
+  const over = implied(overOdds), under = implied(underOdds);
+  if(!isFinite(over) || !isFinite(under)) return NaN;
+  const s = over + under;
+  if(s<=0) return NaN;
+  const pOver = over / s;
+  const cutoff = Math.floor(line + 0.5) + 1;
+  function tailProb(mu){
+    let cdf = 0;
+    let fact = 1;
+    for(let k=0;k<cutoff;k++){
+      const pmf = Math.exp(-mu) * Math.pow(mu, k) / fact;
+      cdf += pmf;
+      fact *= (k+1);
+    }
+    return 1 - cdf;
+  }
+  let lo = 0.05, hi = 8, mu = 2.5;
+  for(let i=0;i<40;i++){
+    mu = (lo+hi)/2;
+    const tail = tailProb(mu);
+    if(tail > pOver) hi = mu; else lo = mu;
+  }
+  return mu;
+}
+
+/* balance lambda */
+function balanceLambda(lh, la){
+  const avg = (lh + la) / 2;
+  const adjust = avg > 3.0 ? 0.86 : avg > 2.2 ? 0.93 : 1.0;
+  return [lh * adjust, la * adjust];
+}
+
+/* compute attack/defense (refined but safe) */
+function computeAttack(xg, sot, form, rating, absFW, absMF){
+  const base = 0.5 * (xg || 1.0) + 0.22 * ((sot || 3) / 4) + 0.12 * (form || 0.5) + 0.06 * ((rating || 6.5) - 6);
+  const penalty = Math.max(0.55, 1 - 0.06*(absFW||0) - 0.03*(absMF||0));
+  return Math.max(0.08, base * penalty);
+}
+function computeDefense(csRate, ga, absDF, ti){
+  const csAdj = 1 - clamp(csRate * 0.3, 0, 0.55);
+  const gaAdj = 1 + 0.2 * (ga || 1.2);
+  const absAdj = 1 + 0.08 * (absDF || 0);
+  const tiAdj = 1 - clamp((ti || 0)/60, 0, 0.25);
+  return clamp(csAdj * gaAdj * absAdj * tiAdj, 0.45, 3.2);
+}
+
+/* prob helpers */
+function probCoverFromScores(scoreFreq, handicap, runs){
+  let win=0, push=0, lose=0;
+  for(const sc in scoreFreq){
+    const v = scoreFreq[sc];
+    const [gh, ga] = sc.split('-').map(x=>parseInt(x));
+    const diff = gh - ga - handicap;
+    if(diff>0) win += v;
+    else if(diff===0) push += v;
+    else lose += v;
+  }
+  return (win + 0.5*push) / runs;
+}
+function probOUFromTotals(totals, line, runs){
+  let over=0, under=0;
+  const isInt = Number.isInteger(line);
+  for(const t in totals){
+    const g = parseInt(t), v = totals[t];
+    if(isInt){
+      if(g>line) over += v;
+      else if(g<line) under += v;
+      else { over += 0.5*v; under += 0.5*v; }
+    } else {
+      if(g>line) over += v; else under += v;
+    }
+  }
+  return {over: over/runs, under: under/runs};
+}
+
+/* dynamic trap detection */
+function detectTrap2D(marketHomeOpen, marketHomeNow, modelCoverHome, marketOverOpen, marketOverNow, modelOver, thresholdBase){
+  const deltaH = (marketHomeNow - marketHomeOpen);
+  const deltaO = (marketOverNow - marketOverOpen);
+  const suspiciousH = Math.abs(deltaH) > thresholdBase;
+  const suspiciousO = Math.abs(deltaO) > thresholdBase;
+  let messages = [];
+  if(suspiciousH){
+    const contradiction = (deltaH > 0 && modelCoverHome < 0.5) || (deltaH < 0 && modelCoverHome > 0.5);
+    if(contradiction) messages.push('HDP trap suspected: market moved but model disagrees.');
+  }
+  if(suspiciousO){
+    const contradictionO = (deltaO > 0 && modelOver < 0.5) || (deltaO < 0 && modelOver > 0.5);
+    if(contradictionO) messages.push('O/U trap suspected: market moved but model disagrees.');
+  }
+  if(messages.length===0) return {trap:false, msg:'Netral'};
+  return {trap:true, msg: messages.join(' • ')};
+}
+
+/* hybrid value index */
+function computeHybrid(edgeHDP, edgeOU, entropyBits){
+  const wH = 0.6, wO = 0.4;
+  const damp = Math.max(0.25, 1 - (entropyBits / 6));
+  return ((edgeHDP * wH) + (edgeOU * wO)) * damp;
+}
+
+/* =================== Main Analysis v78 =================== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  dom('btnAnalyze').addEventListener('click', analyzeMatch);
+  dom('btnReset').addEventListener('click', resetAll);
+  dom('btnDownload').addEventListener('click', downloadCSV);
+  loadInputs();
+});
+
+/* persistent storage helpers */
+let lastCSV = '';
+function saveInputs(){
+  try{
+    const data = {};
+    document.querySelectorAll('input,select').forEach(el=>{ if(el.id) data[el.id] = el.value; });
+    localStorage.setItem('index_v78_inputs', JSON.stringify(data));
+  }catch(e){}
+}
+function loadInputs(){
+  try{
+    const data = JSON.parse(localStorage.getItem('index_v78_inputs') || '{}');
+    Object.entries(data).forEach(([id,val])=>{ const el = dom(id); if(el) el.value = val; });
+  }catch(e){}
+}
+
+/* analysis function */
+function analyzeMatch(){
+  try{
+    // basic validation & inputs
+    const home = (dom('teamHome').value || '').trim();
+    const away = (dom('teamAway').value || '').trim();
+    if(!home || !away){ alert('Isi nama tim Home & Away'); return; }
+
+    const ratingH = toNum(dom('ratingHome').value, 6.6);
+    const ratingA = toNum(dom('ratingAway').value, 6.3);
+    const formH = clamp(toNum(dom('formHome').value, 0.5), 0, 1);
+    const formA = clamp(toNum(dom('formAway').value, 0.5), 0, 1);
+
+    const xgH = toNum(dom('xgHome').value, ratingH/5);
+    const xgA = toNum(dom('xgAway').value, ratingA/5);
+    const sotH = toNum(dom('sotHome').value, 4);
+    const sotA = toNum(dom('sotAway').value, 3);
+    const csH = toNum(dom('csHome').value, 0.28);
+    const csA = toNum(dom('csAway').value, 0.26);
+
+    // parse absences as "df/mf/fw"
+    function parseAbs(s){ if(!s) return [0,0,0]; const arr = String(s).replace(/,/g,'/').split('/').map(x=>Math.max(0, toNum(x,0))); while(arr.length<3) arr.push(0); return arr.slice(0,3); }
+    const [absDfH, absMfH, absFwH] = parseAbs(dom('absHome').value);
+    const [absDfA, absMfA, absFwA] = parseAbs(dom('absAway').value);
+
+    const h2hParts = (dom('h2hInput').value || '').toUpperCase().replace(/[^WDL, ]/g,'').split(/[, ]+/).filter(Boolean);
+    let h2hRate = 0.5;
+    if(h2hParts.length>0) h2hRate = h2hParts.filter(p=>p==='W').length / h2hParts.length;
+    const h2hWeight = clamp(toNum(dom('h2hWeight').value, 0.12), 0, 0.4);
+
+    const preset = dom('presetMode').value || 'auto';
+    const mcRuns = Math.max(2000, parseInt(toNum(dom('mcRuns').value, 40000)));
+    const ouLine = toNum(dom('ouLine').value, 2.5);
+    const hdpLine = toNum(dom('hdpLine').value, 0.25);
+
+    // odds parse open/now
+    const [homeOddsOpen, homeOddsNow] = splitPair(dom('homeOdds').value);
+    const [awayOddsOpen, awayOddsNow] = splitPair(dom('awayOdds').value);
+    const [ouOverOpen, ouOverNow] = splitPair(dom('ouOverOdds').value);
+    const [ouUnderOpen, ouUnderNow] = splitPair(dom('ouUnderOdds').value);
+
+    // implied probabilities
+    const impHomeOpen = implied(homeOddsOpen), impAwayOpen = implied(awayOddsOpen);
+    const impHomeNow = implied(homeOddsNow), impAwayNow = implied(awayOddsNow);
+    const [mHomeOpen, mAwayOpen] = isFinite(impHomeOpen)&&isFinite(impAwayOpen)? removeVig(impHomeOpen, impAwayOpen) : [NaN, NaN];
+    const [mHomeNow, mAwayNow] = isFinite(impHomeNow)&&isFinite(impAwayNow)? removeVig(impHomeNow, impAwayNow) : [NaN, NaN];
+
+    const mOverOpenRaw = implied(ouOverOpen), mUnderOpenRaw = implied(ouUnderOpen);
+    const mOverNowRaw = implied(ouOverNow), mUnderNowRaw = implied(ouUnderNow);
+    const [mOverOpen, mUnderOpen] = (isFinite(mOverOpenRaw)&&isFinite(mUnderOpenRaw)) ? removeVig(mOverOpenRaw, mUnderOpenRaw) : [NaN, NaN];
+    const [mOverNow, mUnderNow] = (isFinite(mOverNowRaw)&&isFinite(mUnderNowRaw)) ? removeVig(mOverNowRaw, mUnderNowRaw) : [NaN, NaN];
+
+    const marketOverNow = isFinite(mOverNow) ? mOverNow : (isFinite(mOverOpen) ? mOverOpen : NaN);
+
+    // adaptive params (alpha/rho) computed from diffs
+    function adaptiveAlphaRho(){
+      const xgDiff = Math.abs((xgH||0)-(xgA||0));
+      const sotDiff = Math.abs((sotH||0)-(sotA||0)) / Math.max(1, (sotH || sotA || 1));
+      const formDiff = Math.abs((formH||0)-(formA||0));
+      let alpha = clamp(0.08 + (1 - Math.exp(-xgDiff*1.6))*0.14 + formDiff*0.03, 0.05, 0.30);
+      let rho = clamp(0.06 + (1 - Math.exp(- ( (1/(1+xgDiff)) ) ))*0.18 + Math.min(0.08, sotDiff*0.05), 0.03, 0.35);
+      if(preset==='cup'){ alpha = clamp(alpha+0.03,0.05,0.35); rho = clamp(rho+0.04,0.03,0.4); }
+      if(preset==='custom'){ alpha = clamp(toNum(dom('alpha').value, alpha),0.01,0.5); rho = clamp(toNum(dom('rho').value, rho),0.0,0.5); }
+      return {alpha, rho};
+    }
+    const params = adaptiveAlphaRho();
+    let alpha = params.alpha, rho = params.rho;
+
+    // compute attack/defense indices
+    const atkH = computeAttack(xgH, sotH, formH, ratingH, absFwH, absMfH);
+    const atkA = computeAttack(xgA, sotA, formA, ratingA, absFwA, absMfA);
+    const defH = computeDefense(csH, toNum(dom('gcHome')?.value, 1.15), absDfH, toNum(dom('tiHome')?.value, (toNum(dom('tackleHome')?.value,0)+toNum(dom('interHome')?.value,0))));
+    const defA = computeDefense(csA, toNum(dom('gcAway')?.value, 1.3), absDfA, toNum(dom('tiAway')?.value, (toNum(dom('tackleAway')?.value,0)+toNum(dom('interAway')?.value,0))));
+
+    const leagueAvg = toNum(dom('leagueAvg').value, Math.max(0.9, (xgH + xgA)/2));
+
+    // initial lambda estimates
+    const statLambdaH = leagueAvg * (atkH / Math.max(0.3, defA));
+    const statLambdaA = leagueAvg * (atkA / Math.max(0.3, defH));
+    const ratingBaseH = (ratingH/6.5) * leagueAvg;
+    const ratingBaseA = (ratingA/6.5) * leagueAvg;
+    let lambdaH = alpha * ratingBaseH + (1-alpha) * statLambdaH;
+    let lambdaA = alpha * ratingBaseA + (1-alpha) * statLambdaA;
+
+    // H2H micro adjust
+    const h2hBoost = clamp((h2hRate - 0.5) * (h2hWeight || 0.12), -0.08, 0.08);
+    lambdaH = Math.max(0.03, lambdaH * (1 + h2hBoost));
+    lambdaA = Math.max(0.03, lambdaA * (1 - h2hBoost));
+    [lambdaH, lambdaA] = balanceLambda(lambdaH, lambdaA);
+
+    // marketTotal approx
+    const marketTotalApprox = inferMarketTotalFromOU(ouLine, ouOverNow||ouOverOpen, ouUnderNow||ouUnderOpen);
+    // dynamic calibration: iterative lightweight (Newton-like) to push model total toward market total if market exists
+    if(isFinite(marketTotalApprox)){
+      let modelTotal = lambdaH + lambdaA;
+      let beta = 0.65; // adaptivity
+      for(let iter=0; iter<6; iter++){
+        modelTotal = lambdaH + lambdaA;
+        if(Math.abs(Math.log(modelTotal+1e-9) - Math.log(marketTotalApprox+1e-9)) < 0.0005) break;
+        const scale = Math.exp(beta * (Math.log(marketTotalApprox+1e-9) - Math.log(modelTotal+1e-9)));
+        lambdaH *= scale; lambdaA *= scale;
+        [lambdaH, lambdaA] = balanceLambda(lambdaH, lambdaA);
+        beta = Math.min(0.95, beta * 1.05);
+      }
+    }
+
+    // home advantage scaled by lineup delta
+    const homeAdvBase = 0.14;
+    const lineupFactor = clamp(toNum(dom('lineupDelta').value, 0)/100, -0.3, 0.3);
+    const homeAdv = homeAdvBase * (1 + lineupFactor);
+
+    // Monte Carlo with batching
+    const runsTotal = Math.max(2000, parseInt(mcRuns));
+    const batch = Math.max(1000, Math.min(5000, Math.floor(runsTotal/8)));
+    let accumulated = {scoreFreq:{}, totals:{}, homeWins:0, draws:0, awayWins:0, sumH:0, sumA:0, runs:0};
+
+    function runBatch(n){
+      for(let i=0;i<n;i++){
+        const [gh, ga] = sampleBivariate(lambdaH + homeAdv, lambdaA, rho);
+        const k = gh + '-' + ga;
+        accumulated.scoreFreq[k] = (accumulated.scoreFreq[k]||0) + 1;
+        accumulated.totals[gh+ga] = (accumulated.totals[gh+ga]||0) + 1;
+        accumulated.sumH += gh; accumulated.sumA += ga; accumulated.runs++;
+        if(gh>ga) accumulated.homeWins++; else if(gh===ga) accumulated.draws++; else accumulated.awayWins++;
+      }
+    }
+
+    const maxBatches = Math.ceil(runsTotal / batch);
+    for(let b=0;b<maxBatches;b++){
+      runBatch(Math.min(batch, runsTotal - (b*batch)));
+    }
+
+    const runs = accumulated.runs;
+    const pHome = accumulated.homeWins / runs;
+    const pDraw = accumulated.draws / runs;
+    const pAway = accumulated.awayWins / runs;
+    const avgH = accumulated.sumH / runs;
+    const avgA = accumulated.sumA / runs;
+
+    const totals = accumulated.totals;
+    const scoreFreq = accumulated.scoreFreq;
+
+    // build pmf arrays
+    const maxT = Math.max(...Object.keys(totals).map(x=>parseInt(x)).filter(n=>!isNaN(n)).concat([10]));
+    const pmModel = [];
+    for(let t=0;t<=maxT;t++) pmModel[t] = (totals[t] || 0) / runs;
+
+    let pmMarket = null;
+    if(isFinite(marketTotalApprox)){
+      pmMarket = [];
+      for(let t=0;t<=maxT;t++){
+        pmMarket[t] = Math.exp(-marketTotalApprox) * Math.pow(marketTotalApprox, t) / (function fact(n){ let r=1; for(let i=1;i<=n;i++) r*=i; return r; }(t));
+      }
+      let tail=0; for(let t=0;t<pmMarket.length;t++) tail += pmMarket[t];
+      if(tail < 0.999){ pmMarket[pmMarket.length-1] += (1-tail); }
+    } else pmMarket = pmModel.slice();
+
+    const entropyScores = entropyFromCounts(scoreFreq, runs);
+    const entropyTotals = entropyFromCounts(totals, runs);
+    const kl = klDivergence(pmModel, pmMarket);
+
+    const ouProbs = probOUFromTotals(totals, ouLine, runs);
+    const coverHome = probCoverFromScores(scoreFreq, hdpLine, runs);
+    const coverAway = 1 - coverHome;
+
+    const impHdpHomeNow = implied(toNum(dom('hdpHomeNow')?.value, NaN));
+    const impHdpAwayNow = implied(toNum(dom('hdpAwayNow')?.value, NaN));
+    let mHdpHome = NaN, mHdpAway = NaN;
+    if(isFinite(impHdpHomeNow) && isFinite(impHdpAwayNow)) [mHdpHome, mHdpAway] = removeVig(impHdpHomeNow, impHdpAwayNow);
+
+    const impOvr = implied(ouOverNow) || implied(ouOverOpen);
+    const impUnd = implied(ouUnderNow) || implied(ouUnderOpen);
+    let mOver = NaN, mUnder = NaN;
+    if(isFinite(impOvr) && isFinite(impUnd)) [mOver, mUnder] = removeVig(impOvr, impUnd);
+
+    const edgeHDPHome = isFinite(mHdpHome) ? (coverHome - mHdpHome) : NaN;
+    const edgeHDPAway = isFinite(mHdpAway) ? (coverAway - mHdpAway) : NaN;
+    const edgeOUOver = isFinite(mOver) ? (ouProbs.over - mOver) : NaN;
+    const edgeOUUnder = isFinite(mUnder) ? (ouProbs.under - mUnder) : NaN;
+
+    const avgEdgeHDP = (isFinite(edgeHDPHome)?edgeHDPHome:0 + isFinite(edgeHDPAway)?edgeHDPAway:0) / 2;
+    const avgEdgeOU = (isFinite(edgeOUOver)?edgeOUOver:0 + isFinite(edgeOUUnder)?edgeOUUnder:0) / 2;
+    const hybridIndex = computeHybrid(avgEdgeHDP, avgEdgeOU, entropyScores);
+
+    const vpc = hybridIndex * 100;
+    let valueLabel = 'FAIR', valueColor = '#574a12', valueText = 'Market ≈ Model';
+    if(vpc > 6){ valueLabel = 'VALUE'; valueColor = '#114b2b'; valueText = `Model stronger than market ${vpc.toFixed(2)}%`; }
+    else if(vpc < -6){ valueLabel = 'NO VALUE'; valueColor = '#5a0b16'; valueText = `Market stronger ${(-vpc).toFixed(2)}%`; }
+
+    const modelTotal = lambdaH + lambdaA;
+    const expectedMarketBias = isFinite(marketTotalApprox) ? ((modelTotal - marketTotalApprox) / Math.max(0.0001, marketTotalApprox)) * 100 : NaN;
+
+    const mu = modelTotal;
+    let varTot = 0;
+    for(let t=0;t<pmModel.length;t++) { varTot += ((t - mu)*(t - mu)) * (pmModel[t] || 0); }
+    const sigma2 = varTot;
+    const confRaw = Math.exp( - ( (entropyScores + kl + sigma2) / 3 ) );
+    let confidence = Math.round(clamp(confRaw * 100, 5, 99));
+
+    const trapThresholdBase = 0.02 + entropyScores * 0.006;
+    const trapCheck = detectTrap2D(mHomeOpen, mHomeNow, coverHome, mOverOpen, mOverNow, ouProbs.over, trapThresholdBase);
+
+    let market1x2 = null;
+    if(isFinite(mHomeNow) && isFinite(mAwayNow)){
+      const pHomeM = mHomeNow; const pAwayM = mAwayNow; const pDrawM = Math.max(0, 1 - (pHomeM + pAwayM));
+      market1x2 = [pHomeM, pDrawM, pAwayM];
+    } else {
+      market1x2 = null;
+    }
+    const modelReliability = clamp((1 - kl) * (1 - entropyScores/6), 0.05, 0.95);
+    const marketReliability = isFinite(marketOverNow) ? clamp(1 - Math.abs(marketOverNow - ouProbs.over), 0.05, 0.95) : 0.5;
+    const wModel = modelReliability, wMarket = marketReliability * 0.8;
+
+    let consensus1x2 = null;
+    if(market1x2){
+      const model1x2 = [pHome, pDraw, pAway];
+      consensus1x2 = [
+        (model1x2[0]*wModel + market1x2[0]*wMarket) / (wModel + wMarket),
+        (model1x2[1]*wModel + market1x2[1]*wMarket) / (wModel + wMarket),
+        (model1x2[2]*wModel + market1x2[2]*wMarket) / (wModel + wMarket)
+      ];
+    }
+
+    const lines = [];
+    lines.push(`Match: ${home} vs ${away}`);
+    lines.push(`λ model: Home ${lambdaH.toFixed(2)} | Away ${lambdaA.toFixed(2)} (homeAdv ${homeAdv.toFixed(2)})`);
+    lines.push(`Sim MC runs: ${runs} → Exp goals H ${avgH.toFixed(2)} | A ${avgA.toFixed(2)}`);
+    lines.push(`1X2 Model: Home ${Math.round(pHome*10000)/100}% | Draw ${Math.round(pDraw*10000)/100}% | Away ${Math.round(pAway*10000)/100}%`);
+    if(consensus1x2) lines.push(`Consensus 1X2: Home ${Math.round(consensus1x2[0]*10000)/100}% | Draw ${Math.round(consensus1x2[1]*10000)/100}% | Away ${Math.round(consensus1x2[2]*10000)/100}%`);
+    lines.push(`OU(${ouLine}) Model: Over ${Math.round(ouProbs.over*10000)/100}% | Under ${Math.round(ouProbs.under*10000)/100}%`);
+    lines.push(`HDP(${hdpLine}) Cover: Home ${Math.round(coverHome*10000)/100}% | Away ${Math.round(coverAway*10000)/100}%`);
+    lines.push(`Hybrid Index: ${(hybridIndex*100).toFixed(2)}% → ${valueLabel}`);
+    lines.push(`Expected market bias (total goals): ${isFinite(expectedMarketBias) ? expectedMarketBias.toFixed(2)+'%' : '—'}`);
+    lines.push(`Entropy (scores): ${entropyScores.toFixed(3)} bits | KL: ${kl.toFixed(4)} | Var(total): ${sigma2.toFixed(3)}`);
+    lines.push(`Confidence: ${confidence}% | Trap: ${trapCheck.msg}`);
+    dom('summary').textContent = lines.join('\n');
+
+    updateStrength('atkHomeBar','atkHomeVal',atkH);
+    updateStrength('atkAwayBar','atkAwayVal',atkA);
+    updateStrength('defHomeBar','defHomeVal',(1/defH)*10);
+    updateStrength('defAwayBar','defAwayVal',(1/defA)*10);
+
+    dom('confFill').style.width = confidence + '%';
+    dom('confFill').style.background = confidence < 45 ? '#ef476f' : (confidence < 65 ? '#ffd166' : '#2ecc71');
+    dom('confText').textContent = 'Confidence: ' + confidence + '%';
+
+    dom('valuePill').style.background = valueColor; dom('valuePill').textContent = valueLabel; dom('valueText').textContent = valueText;
+
+    dom('trapBox').style.display = 'block'; dom('trapBox').textContent = 'Trap diagnostic: ' + trapCheck.msg;
+
+    const candidates = [];
+    function addCandidate(tag, prob, edge){
+      const e = isFinite(edge) ? edge : 0;
+      const score = prob*0.7 + e*0.3;
+      candidates.push({tag, prob, edge: e, score});
+    }
+    addCandidate(`HDP Home ${hdpLine}`, coverHome, edgeHDPHome);
+    addCandidate(`HDP Away ${-hdpLine}`, coverAway, edgeHDPAway);
+    addCandidate(`OU Over ${ouLine}`, ouProbs.over, edgeOUOver);
+    addCandidate(`OU Under ${ouLine}`, ouProbs.under, edgeOUUnder);
+    candidates.sort((a,b)=>b.score - a.score);
+
+    dom('recs').innerHTML = '';
+    candidates.slice(0,3).forEach(c=>{
+      const div = document.createElement('div'); div.className = 'card';
+      const pEdge = isFinite(c.edge) ? (c.edge*100).toFixed(2)+'%' : 'no market';
+      div.innerHTML = `<div style="font-weight:700">${c.tag}</div><div style="text-align:right">${Math.round(c.prob*10000)/100}%<div class="small">edge ${pEdge}</div></div>`;
+      dom('recs').appendChild(div);
+    });
+
+    renderHistogram(totals);
+
+    dom('debug').textContent = `debug: runs ${runs} | hybridIndex ${(hybridIndex*100).toFixed(2)}% | marketTotalApprox ${isFinite(marketTotalApprox)?marketTotalApprox.toFixed(2):'—'}`;
+
+    let csv = 'score,count,prob\n';
+    Object.keys(scoreFreq).sort().forEach(k=>{
+      const c = scoreFreq[k];
+      csv += `${k},${c},${(c/runs).toFixed(6)}\n`;
+    });
+    lastCSV = csv;
+
+    saveInputs();
+
+  } catch(e){
+    console.error(e);
+    alert('Error saat analisis — cek console.');
+  }
+}
+
+/* UI helpers */
+function updateStrength(barId, valId, score){
+  const pctv = Math.max(4, Math.min(95, (score/3.0) * 100 ));
+  dom(barId).style.width = pctv + '%';
+  dom(valId).textContent = isNaN(score) ? '-' : score.toFixed(2);
+}
+function renderHistogram(totals){
+  const c = dom('hist'); if(!c || !c.getContext) return;
+  const ctx = c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
+  const keys = Object.keys(totals).map(x=>parseInt(x)).sort((a,b)=>a-b);
+  if(keys.length===0) return;
+  const maxV = Math.max(...Object.values(totals));
+  const pad = 30; const barW = Math.max(8, (c.width - pad*2)/keys.length - 4);
+  keys.forEach((k,i)=>{
+    const v = totals[k]; const h = (v/maxV)*(c.height-40);
+    ctx.fillStyle = '#0b74de'; ctx.fillRect(pad + i*(barW+4), c.height-30-h, barW, h);
+    ctx.fillStyle = '#9fb3c5'; ctx.font = '11px Arial'; ctx.fillText(String(k), pad + i*(barW+4), c.height-10);
+  });
+}
+
+/* CSV download & reset */
+function downloadCSV(){
+  if(!lastCSV){ alert('Run analysis first'); return; }
+  const match = ((dom('teamHome').value||'home') + '_vs_' + (dom('teamAway').value||'away')).replace(/\s+/g,'_');
+  const fn = `${match}_v78_mc.csv`;
+  const blob = new Blob([lastCSV], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = fn; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+function resetAll(){
+  document.querySelectorAll('input').forEach(i=>{ if(i.id) i.value=''; });
+  dom('summary').textContent = 'Isi input lalu klik Analisis.';
+  dom('recs').innerHTML = ''; dom('trapBox').style.display='none'; dom('confFill').style.width='0%';
+  const ctx = dom('hist')?.getContext?.('2d'); if(ctx) ctx.clearRect(0,0,dom('hist').width, dom('hist').height);
+  lastCSV = '';
+  alert('Reset selesai');
+}
+</script>
+</body>
+</html>
