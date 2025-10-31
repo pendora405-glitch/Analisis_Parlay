@@ -1,3 +1,406 @@
 <!doctype html>
-<!-- shortened: the full HTML v79 file generated previously -->
-<html lang="id"><head><meta charset="utf-8"/><title>Index v79 — Final Precision</title></head><body><p>File HTML lengkap ini adalah versi Index v79 Final Precision (Validated, Full). Gunakan di browser untuk menjalankan analisis.</p></body></html>
+
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Index v79 — Final Precision (Validated, Full)</title>
+<style>
+:root{--bg:#041018;--panel:#071826;--accent:#0b74de;--muted:#8faab7;--good:#2ecc71;--warn:#ffd166;--bad:#ef476f;--text:#dff3ff}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.container{max-width:980px;margin:18px auto;padding:18px}
+h1{font-size:20px;margin:0 0 6px}
+.panel{background:var(--panel);padding:12px;border-radius:10px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.03)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.col{flex:1 1 260px;min-width:220px}
+label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
+input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #22333f;background:#08131a;color:#fff;font-size:14px}
+button{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+button.ghost{background:transparent;border:1px solid #233645;color:var(--text);padding:6px 8px;border-radius:6px}
+.small{font-size:12px;color:var(--muted)}
+.result{background:#06121a;padding:10px;border-radius:8px;border:1px dashed rgba(255,255,255,0.03);font-family:monospace;white-space:pre-wrap}
+.card{display:flex;justify-content:space-between;padding:10px;border-radius:8px;background:#061922;margin-bottom:8px}
+canvas{background:transparent;border-radius:6px}
+.progress-wrap{background:#07202a;border-radius:10px;padding:6px;margin-top:8px}
+.progress-fill{height:18px;border-radius:8px;width:0%;transition:width .5s}
+.strength-bar{height:14px;border-radius:8px;background:#0a2230;overflow:hidden;margin-top:6px}
+.strength-fill{height:14px;border-radius:8px 0 0 8px;background:var(--accent);width:0%;transition:width .5s}
+#saveBtn{position:fixed;right:18px;bottom:18px;z-index:999;background:var(--accent);border-radius:8px;padding:8px 12px;color:#fff;cursor:pointer}
+.indicator{display:flex;align-items:center;gap:8px}
+.indicator .dot{width:12px;height:12px;border-radius:50%}
+.ind-green{background:var(--good)}.ind-amber{background:var(--warn)}.ind-red{background:var(--bad)}
+@media (max-width:720px){.col{flex-basis:100%}}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Index v79 — Final Precision (Validated, Full)</h1>
+  <p class="small">UI lengkap (sama dengan v75) + mesin netral & tajam + validasi ketat + placeholder contoh. Isi manual lalu klik <b>Analisis</b>.</p>  <div class="panel">
+    <div class="row">
+      <div class="col"><label>Mode</label><select id="presetMode"><option value="auto">Auto</option><option value="league">League</option><option value="cup">Cup</option><option value="custom">Custom</option></select></div>
+      <div class="col"><label>Date</label><input id="matchDate" type="date" placeholder=""></div>
+    </div>
+    <label>Match (Home vs Away)</label><input id="matchName" type="text" placeholder="Contoh: Brighton vs Brentford">
+  </div>  <div class="panel">
+    <h3 style="margin:0">Team core stats (minimal)</h3>
+    <div class="row">
+      <div class="col">
+        <label>Home Team</label><input id="teamHome" type="text" placeholder="Brighton">
+        <label>Rating (SofaScore avg)</label><input id="ratingHome" type="number" step="0.01" placeholder="6.9">
+        <label>Form Last5 (0-1)</label><input id="formHome" type="number" step="0.01" min="0" max="1" placeholder="0.78">
+        <label>H2H (e.g. W,D,L,...)</label><input id="h2hInput" type="text" placeholder="W,D,W,D,L">
+      </div>
+      <div class="col">
+        <label>Away Team</label><input id="teamAway" type="text" placeholder="Brentford">
+        <label>Rating (SofaScore avg)</label><input id="ratingAway" type="number" step="0.01" placeholder="6.4">
+        <label>Form Last5 (0-1)</label><input id="formAway" type="number" step="0.01" min="0" max="1" placeholder="0.62">
+        <label>H2H win rate (optional)</label><input id="h2hRate" type="number" step="0.01" placeholder="">
+      </div>
+    </div><div style="margin-top:8px">
+  <button id="btnAutoH2H" class="ghost">Auto H2H → fill rate</button>
+  <button id="btnAutoCR" class="ghost">Auto Conversion Rate</button>
+  <button id="btnAutoTI" class="ghost">Auto TI (tackle+inter)</button>
+</div>
+
+<h4 style="margin-top:10px">Key stats</h4>
+<div class="row">
+  <div class="col"><label>xG / game (Home) (0–5)</label><input id="xgHome" type="number" step="0.01" min="0" max="5" placeholder="1.65"></div>
+  <div class="col"><label>xG / game (Away) (0–5)</label><input id="xgAway" type="number" step="0.01" min="0" max="5" placeholder="1.22"></div>
+</div>
+<div class="row" style="margin-top:8px">
+  <div class="col"><label>SOT / game (Home)</label><input id="sotHome" type="number" step="0.01" placeholder="4.2"></div>
+  <div class="col"><label>SOT / game (Away)</label><input id="sotAway" type="number" step="0.01" placeholder="3.4"></div>
+</div>
+
+<h4 style="margin-top:10px">Tackles + Interceptions (auto TI)</h4>
+<div class="row">
+  <div class="col"><label>Home Tackles</label><input id="tackleHome" type="number" step="0.1" placeholder="18.3"><label>Home Interceptions</label><input id="interHome" type="number" step="0.1" placeholder="8.7"></div>
+  <div class="col"><label>Away Tackles</label><input id="tackleAway" type="number" step="0.1" placeholder="15.1"><label>Away Interceptions</label><input id="interAway" type="number" step="0.1" placeholder="7.2"></div>
+</div>
+<div style="margin-top:8px">
+  <label>TI Home (auto)</label><input id="tiHome" type="number" readonly>
+  <label>TI Away (auto)</label><input id="tiAway" type="number" readonly>
+</div>
+
+<h4 style="margin-top:10px">Absences (count only)</h4>
+<div class="row">
+  <div class="col"><label>Home DF absent</label><input id="absDfHome" type="number" min="0" value="0"><label>Home MF absent</label><input id="absMfHome" type="number" min="0" value="0"><label>Home FW absent</label><input id="absFwHome" type="number" min="0" value="0"></div>
+  <div class="col"><label>Away DF absent</label><input id="absDfAway" type="number" min="0" value="0"><label>Away MF absent</label><input id="absMfAway" type="number" min="0" value="0"><label>Away FW absent</label><input id="absFwAway" type="number" min="0" value="0"></div>
+</div>
+
+<h4 style="margin-top:10px">Clean sheet & GA (click calc)</h4>
+<div class="row">
+  <div class="col"><label>CS count (Home)</label><input id="csCountHome" type="number" placeholder="3"><label>Matches (Home)</label><input id="csMatchesHome" type="number" placeholder="10"><label>CSR Home</label><input id="csHome" type="number" readonly><button id="btnCalcCSHome" class="ghost">Calc CSR Home</button></div>
+  <div class="col"><label>CS count (Away)</label><input id="csCountAway" type="number" placeholder="2"><label>Matches (Away)</label><input id="csMatchesAway" type="number" placeholder="10"><label>CSR Away</label><input id="csAway" type="number" readonly><button id="btnCalcCSAway" class="ghost">Calc CSR Away</button></div>
+</div>
+<div class="row" style="margin-top:8px">
+  <div class="col"><label>Goals conceded (Home)</label><input id="gcHomeCount" type="number" placeholder="12"><label>Matches (Home)</label><input id="gcMatchesHome" type="number" placeholder="10"><label>GA / game Home</label><input id="gcHome" type="number" readonly><button id="btnCalcGAHome" class="ghost">Calc GA Home</button></div>
+  <div class="col"><label>Goals conceded (Away)</label><input id="gcAwayCount" type="number" placeholder="14"><label>Matches (Away)</label><input id="gcMatchesAway" type="number" placeholder="10"><label>GA / game Away</label><input id="gcAway" type="number" readonly><button id="btnCalcGAAway" class="ghost">Calc GA Away</button></div>
+</div>
+
+  </div>  <div class="panel">
+    <h3 style="margin:0">Odds & model</h3>
+    <div class="row">
+      <div class="col"><label>HDP Line (-2..2)</label><input id="hdpLine" type="number" step="0.25" min="-2" max="2" placeholder="-0.25"></div>
+      <div class="col"><label>OU Line (0..6)</label><input id="ouLine" type="number" step="0.25" min="0" max="6" placeholder="2.75"></div>
+      <div class="col"><label>MC runs (1000..200000)</label><input id="mcRuns" type="number" step="1000" min="1000" max="200000" placeholder="50000"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="col"><label>HDP Home Open</label><input id="hdpHomeOpen" type="number" step="0.01" placeholder=""></div>
+      <div class="col"><label>HDP Home Now</label><input id="hdpHomeNow" type="number" step="0.01" placeholder=""></div>
+      <div class="col"><label>HDP Away Open</label><input id="hdpAwayOpen" type="number" step="0.01" placeholder=""></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="col"><label>HDP Away Now</label><input id="hdpAwayNow" type="number" step="0.01" placeholder=""></div>
+      <div class="col"><label>OU Over Open</label><input id="ouOverOpen" type="number" step="0.01" placeholder=""></div>
+      <div class="col"><label>OU Over Now</label><input id="ouOverNow" type="number" step="0.01" placeholder=""></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="col"><label>OU Under Open</label><input id="ouUnderOpen" type="number" step="0.01" placeholder=""></div>
+      <div class="col"><label>OU Under Now</label><input id="ouUnderNow" type="number" step="0.01" placeholder=""></div>
+      <div class="col"><label>ρ (rho)</label><input id="rho" type="number" step="0.01" placeholder="0.12"></div>
+    </div>
+    <div style="margin-top:10px">
+      <button id="btnAnalyze">Analisis</button>
+      <button id="btnReset" class="ghost">Reset</button>
+      <button id="btnDownload" class="ghost">Download CSV</button>
+    </div>
+  </div>  <div class="panel">
+    <h3 style="margin:0">Result & recommendations</h3>
+    <div id="summary" class="result" style="margin-top:8px">Isi input lalu klik Analisis.</div><div style="margin-top:10px">
+  <div><b>Home Attack</b> <span id="atkHomeVal" style="float:right">-</span></div>
+  <div class="strength-bar"><div id="atkHomeBar" class="strength-fill"></div></div>
+  <div style="margin-top:8px"><b>Home Defense</b> <span id="defHomeVal" style="float:right">-</span></div>
+  <div class="strength-bar"><div id="defHomeBar" class="strength-fill"></div></div>
+
+  <div style="height:8px"></div>
+
+  <div style="margin-top:8px"><b>Away Attack</b> <span id="atkAwayVal" style="float:right">-</span></div>
+  <div class="strength-bar"><div id="atkAwayBar" class="strength-fill"></div></div>
+  <div style="margin-top:8px"><b>Away Defense</b> <span id="defAwayVal" style="float:right">-</span></div>
+  <div class="strength-bar"><div id="defAwayBar" class="strength-fill"></div></div>
+</div>
+
+<div style="margin-top:12px">
+  <label class="small">Confidence</label>
+  <div class="progress-wrap"><div id="confFill" class="progress-fill"></div></div>
+  <div id="confText" class="small" style="text-align:right">Confidence: 0%</div>
+</div>
+
+<div id="valueIndicator" style="margin-top:12px;display:flex;gap:10px;align-items:center">
+  <div id="valuePill" class="value-pill" style="background:#23333b">Value: N/A</div>
+  <div id="valueText" class="small">Indicator after analysis</div>
+</div>
+
+<div id="oddsStat" style="margin-top:12px"></div>
+<div id="trapBox" class="result" style="margin-top:10px;display:none"></div>
+<div id="recs" style="margin-top:8px"></div>
+
+<div style="margin-top:12px"><canvas id="hist" width="900" height="160"></canvas></div>
+<div id="debug" class="result" style="margin-top:8px;background:#07121b"></div>
+
+  </div>  <p class="small">Tip: isi CSR/GA/xG/SOT/TI & absences untuk akurasi terbaik. Preset Auto menyesuaikan alpha/ρ.</p>
+</div><button id="saveBtn" title="Save inputs locally">💾 Save Input</button>
+
+<script>
+/* ------------------------------------------------------------------
+   Index v79 — Final Precision (Validated, Full)
+   - UI identical to v75 (placeholders added)
+   - Engine: neutral hybrid (analytical central mass + NB tails), draw calibration
+   - Strong input validation prior to running analysis
+   ------------------------------------------------------------------ */
+
+function dom(id){return document.getElementById(id)}
+function safe(v,d=NaN){const x=parseFloat(v);return isNaN(x)?d:x}
+function clamp(v,a,b){return isNaN(v)?a:Math.max(a,Math.min(b,v))}
+function pct(v){return isNaN(v)?'-':(100*v).toFixed(1)+'%'}
+
+/* ---------- RNG & Samplers ---------- */
+function poisson(lambda){if(lambda<=0) return 0;let L=Math.exp(-lambda),p=1,k=0;while(p>L){k++;p*=Math.random();if(k>10000) break;}return k-1}
+function randn_bm(){let u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();return Math.sqrt(-2.0*Math.log(u))*Math.cos(2.0*Math.PI*v)}
+function gammaSample(alpha){if(alpha<1){const u=Math.random();return gammaSample(alpha+1)*Math.pow(u,1/alpha);}const d=alpha-1/3;const c=1/Math.sqrt(9*d);while(true){const x=randn_bm();const v=1+c*x;if(v<=0) continue; const v3=v*v*v; const u=Math.random(); if(u<1-0.0331*(x*x)*(x*x)) return d*v3; if(Math.log(u)<0.5*x*x+d*(1-v3+Math.log(v3))) return d*v3;}}
+
+/* ---------- Analytical helpers ---------- */
+const factCache=[1]; function logFact(n){ if(factCache[n]) return Math.log(factCache[n]); let f=factCache[factCache.length-1]; for(let i=factCache.length;i<=n;i++){ f*=i; factCache[i]=f;} return Math.log(factCache[n]); }
+function poissonPMF(k,lambda){ if(k<0) return 0; return Math.exp(-lambda + k*Math.log(lambda) - logFact(k)); }
+function analyticalJoint(lambdaH,lambdaA,maxGoals){const joint={}; for(let g=0;g<=maxGoals;g++){ const pH = poissonPMF(g,lambdaH); for(let a=0;a<=maxGoals;a++){ const pA = poissonPMF(a,lambdaA); joint[`${g}-${a}`]= (joint[`${g}-${a}`]||0) + (pH*pA); }} return joint; }
+
+/* ---------- NB-like samplers (neutral) ---------- */
+function sampleBivariateNB(lambdaH, lambdaA, rho, disp){
+  const rhoShare = clamp(rho,0,0.4);
+  const shapeH = Math.max(0.5, (1/Math.max(0.08,disp)) * (lambdaH/Math.max(0.3, (lambdaH+lambdaA)/2)) );
+  const shapeA = Math.max(0.5, (1/Math.max(0.08,disp)) * (lambdaA/Math.max(0.3, (lambdaH+lambdaA)/2)) );
+  const sharedShape = Math.max(0.8, (shapeH+shapeA)/4);
+  const shared = gammaSample(sharedShape)/sharedShape;
+  const mh = gammaSample(shapeH)/shapeH;
+  const ma = gammaSample(shapeA)/shapeA;
+  const multH = (1-rhoShare)*mh + rhoShare*shared;
+  const multA = (1-rhoShare)*ma + rhoShare*shared;
+  const lamH_real = Math.max(0.01, lambdaH * multH);
+  const lamA_real = Math.max(0.01, lambdaA * multA);
+  return [poisson(lamH_real), poisson(lamA_real)];
+}
+function sampleBivariateNB_IS(lambdaH, lambdaA, rho, disp, isFactor){
+  const rhoShare = clamp(rho,0,0.4);
+  const shapeH = Math.max(0.5, (1/Math.max(0.08,disp)) * (lambdaH/Math.max(0.3, (lambdaH+lambdaA)/2)) );
+  const shapeA = Math.max(0.5, (1/Math.max(0.08,disp)) * (lambdaA/Math.max(0.3, (lambdaH+lambdaA)/2)) );
+  const sharedShape = Math.max(0.8, (shapeH+shapeA)/4);
+  const shared = (gammaSample(sharedShape)/sharedShape - 1)*isFactor + 1;
+  const mh = (gammaSample(shapeH)/shapeH - 1)*isFactor + 1;
+  const ma = (gammaSample(shapeA)/shapeA - 1)*isFactor + 1;
+  const multH = (1-rhoShare)*mh + rhoShare*shared;
+  const multA = (1-rhoShare)*ma + rhoShare*shared;
+  const lamH_real = Math.max(0.01, lambdaH * multH);
+  const lamA_real = Math.max(0.01, lambdaA * multA);
+  return [poisson(lamH_real), poisson(lamA_real)];
+}
+
+/* ---------- Hybrid joint ---------- */
+function hybridJoint(lambdaH, lambdaA, disp, rho, maxGoals, mcRuns){
+  const jointA = analyticalJoint(lambdaH, lambdaA, maxGoals);
+  let totalAnal = 0; Object.values(jointA).forEach(v=> totalAnal+=v);
+  const tailCounts = {}; const isFactor = 0.4; let tailTotal=0;
+  for(let i=0;i<mcRuns;i++){
+    const [g,a] = sampleBivariateNB_IS(lambdaH, lambdaA, rho, disp, isFactor);
+    if(g<=maxGoals && a<=maxGoals) continue;
+    const k = `${g}-${a}`; tailCounts[k] = (tailCounts[k]||0) + 1; tailTotal++;
+  }
+  const combined = {};
+  for(const k in jointA) combined[k] = jointA[k];
+  for(const k in tailCounts) combined[k] = (combined[k]||0) + (tailCounts[k]/mcRuns)*(1-totalAnal);
+  let s=0; for(const k in combined) s+=combined[k]; for(const k in combined) combined[k]/=s;
+  return combined;
+}
+
+function jointToMetrics(joint){ let pHome=0,pDraw=0,pAway=0, avgH=0,avgA=0; const totals={}; for(const k in joint){ const p=joint[k]; const [g,a]=k.split('-').map(x=>parseInt(x)); avgH+=g*p; avgA+=a*p; totals[g+a]=(totals[g+a]||0)+p; if(g>a) pHome+=p; else if(g===a) pDraw+=p; else pAway+=p; } return {pHome,pDraw,pAway,avgH,avgA,totals}; }
+
+/* ---------- Draw calibration ---------- */
+function estimateDrawProb(lambdaH,lambdaA,disp,rho,runs){ let draws=0; for(let i=0;i<runs;i++){ const [gh,ga]=sampleBivariateNB(lambdaH,lambdaA,rho,disp); if(gh===ga) draws++; } return draws/runs; }
+function calibrateDispForDraw(lambdaH,lambdaA,initialDisp,targetDraw,rho){ let disp = initialDisp; for(let it=0; it<8; it++){ const est = estimateDrawProb(lambdaH,lambdaA,disp,rho,1200); const err = est - targetDraw; if(Math.abs(err)<0.007) break; if(err>0) disp = Math.min(2.5, disp*1.05); else disp = Math.max(0.25, disp*0.95); } return disp; }
+
+/* ---------- Odds helpers ---------- */
+function impliedProb(odds){ if(!odds||odds<=0) return null; return 1/odds }
+function kellyFraction(p,odds){ const b=odds-1; if(b<=0) return 0; const f=(p*(b+1)-1)/b; return Math.max(0,Math.min(0.2,f)); }
+
+/* ---------- Validation ---------- */
+function validateAll(){ const errs=[]; const home=dom('teamHome').value.trim(), away=dom('teamAway').value.trim(); if(!home) errs.push('Team Home kosong'); if(!away) errs.push('Team Away kosong'); const xgH=safe(dom('xgHome').value,NaN), xgA=safe(dom('xgAway').value,NaN); if(!isFinite(xgH)||xgH<0||xgH>5) errs.push('xG Home 0–5'); if(!isFinite(xgA)||xgA<0||xgA>5) errs.push('xG Away 0–5'); const fH=safe(dom('formHome').value,NaN), fA=safe(dom('formAway').value,NaN); if(!isFinite(fH)||fH<0||fH>1) errs.push('Form Home 0–1'); if(!isFinite(fA)||fA<0||fA>1) errs.push('Form Away 0–1'); const hdp=safe(dom('hdpLine').value,NaN), ou=safe(dom('ouLine').value,NaN); if(!isFinite(hdp)||hdp<-2||hdp>2) errs.push('HDP line -2..2'); if(!isFinite(ou)||ou<0||ou>6) errs.push('OU line 0..6'); const mc=parseInt(dom('mcRuns').value); if(!isFinite(mc)||mc<1000||mc>200000) errs.push('MC runs 1000..200000'); return errs; }
+
+/* ---------- Main analysis (v79 engine) ---------- */
+let lastCSV='';
+function analyzeMatch(){ try{
+    const errs = validateAll(); if(errs.length){ alert('Perbaiki input:\n'+errs.join('\n')); return; }
+    const home = dom('teamHome').value.trim(), away = dom('teamAway').value.trim();
+    const ratingH = safe(dom('ratingHome').value, NaN), ratingA = safe(dom('ratingAway').value, NaN);
+    const formH = safe(dom('formHome').value, 0.5), formA = safe(dom('formAway').value, 0.5);
+    let h2hRate = safe(dom('h2hRate').value, NaN); if(!isFinite(h2hRate)){ const parts = (dom('h2hInput').value||'').toUpperCase().replace(/[^WDL, ]/g,'').split(/[, ]+/).filter(Boolean); if(parts.length>0) h2hRate = parts.filter(p=>p==='W').length/parts.length; } if(!isFinite(h2hRate)) h2hRate = 0.5;
+
+    const xgH = safe(dom('xgHome').value, NaN), xgA = safe(dom('xgAway').value, NaN);
+    const sotH = safe(dom('sotHome').value, NaN), sotA = safe(dom('sotAway').value, NaN);
+    const csH = safe(dom('csHome').value, NaN), csA = safe(dom('csAway').value, NaN);
+    const gaH = safe(dom('gcHome').value, NaN), gaA = safe(dom('gcAway').value, NaN);
+    const absDfH = Math.max(0, safe(dom('absDfHome').value, 0)), absMfH = Math.max(0, safe(dom('absMfHome').value, 0)), absFwH = Math.max(0, safe(dom('absFwHome').value, 0));
+    const absDfA = Math.max(0, safe(dom('absDfAway').value, 0)), absMfA = Math.max(0, safe(dom('absMfAway').value, 0)), absFwA = Math.max(0, safe(dom('absFwAway').value, 0));
+    const tiH = safe(dom('tiHome').value, safe(dom('tackleHome').value,0) + safe(dom('interHome').value,0));
+    const tiA = safe(dom('tiAway').value, safe(dom('tackleAway').value,0) + safe(dom('interAway').value,0));
+    const preset = dom('presetMode').value || 'auto';
+    const absTotal = absDfH+absMfH+absFwH+absDfA+absMfA+absFwA;
+
+    // auto params
+    const ap = (function(xgH,xgA,formH,formA,preset,absences){ const xgDiff=Math.abs(xgH-xgA); const formDiff=Math.abs((formH||0.5)-(formA||0.5)); let alpha = clamp(0.08 + (xgDiff*0.07) + (formDiff*0.04) - (absences*0.01), 0.05, 0.28); let rho = clamp(0.09 + Math.min(0.35,(1-Math.exp(-xgDiff*1.4))*0.22) + (formDiff*0.03), 0.04, 0.36); if(preset==='cup'){alpha=Math.min(0.24,alpha+0.03);rho=Math.min(0.40,rho+0.03);} return {alpha,rho}; })(xgH,xgA,formH,formA,preset,absTotal);
+
+    const alpha = (dom('alpha')?.value? safe(dom('alpha').value, ap.alpha) : ap.alpha);
+    const rho = (dom('rho')?.value? safe(dom('rho').value, ap.rho) : ap.rho);
+    const runs = Math.max(2000, parseInt(dom('mcRuns').value || 40000));
+    // attack/defense (v75 formulas, neutral)
+    function computeAttack(xg,sot,form,rating,absFw,absMf){ const xgScore = (xg||1.0)/1.2; const sOTScore = ((sot||3)/4); const formScore = (form||0.5); const ratingScore = ((rating?rating:6.5)-5.5)/2.0; const absPenalty = Math.max(0.5,1 - 0.14*(absFw||0) - 0.06*(absMf||0)); const base = 0.5*xgScore + 0.22*sOTScore + 0.16*formScore + 0.12*ratingScore; return clamp(base*absPenalty, 0.12, 2.2); }
+    function computeDefense(cs,ga,absDf,ti){ const csFactor = 1 - clamp(cs,0,0.6)*0.45; const gaFactor = 1 + clamp((ga||1.2)-0.9,0,2.0)*0.28; const absFactor = 1 + 0.12*(absDf||0); const tiFactor = 1 - clamp((ti||0)/60,0,0.30); const res = clamp(csFactor * gaFactor * absFactor * tiFactor, 0.48, 3.0); return res; }
+
+    const atkH = computeAttack(xgH,sotH,formH,ratingH,absFwH,absMfH);
+    const atkA = computeAttack(xgA,sotA,formA,ratingA,absFwA,absMfA);
+    const defH = computeDefense(csH,gaH,absDfH,tiH);
+    const defA = computeDefense(csA,gaA,absDfA,tiA);
+
+    // lambda blending neutral
+    const leagueAvg = Math.max(0.45, (xgH + xgA) / 2 );
+    let lambdaH = leagueAvg * (atkH/Math.max(0.25,leagueAvg)) * (1/defA);
+    let lambdaA = leagueAvg * (atkA/Math.max(0.25,leagueAvg)) * (1/defH);
+    const ratingBaseH = ((ratingH?ratingH:6.5)/5) * leagueAvg; const ratingBaseA = ((ratingA?ratingA:6.3)/5) * leagueAvg;
+    lambdaH = alpha*ratingBaseH + (1-alpha)*lambdaH; lambdaA = alpha*ratingBaseA + (1-alpha)*lambdaA;
+    (function balanceLambda(){ const avg=(lambdaH+lambdaA)/2; let adjust=1.0; if(avg>3.0) adjust=0.86; else if(avg>2.4) adjust=0.92; else if(avg<0.9) adjust=1.06; lambdaH = Math.max(0.02, lambdaH*adjust); lambdaA = Math.max(0.02, lambdaA*adjust); })();
+
+    // H2H sharpen
+    const h2hBoost = clamp((h2hRate-0.5)*0.24,-0.12,0.12);
+    lambdaH = Math.max(0.02, lambdaH*(1+h2hBoost)); lambdaA = Math.max(0.02, lambdaA*(1-h2hBoost));
+
+    // dispersion & calibration
+    const initialDisp = clamp(0.55 + (leagueAvg-0.9)*0.22, 0.35, 1.2);
+    const disp = calibrateDispForDraw(lambdaH,lambdaA, initialDisp, 0.26, rho);
+
+    // hybrid joint
+    const K = 7; const mcRuns = Math.max(2000, Math.min(120000, runs));
+    const joint = hybridJoint(lambdaH, lambdaA, disp, rho, K, mcRuns);
+    const metrics = jointToMetrics(joint);
+
+    // compute OU & HDP probabilities
+    function probCoverFromScores(jointMap, handicap){ let win=0,push=0,lose=0; for(const key in jointMap){ const p=jointMap[key]; const [gh,ga]=key.split('-').map(x=>parseInt(x)); const diff=gh-ga-handicap; if(diff>0) win+=p; else if(diff===0) push+=p; else lose+=p; } return (win+0.5*push); }
+    function probOUFromTotals(totals,line){ let over=0,under=0; const isInt=Number.isInteger(line); for(const t in totals){ const g=parseInt(t), v=totals[t]; if(isInt){ if(g>line) over+=v; else if(g<line) under+=v; else { over+=0.5*v; under+=0.5*v; } } else { if(g>line) over+=v; else under+=v; } } return {over:over, under:under}; }
+
+    const ouLine = safe(dom('ouLine').value, 2.5);
+    const ouProbs = probOUFromTotals(metrics.totals, ouLine);
+    const hdpLine = safe(dom('hdpLine').value, 0.25);
+    const coverHome = probCoverFromScores(joint, hdpLine);
+    const coverAway = 1-coverHome;
+
+    // market implieds
+    const imp = { hdpHome: impliedProb(safe(dom('hdpHomeNow').value,NaN)), hdpAway: impliedProb(safe(dom('hdpAwayNow').value,NaN)), ouOver: impliedProb(safe(dom('ouOverNow').value,NaN)), ouUnder: impliedProb(safe(dom('ouUnderNow').value,NaN)) };
+    function edge(m, impv){ if(!impv||!isFinite(impv)) return null; return m-impv }
+    const eH = edge(coverHome, imp.hdpHome), eA = edge(coverAway, imp.hdpAway), eOver = edge(ouProbs.over, imp.ouOver), eUnder = edge(ouProbs.under, imp.ouUnder);
+    const avgEdgeHDP = ((eH===null?0:eH)+(eA===null?0:eA))/2; const avgEdgeOU = ((eOver===null?0:eOver)+(eUnder===null?0:eUnder))/2; const combinedIndex = (0.6*avgEdgeHDP)+(0.4*avgEdgeOU);
+  // confidence
+    const topProb = Math.max(metrics.pHome, metrics.pAway, ouProbs.over, ouProbs.under);
+    const conf = Math.round(topProb*100);
+    dom('confFill').style.width = conf+'%'; dom('confText').textContent = 'Confidence: '+conf+'%';
+
+    // summary
+    let summary = `Match: ${home} vs ${away}\n`;
+    summary += `λ: Home ${lambdaH.toFixed(2)} | Away ${lambdaA.toFixed(2)}\n`;
+    summary += `Atk H:${atkH.toFixed(2)} A:${atkA.toFixed(2)} | Def H:${defH.toFixed(2)} A:${defA.toFixed(2)}\n`;
+    summary += `Exp goals: H ${metrics.avgH.toFixed(2)} | A ${metrics.avgA.toFixed(2)}\n`;
+    summary += `1X2 Model: Home ${pct(metrics.pHome)} Draw ${pct(metrics.pDraw)} Away ${pct(metrics.pAway)}\n`;
+    summary += `OU(${ouLine}) Over ${pct(ouProbs.over)} Under ${pct(ouProbs.under)}\n`;
+    summary += `HDP(${hdpLine}) Home ${pct(coverHome)} Away ${pct(coverAway)}\n`;
+    summary += `Alpha:${alpha.toFixed(2)} Rho:${rho.toFixed(2)} Disp:${disp.toFixed(2)} Runs:${mcRuns}\n`;
+    summary += `Combined Value Index: ${(combinedIndex*100).toFixed(2)}%\n`;
+    summary += `Absent H:${absDfH}/${absMfH}/${absFwH} • A:${absDfA}/${absMfA}/${absFwA}\n`;
+    summary += `TI H:${tiH} TI A:${tiA}\n`;
+    summary += `Confidence: ${conf}%`;
+
+    dom('summary').textContent = summary;
+
+    updateStrength('atkHomeBar','atkHomeVal',atkH); updateStrength('defHomeBar','defHomeVal',(1/defH)*10);
+    updateStrength('atkAwayBar','atkAwayVal',atkA); updateStrength('defAwayBar','defAwayVal',(1/defA)*10);
+
+    // value pill
+    let valueLabel='N/A', valueColor='#23333b', valueText='Market odds incomplete';
+    if(isFinite(combinedIndex)){
+      const vpc = combinedIndex*100;
+      if(vpc>3.2){ valueLabel='VALUE'; valueColor='#114b2b'; valueText=`Model stronger than market ${(vpc).toFixed(2)}%`; }
+      else if(vpc<-3.2){ valueLabel='NO VALUE'; valueColor='#5a0b16'; valueText=`Market stronger ${(-vpc).toFixed(2)}%`; }
+      else { valueLabel='FAIR'; valueColor='#574a12'; valueText=`Market ≈ Model (${vpc.toFixed(2)}%)`; }
+    }
+    dom('valuePill').style.background = valueColor; dom('valuePill').textContent = valueLabel; dom('valueText').textContent = valueText;
+
+      // recommendations
+    const candidates = [];
+    function edgeVal(m, impv){ if(!impv) return null; return m-impv }
+    candidates.push({tag:`HDP Home ${hdpLine}`,prob:coverHome,edge:edgeVal(coverHome,imp.hdpHome)});
+    candidates.push({tag:`HDP Away ${-hdpLine}`,prob:coverAway,edge:edgeVal(coverAway,imp.hdpAway)});
+    candidates.push({tag:`OU Over ${ouLine}`,prob:ouProbs.over,edge:edgeVal(ouProbs.over,imp.ouOver)});
+    candidates.push({tag:`OU Under ${ouLine}`,prob:ouProbs.under,edge:edgeVal(ouProbs.under,imp.ouUnder)});
+    candidates.forEach(c=>{ c.score=(c.prob*0.72)+((c.edge!==null)?(c.edge*0.28):0); });
+    candidates.sort((a,b)=>b.score-a.score);
+    dom('recs').innerHTML=''; candidates.slice(0,2).forEach(t=>{ const div=document.createElement('div'); div.className='card'; div.innerHTML=`<div style="font-weight:700">${t.tag}</div><div style="text-align:right">${pct(t.prob)}<div class="small">${t.edge===null?'No market odds':('edge '+(t.edge*100).toFixed(2)+'%')}</div></div>`; dom('recs').appendChild(div); });
+
+    renderHistogram(metrics.totals);
+    dom('debug').textContent = `avgGoals H:${metrics.avgH.toFixed(2)} A:${metrics.avgA.toFixed(2)} | λH:${lambdaH.toFixed(2)} λA:${lambdaA.toFixed(2)} | disp:${disp.toFixed(2)}`;
+
+    // CSV export
+    let csv='score,prob\n'; Object.keys(joint).sort().forEach(k=>{ csv+=`${k},${joint[k].toFixed(8)}\n`; }); lastCSV = csv; saveSnapshot(); renderOddsStat({avgEdgeHDP,avgEdgeOU,combinedIndex,imp,coverHome,coverAway,ouProbs});
+
+  }catch(e){ console.error(e); alert('Error saat analisis — cek console.'); }
+}
+
+/* ---------- UI helpers ---------- */
+function renderOddsStat(ctx){ const container=dom('oddsStat'); container.innerHTML=''; const ci=ctx.combinedIndex; const absci=Math.abs(ci*100); let status='Neutral',cls='ind-amber',text='Stats ~ Market'; if(!isFinite(ci)){ status='No market'; cls='ind-amber'; text='Odds incomplete'; } else if(absci<2.5){ status='Concordant'; cls='ind-green'; text='Stats support market'; } else if(absci<6){ status='Caution'; cls='ind-amber'; text='Small diff'; } else { status='Discordant'; cls='ind-red'; text='Stats oppose market — value potential'}; const arrow=ci>0?'⬆️ Model>Market':(ci<0?'⬇️ Market>Model':'→'); const el=document.createElement('div'); el.className='indicator'; el.innerHTML=`<div class="dot ${cls}"></div><div><b>${status}</b> • ${text}<div style="font-size:13px;margin-top:4px">${arrow} • ΔHDP:${(ctx.avgEdgeHDP*100).toFixed(2)}% ΔOU:${(ctx.avgEdgeOU*100).toFixed(2)}%</div></div>`; container.appendChild(el); }
+
+function updateStrength(barId,valId,score){ const pctv=Math.max(4,Math.min(95,(score/2.5)*100)); dom(barId).style.width=pctv+'%'; dom(valId).textContent=score.toFixed(2) }
+
+function renderHistogram(totals){ const c=dom('hist'); if(!c||!c.getContext) return; const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); const keys=Object.keys(totals).map(x=>parseInt(x)).sort((a,b)=>a-b); if(keys.length===0) return; const maxV=Math.max(...Object.values(totals)); const pad=30; const barW=Math.max(10,(c.width-pad*2)/keys.length-4); keys.forEach((k,i)=>{ const v=totals[k]; const h=(v/maxV)*(c.height-40); ctx.fillStyle='#0b74de'; ctx.fillRect(pad+i*(barW+4),c.height-30-h,barW,h); ctx.fillStyle='#9fb3c5'; ctx.font='11px Arial'; ctx.fillText(String(k),pad+i*(barW+4),c.height-10) }); }
+
+/* ---------- Small UI functions & binds ---------- */
+function saveInputs(){ const data={}; document.querySelectorAll('input,select').forEach(el=>{ if(el.id) data[el.id]=el.value }); localStorage.setItem('index_v79_inputs',JSON.stringify(data)); alert('Inputs saved locally') }
+function loadInputs(){ try{ const data=JSON.parse(localStorage.getItem('index_v79_inputs')||'{}'); Object.entries(data).forEach(([id,val])=>{ const el=dom(id); if(el) el.value=val }) }catch(e){} }
+function saveSnapshot(){ try{ const snap={}; ['teamHome','teamAway','matchName','xgHome','xgAway','mcRuns','presetMode'].forEach(k=>{ const el=dom(k); if(el) snap[k]=el.value }); localStorage.setItem('index_v79_snap',JSON.stringify(snap)) }catch(e){} }
+
+function autoH2H(){ const s=(dom('h2hInput').value||'').toUpperCase(); const parts=s.replace(/[^WDL, ]/g,'').split(/[, ]+/).filter(Boolean); if(parts.length===0){alert('Isi H2H string');return;} const wins=parts.filter(p=>p==='W').length; dom('h2hRate').value=(wins/parts.length).toFixed(2); saveInputs(); }
+function autoCR(){ const gh=safe(dom('xgHome').value,NaN), sh=safe(dom('sotHome').value,NaN), ga=safe(dom('xgAway').value,NaN), sa=safe(dom('sotAway').value,NaN); let msg=''; if(sh>0 && !isNaN(gh)) msg+='CR Home ≈ '+(gh/sh).toFixed(2)+'\n'; if(sa>0 && !isNaN(ga)) msg+='CR Away ≈ '+(ga/sa).toFixed(2); if(msg==='') msg='Not enough xG/SOT'; alert(msg) }
+function autoTI(){ const tH=safe(dom('tackleHome').value,0), iH=safe(dom('interHome').value,0), tA=safe(dom('tackleAway').value,0), iA=safe(dom('interAway').value,0); const tiH=+(tH+iH).toFixed(1), tiA=+(tA+iA).toFixed(1); dom('tiHome').value=tiH; dom('tiAway').value=tiA; saveInputs(); alert('TI set') }
+function calcCSHome(){ const cs=safe(dom('csCountHome').value,0), m=safe(dom('csMatchesHome').value,0); if(m<=0){alert('Enter matches Home');return;} dom('csHome').value=(clamp(cs/m,0,1)).toFixed(2); saveInputs(); }
+function calcCSAway(){ const cs=safe(dom('csCountAway').value,0), m=safe(dom('csMatchesAway').value,0); if(m<=0){alert('Enter matches Away');return;} dom('csAway').value=(clamp(cs/m,0,1)).toFixed(2); saveInputs(); }
+function calcGAHome(){ const g=safe(dom('gcHomeCount').value,0), m=safe(dom('gcMatchesHome').value,0); if(m<=0){alert('Enter matches Home');return;} dom('gcHome').value=(g/m).toFixed(2); saveInputs(); }
+function calcGAAway(){ const g=safe(dom('gcAwayCount').value,0), m=safe(dom('gcMatchesAway').value,0); if(m<=0){alert('Enter matches Away');return;} dom('gcAway').value=(g/m).toFixed(2); saveInputs() }
+
+function downloadCSV(){ if(!lastCSV){ alert('Run analysis first'); return } const match=(dom('matchName').value||dom('teamHome').value+'_vs_'+dom('teamAway').value).replace(/\s+/g,'_'); const fn=`${match}_v79_final.csv`; const blob=new Blob([lastCSV],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); }
+function resetAll(){ document.querySelectorAll('input').forEach(i=>{ if(i.type!=='button') i.value=''}); dom('summary').textContent='Isi input lalu klik Analisis.'; dom('recs').innerHTML=''; dom('trapBox').style.display='none'; dom('confFill').style.width='0%'; dom('confText').textContent='Confidence: 0%'; const ctx=dom('hist')?.getContext?.(); if(ctx) ctx.clearRect(0,0,dom('hist').width,dom('hist').height); lastCSV=''; dom('debug').textContent=''; alert('Reset selesai') }
+
+const handlers = { btnAutoH2H: autoH2H, btnAutoCR: autoCR, btnAutoTI: autoTI, btnAnalyze: analyzeMatch, btnReset: resetAll, btnDownload: downloadCSV, btnCalcCSHome: calcCSHome, btnCalcCSAway: calcCSAway, btnCalcGAHome: calcGAHome, btnCalcGAAway: calcGAAway };
+
+document.addEventListener('DOMContentLoaded', ()=>{ Object.keys(handlers).forEach(id=>{ const el=dom(id); if(el) el.addEventListener('click', handlers[id]); }); dom('saveBtn').addEventListener('click', saveInputs); loadInputs(); if(!dom('hist')?.getContext) dom('hist').parentNode.innerText='⚠️ Histogram not available'; });
+
+// expose for console
+window.v79 = { analyzeMatch, downloadCSV, resetAll, saveInputs }
+
+</script>
+</body>
+</html>
