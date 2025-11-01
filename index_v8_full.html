@@ -1,0 +1,1579 @@
+<!doctype html>
+
+<html lang="id">
+
+<head>
+
+<meta charset="utf-8"/>
+
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+
+<title>Prediksi Bola — v78 Full Advanced (MC, Gauge, Trap Detection)</title>
+
+<style>
+
+:root{
+
+  --bg:#041018; --panel:#071826; --card:#06121a; --accent:#0b74de; --muted:#9fb3c5;
+
+  --good:#2ecc71; --warn:#ffd166; --bad:#ef476f; --txt:#dff3ff;
+
+}
+
+*{box-sizing:border-box}
+
+html,body{height:100%}
+
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased}
+
+.container{max-width:1220px;margin:14px auto;padding:14px}
+
+.header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+
+.title{font-size:20px;color:var(--accent);margin:0}
+
+.sub{font-size:13px;color:var(--muted)}
+
+.panel{background:var(--panel);padding:12px;border-radius:10px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.03)}
+
+.row{display:flex;gap:10px;flex-wrap:wrap}
+
+.col{flex:1 1 300px;min-width:260px}
+
+label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
+
+input,select,button,textarea{font-size:14px}
+
+input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #22333f;background:#08131a;color:#fff}
+
+input[readonly]{background:#0a1620;color:#9fb3c5}
+
+button{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+
+button.ghost{background:transparent;border:1px solid #22333f;color:var(--txt);padding:6px 8px;border-radius:6px}
+
+.small{font-size:12px;color:var(--muted)}
+
+.result{background:#08141a;padding:12px;border-radius:8px;border:1px dashed #16323a;font-family:monospace;white-space:pre-wrap}
+
+.card{display:flex;justify-content:space-between;padding:10px;border-radius:8px;background:#061922;margin-bottom:8px}
+
+.strength-bar{height:12px;border-radius:8px;background:#07202a;overflow:hidden;margin-top:6px}
+
+.strength-fill{height:12px;border-radius:8px 0 0 8px;background:var(--accent);width:0%;transition:width .4s}
+
+.progress-wrap{background:#07202a;border-radius:10px;padding:6px;margin-top:8px}
+
+.progress-fill{height:18px;border-radius:8px;width:0%;transition:width .4s;background:var(--accent)}
+
+.align-box{padding:8px;border-radius:8px;margin-top:8px}
+
+.align-good{background:linear-gradient(90deg,#063a1f,#0f6f3f);color:#dfffe8}
+
+.align-warn{background:linear-gradient(90deg,#3b2f06,#6f5308);color:#fff7df}
+
+.align-bad{background:linear-gradient(90deg,#3a0a12,#6b0f1b);color:#ffdee6}
+
+.grid-2{display:grid;grid-template-columns:1fr 420px;gap:12px}
+
+.canvas-wrap{margin-top:12px}
+
+.footer{text-align:center;color:#6f8a94;font-size:12px;margin-top:12px}
+
+.muted{color:var(--muted);font-size:12px}
+
+@media (max-width:1120px){.grid-2{grid-template-columns:1fr}}
+
+</style>
+
+</head>
+
+<body>
+
+  <div class="container">
+
+    <div class="header">
+
+      <div>
+
+        <h1 class="title">⚽ Prediksi — v78 Full Advanced</h1>
+
+        <div class="sub">Monte Carlo bivariate • HDP & Over/Under • Trap detection • Confidence gauge • Bahasa Indonesia</div>
+
+      </div>
+
+      <div style="text-align:right">
+
+        <div class="small">v78 — Full Advanced</div>
+
+        <div style="margin-top:8px"><button id="btnDownloadLast" class="ghost">Download Last CSV</button></div>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="grid-2">
+
+      <!-- LEFT: INPUTS -->
+
+      <div>
+
+        <!-- MATCH INFO -->
+
+        <section class="panel">
+
+          <div class="row">
+
+            <div class="col"><label>Match (Home vs Away)</label><input id="matchName" placeholder="Contoh: Atalanta vs Lazio"></div>
+
+            <div class="col"><label>Kompetisi</label><input id="league" placeholder="Contoh: Serie A"></div>
+
+            <div class="col"><label>Mode</label>
+
+              <select id="presetMode"><option value="auto">Auto</option><option value="league">League</option><option value="cup">Cup</option></select>
+
+            </div>
+
+          </div>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>Alpha (shrink) — fine tune</label><input id="alpha" type="number" step="0.01" value="0.10"></div>
+
+            <div class="col"><label>Rho (correlation)</label><input id="rho" type="number" step="0.01" value="0.12"></div>
+
+            <div class="col"><label>MC runs</label><input id="mcRuns" type="number" value="40000"></div>
+
+          </div>
+
+        </section>
+
+
+
+        <!-- TEAMS -->
+
+        <section class="panel">
+
+          <h3 style="margin:0">Tim & Kontrol</h3>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>Home Team</label><input id="teamHome"></div>
+
+            <div class="col"><label>Away Team</label><input id="teamAway"></div>
+
+            <div class="col"><label>Rata-rata Gol Liga (opsional)</label><input id="avgLeagueGoals" type="number" step="0.01" value="2.6"></div>
+
+          </div>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>ELO Home (opsional)</label><input id="eloHome" type="number"></div>
+
+            <div class="col"><label>ELO Away (opsional)</label><input id="eloAway" type="number"></div>
+
+            <div class="col"><label>Versi / Catatan</label><input id="notes" placeholder="Opsional"></div>
+
+          </div>
+
+        </section>
+
+
+
+        <!-- ATTACK -->
+
+        <section class="panel">
+
+          <h3 style="margin:0">Attack (Inti)</h3>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>xG / game Home</label><input id="xgHome" type="number" step="0.01"></div>
+
+            <div class="col"><label>xG / game Away</label><input id="xgAway" type="number" step="0.01"></div>
+
+            <div class="col"><label>SOT / game Home</label><input id="sotHome" type="number" step="0.1"></div>
+
+          </div>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>SOT / game Away</label><input id="sotAway" type="number" step="0.1"></div>
+
+            <div class="col"><label>Goals/game Home (opsional)</label><input id="gfHome" type="number" step="0.01"></div>
+
+            <div class="col"><label>Goals/game Away (opsional)</label><input id="gfAway" type="number" step="0.01"></div>
+
+          </div>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>Big Chances Home</label><input id="bigHome" type="number" step="0.1" value="0"></div>
+
+            <div class="col"><label>Missed Big Chances Home</label><input id="missHome" type="number" step="0.1" value="0"></div>
+
+            <div class="col"><label>Conversion Home (opsional)</label><input id="convHome" type="number" step="0.01"></div>
+
+          </div>
+
+        </section>
+
+
+
+        <!-- DEFENSE -->
+
+        <section class="panel">
+
+          <h3 style="margin:0">Defense (Inti)</h3>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>Tackles Home</label><input id="tackleHome" type="number" step="0.1"></div>
+
+            <div class="col"><label>Interceptions Home</label><input id="interHome" type="number" step="0.1"></div>
+
+            <div class="col"><label>TI Home (auto)</label><input id="tiHome" readonly></div>
+
+          </div>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>Tackles Away</label><input id="tackleAway" type="number" step="0.1"></div>
+
+            <div class="col"><label>Interceptions Away</label><input id="interAway" type="number" step="0.1"></div>
+
+            <div class="col"><label>TI Away (auto)</label><input id="tiAway" readonly></div>
+
+          </div>
+
+
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>Clean sheets Home (count)</label><input id="csCountHome" type="number"></div>
+
+            <div class="col"><label>Matches CS Home</label><input id="csMatchesHome" type="number"></div>
+
+            <div class="col"><label>CSR Home (auto)</label><input id="csHome" readonly></div>
+
+          </div>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>Clean sheets Away (count)</label><input id="csCountAway" type="number"></div>
+
+            <div class="col"><label>Matches CS Away</label><input id="csMatchesAway" type="number"></div>
+
+            <div class="col"><label>CSR Away (auto)</label><input id="csAway" readonly></div>
+
+          </div>
+
+
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>Goals conceded Home (total)</label><input id="gcHomeCount" type="number"></div>
+
+            <div class="col"><label>Matches GA Home</label><input id="gcMatchesHome" type="number"></div>
+
+            <div class="col"><label>GA/game Home (auto)</label><input id="gcHome" readonly></div>
+
+          </div>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>Goals conceded Away (total)</label><input id="gcAwayCount" type="number"></div>
+
+            <div class="col"><label>Matches GA Away</label><input id="gcMatchesAway" type="number"></div>
+
+            <div class="col"><label>GA/game Away (auto)</label><input id="gcAway" readonly></div>
+
+          </div>
+
+
+
+          <div style="margin-top:8px">
+
+            <button id="btnAutoTI" class="ghost">Auto TI</button>
+
+            <button id="btnCalcCSR" class="ghost">Hitung CSR & GA</button>
+
+          </div>
+
+        </section>
+
+
+
+        <!-- FORM / H2H / ABSENT -->
+
+        <section class="panel">
+
+          <h3 style="margin:0">Form • H2H • Absensi</h3>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>Form Home (W,D,L comma)</label><input id="formRawHome" placeholder="W,W,D,W,L"></div>
+
+            <div class="col"><label>Form Away</label><input id="formRawAway" placeholder="W,L,D,W,D"></div>
+
+            <div class="col"><label>H2H recent</label><input id="h2hRaw" placeholder="W,D,L"></div>
+
+          </div>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>Form Home index (auto)</label><input id="formHome" readonly></div>
+
+            <div class="col"><label>Form Away index (auto)</label><input id="formAway" readonly></div>
+
+            <div class="col"><label>H2H win rate (auto)</label><input id="h2hRate" readonly></div>
+
+          </div>
+
+
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>Absent DF,Mf,FW Home (comma)</label><input id="absHome" placeholder="0,0,0"></div>
+
+            <div class="col"><label>Absent DF,Mf,FW Away</label><input id="absAway" placeholder="0,0,0"></div>
+
+            <div class="col"><label>Errors → goal (est) Home</label><input id="errHome" type="number" value="7"><label style="margin-top:6px;display:block">Errors Away</label><input id="errAway" type="number" value="8"></div>
+
+          </div>
+
+          <div style="margin-top:8px"><button id="btnAutoForm" class="ghost">Auto Form & H2H</button></div>
+
+        </section>
+
+
+
+        <!-- ODDS (OPEN & NOW) -->
+
+        <section class="panel">
+
+          <h3 style="margin:0">Odds — Open & Now (isi bila ada)</h3>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>HDP Line</label><input id="hdpLine" type="number" step="0.25" value="0.25"></div>
+
+            <div class="col"><label>HDP Home Open</label><input id="hdpHomeOpen" type="number" step="0.01"></div>
+
+            <div class="col"><label>HDP Home Now</label><input id="hdpHomeNow" type="number" step="0.01"></div>
+
+          </div>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>HDP Away Open</label><input id="hdpAwayOpen" type="number" step="0.01"></div>
+
+            <div class="col"><label>HDP Away Now</label><input id="hdpAwayNow" type="number" step="0.01"></div>
+
+            <div class="col"><label>Odds Trap Alert Min Δ%</label><input id="trapThreshold" type="number" step="0.1" value="5"></div>
+
+          </div>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>OU Line</label><input id="ouLine" type="number" step="0.25" value="2.5"></div>
+
+            <div class="col"><label>OU Over Open</label><input id="ouOverOpen" type="number" step="0.01"></div>
+
+            <div class="col"><label>OU Over Now</label><input id="ouOverNow" type="number" step="0.01"></div>
+
+          </div>
+
+          <div class="row" style="margin-top:8px">
+
+            <div class="col"><label>OU Under Open</label><input id="ouUnderOpen" type="number" step="0.01"></div>
+
+            <div class="col"><label>OU Under Now</label><input id="ouUnderNow" type="number" step="0.01"></div>
+
+            <div class="col"><label>Odds source (opsional)</label><input id="oddsSource" placeholder="contoh: Pinnacle"></div>
+
+          </div>
+
+        </section>
+
+
+
+        <!-- ACTIONS -->
+
+        <section class="panel" style="text-align:center">
+
+          <button id="btnAnalyze">Analisis</button>
+
+          <button id="btnExample" class="ghost">Contoh Isi (opsional)</button>
+
+          <button id="btnReset" class="ghost">Reset</button>
+
+        </section>
+
+      </div>
+
+
+
+      <!-- RIGHT: RESULTS -->
+
+      <div>
+
+        <section class="panel">
+
+          <h3 style="margin:0">Ringkasan Cepat</h3>
+
+          <div id="summary" class="result">Isi input lalu klik <b>Analisis</b>.</div>
+
+
+
+          <div style="margin-top:12px">
+
+            <div><b>Attack Home</b> <span id="atkHomeVal" style="float:right">-</span></div>
+
+            <div class="strength-bar"><div id="atkHomeBar" class="strength-fill"></div></div>
+
+
+
+            <div style="margin-top:8px"><b>Defense Home</b> <span id="defHomeVal" style="float:right">-</span></div>
+
+            <div class="strength-bar"><div id="defHomeBar" class="strength-fill"></div></div>
+
+
+
+            <div style="height:8px"></div>
+
+
+
+            <div style="margin-top:8px"><b>Attack Away</b> <span id="atkAwayVal" style="float:right">-</span></div>
+
+            <div class="strength-bar"><div id="atkAwayBar" class="strength-fill"></div></div>
+
+
+
+            <div style="margin-top:8px"><b>Defense Away</b> <span id="defAwayVal" style="float:right">-</span></div>
+
+            <div class="strength-bar"><div id="defAwayBar" class="strength-fill"></div></div>
+
+          </div>
+
+
+
+          <div style="margin-top:12px">
+
+            <label class="small">Confidence</label>
+
+            <div class="progress-wrap"><div id="confFill" class="progress-fill" style="width:0%"></div></div>
+
+            <div id="confText" class="small" style="text-align:right">Confidence: 0%</div>
+
+          </div>
+
+
+
+          <div id="marketAlign" class="align-box" style="display:none"></div>
+
+          <div id="marketExplain" class="muted" style="margin-top:8px;opacity:0.95"></div>
+
+
+
+          <div id="recs" style="margin-top:12px"></div>
+
+          <div id="recommendation" class="result" style="margin-top:12px;background:#07121b"></div>
+
+
+
+          <div class="canvas-wrap" style="margin-top:12px">
+
+            <canvas id="hist" width="420" height="160" style="background:#041620;border-radius:6px"></canvas>
+
+            <div style="height:8px"></div>
+
+            <canvas id="gauge" width="420" height="80" style="background:#041620;border-radius:6px"></canvas>
+
+          </div>
+
+
+
+          <div id="trapInfo" class="result" style="margin-top:12px;background:#07121b;display:none"></div>
+
+
+
+          <div id="debug" class="result" style="margin-top:8px;background:#06111a"></div>
+
+        </section>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="footer">v78 — Full Advanced. Semua input manual → hasil real dari input terbaru. Simpan file HTML dan buka di browser modern.</div>
+
+  </div>
+
+
+
+<script>
+
+/* ============================
+
+   v78 Full Advanced - Part 2
+
+   ============================ */
+
+
+
+/* ---------- Utilities ---------- */
+
+const $ = id => document.getElementById(id);
+
+function safe(v,d=NaN){ const x=parseFloat(v); return isNaN(x)?d:x; }
+
+function clamp(v,a,b){ return isNaN(v)?a:Math.max(a,Math.min(b,v)); }
+
+function pct(v){ return isNaN(v)?'-':(100*v).toFixed(1)+'%'; }
+
+function nowISO(){ return (new Date()).toISOString().replace(/[:.]/g,'-'); }
+
+
+
+/* Poisson RNG (Knuth) */
+
+function poissonRand(lambda){
+
+  if(lambda <= 0) return 0;
+
+  let L = Math.exp(-lambda), p = 1, k = 0;
+
+  while(p > L){ k++; p *= Math.random(); if(k>10000) break; }
+
+  return k - 1;
+
+}
+
+
+
+/* Bivariate dependency: share part by rho */
+
+function sampleBivariate(lambdaH, lambdaA, rho){
+
+  const shared = Math.max(0, rho * Math.min(lambdaH, lambdaA));
+
+  const hPart = Math.max(0, lambdaH - shared);
+
+  const aPart = Math.max(0, lambdaA - shared);
+
+  const sh = poissonRand(shared);
+
+  return [sh + poissonRand(hPart), sh + poissonRand(aPart)];
+
+}
+
+
+
+/* Parse absent string "DF,MF,FW" => [df,mf,fw] */
+
+function parseAbsent(s){
+
+  if(!s) return [0,0,0];
+
+  const p = s.toString().split(',').map(x=>safe(x.trim(),0));
+
+  return [p[0]||0,p[1]||0,p[2]||0];
+
+}
+
+
+
+/* Convert form raw to weighted index (0..1) */
+
+function formScoreFromRaw(raw){
+
+  if(!raw) return 0.5;
+
+  const parts = raw.toString().toUpperCase().replace(/[^WDL, ]/g,'').split(/[, ]+/).filter(Boolean).slice(0,10);
+
+  if(parts.length===0) return 0.5;
+
+  let score=0, total=0;
+
+  parts.forEach((p,i)=>{
+
+    const w = 1 - i*0.06; total += w;
+
+    if(p==='W') score += 1*w; else if(p==='D') score += 0.5*w;
+
+  });
+
+  return score/total;
+
+}
+
+
+
+/* H2H win rate from raw string */
+
+function h2hRateFromRaw(raw){
+
+  if(!raw) return 0.5;
+
+  const parts = raw.toString().toUpperCase().replace(/[^WDL, ]/g,'').split(/[ ,]+/).filter(Boolean).slice(0,10);
+
+  if(parts.length===0) return 0.5;
+
+  const wins = parts.filter(p=>p==='W').length;
+
+  return wins / parts.length;
+
+}
+
+
+
+/* Auto TI and CSR/GA calculations */
+
+function autoTI(){
+
+  const tH = safe($('tackleHome').value,0), iH = safe($('interHome').value,0);
+
+  const tA = safe($('tackleAway').value,0), iA = safe($('interAway').value,0);
+
+  $('tiHome').value = (tH + iH).toFixed(1);
+
+  $('tiAway').value = (tA + iA).toFixed(1);
+
+}
+
+function autoCSRandGA(){
+
+  const csCountH = safe($('csCountHome').value,NaN), csMatchesH = safe($('csMatchesHome').value,NaN);
+
+  if(csMatchesH > 0) $('csHome').value = clamp(csCountH/csMatchesH,0,1).toFixed(2);
+
+  const csCountA = safe($('csCountAway').value,NaN), csMatchesA = safe($('csMatchesAway').value,NaN);
+
+  if(csMatchesA > 0) $('csAway').value = clamp(csCountA/csMatchesA,0,1).toFixed(2);
+
+
+
+  const gaCountH = safe($('gcHomeCount').value,NaN), gaMatchesH = safe($('gcMatchesHome').value,NaN);
+
+  if(gaMatchesH > 0) $('gcHome').value = (gaCountH/gaMatchesH).toFixed(2);
+
+  const gaCountA = safe($('gcAwayCount').value,NaN), gaMatchesA = safe($('gcMatchesAway').value,NaN);
+
+  if(gaMatchesA > 0) $('gcAway').value = (gaCountA/gaMatchesA).toFixed(2);
+
+  alert('CSR & GA dihitung otomatis.');
+
+}
+
+
+
+/* Auto Form & H2H */
+
+function autoFormH2H(){
+
+  $('formHome').value = formScoreFromRaw($('formRawHome').value).toFixed(2);
+
+  $('formAway').value = formScoreFromRaw($('formRawAway').value).toFixed(2);
+
+  $('h2hRate').value = h2hRateFromRaw($('h2hRaw').value).toFixed(2);
+
+  alert('Form & H2H otomatis terisi.');
+
+}
+
+
+
+/* ---------- Attack & Defense Index (sharpened) ---------- */
+
+function computeAttackIndex(team){
+
+  // team: {xg, sot, gf, conv, big, miss, form}
+
+  const xg = team.xg || (team.gf || 1.0);
+
+  const sotFactor = 0.2 * ((team.sot||3)/5);
+
+  const convFactor = team.conv ? 0.12 * (team.conv*100) : 0;
+
+  const formFactor = 0.15 * (team.form||0.5);
+
+  const bigMiss = ((team.big||0) - (team.miss||0));
+
+  const bigFactor = clamp(bigMiss * 0.03, -0.12, 0.25);
+
+  const base = 0.45*xg + sotFactor + convFactor + formFactor;
+
+  const adj = 1 + bigFactor + clamp(((team.poss||50)-50)*0.004, -0.12, 0.12);
+
+  return clamp(base * adj, 0.1, 4.5);
+
+}
+
+
+
+function computeDefenseIndex(team){
+
+  // team: {cs (ratio 0..1), ga, ti, absDf, err, saves}
+
+  const cs = clamp(team.cs||0,0,1);
+
+  const ga = Math.max(0.01, team.ga || 1.2);
+
+  const ti = clamp(team.ti||0,0,100);
+
+  const err = clamp(team.err||7,0,50);
+
+  const saves = team.saves || 0;
+
+
+
+  const csAdj = 1 - (0.28 * cs);         // more CS reduces defensive index
+
+  const gaAdj = 1 + (0.22 * ga);         // higher GA worsens defense
+
+  const tiAdj = 1 - clamp(ti/60, 0, 0.30); // more TI improves defense (reduces factor)
+
+  const absAdj = 1 + clamp((team.absDf||0)*0.05, 0, 0.4);
+
+  const errAdj = 1 + (err/38)*0.03;
+
+  const saveAdj = 1 - Math.log(1+saves)/Math.log(1+8)*0.08;
+
+
+
+  return clamp(csAdj * gaAdj * tiAdj * absAdj * errAdj * saveAdj, 0.45, 4.0);
+
+}
+
+
+
+/* Balance & scale lambdas */
+
+function balanceScaleLambda(lambdaH, lambdaA, leagueAvg){
+
+  let avg = (lambdaH + lambdaA)/2;
+
+  if(avg > 3.0){ lambdaH *= 0.88; lambdaA *= 0.88; }
+
+  else if(avg > 2.0){ lambdaH *= 0.95; lambdaA *= 0.95; }
+
+  // adjust with league avg
+
+  const base = (leagueAvg || 2.6) / 2.6;
+
+  lambdaH *= base; lambdaA *= base;
+
+  return [lambdaH, lambdaA];
+
+}
+
+
+
+/* ---------- Monte Carlo & helpers ---------- */
+
+function monteCarlo(lambdaH, lambdaA, rho, runs){
+
+  const scoreFreq = {}, totals = {};
+
+  let hWin=0, draw=0, aWin=0;
+
+  for(let i=0;i<runs;i++){
+
+    const [gh,ga] = sampleBivariate(lambdaH, lambdaA, rho);
+
+    const k = `${gh}-${ga}`;
+
+    scoreFreq[k] = (scoreFreq[k]||0) + 1;
+
+    totals[gh+ga] = (totals[gh+ga]||0) + 1;
+
+    if(gh>ga) hWin++; else if(gh===ga) draw++; else aWin++;
+
+  }
+
+  return {scoreFreq, totals, pHome: hWin/runs, pDraw: draw/runs, pAway: aWin/runs};
+
+}
+
+
+
+function probOUFromTotals(totals, line, runs){
+
+  let over=0, under=0;
+
+  const isInt = Number.isInteger(line);
+
+  for(const t in totals){
+
+    const g = parseInt(t), v = totals[t];
+
+    if(isInt){
+
+      if(g>line) over += v; else if(g<line) under += v; else { over += 0.5*v; under += 0.5*v; }
+
+    } else {
+
+      if(g>line) over += v; else under += v;
+
+    }
+
+  }
+
+  return {over: over/runs, under: under/runs};
+
+}
+
+function probCoverFromScores(scoreFreq, handicap, runs){
+
+  let win=0, push=0, lose=0;
+
+  for(const sc in scoreFreq){
+
+    const v = scoreFreq[sc];
+
+    const [gh,ga] = sc.split('-').map(x=>parseInt(x));
+
+    const diff = gh - ga - handicap;
+
+    if(diff>0) win += v;
+
+    else if(diff===0) push += v;
+
+    else lose += v;
+
+  }
+
+  return (win + 0.5*push)/runs;
+
+}
+
+
+
+/* ---------- Rendering: histogram + gauge ---------- */
+
+function renderHistogram(totals, canvasId='hist'){
+
+  const c = $(canvasId); if(!c) return;
+
+  const ctx = c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
+
+  const keys = Object.keys(totals).map(x=>parseInt(x)).sort((a,b)=>a-b);
+
+  if(keys.length===0) return;
+
+  const maxV = Math.max(...Object.values(totals));
+
+  const pad = 24;
+
+  const barW = Math.max(6, (c.width - pad*2) / keys.length - 4);
+
+  keys.forEach((k,i)=>{
+
+    const v = totals[k] || 0;
+
+    const h = (v / maxV) * (c.height - 40);
+
+    ctx.fillStyle = '#0b74de';
+
+    ctx.fillRect(pad + i*(barW+4), c.height - 30 - h, barW, h);
+
+    ctx.fillStyle = '#9fb3c5';
+
+    ctx.font = '11px Arial';
+
+    ctx.fillText(String(k), pad + i*(barW+4), c.height - 8);
+
+  });
+
+}
+function renderGauge(percentVal, canvasId='gauge'){
+
+  const c = $(canvasId); if(!c) return;
+
+  const ctx = c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
+
+  const w = c.width, h = c.height;
+
+  // background arc
+
+  ctx.lineWidth = 14;
+
+  ctx.strokeStyle = '#07202a';
+
+  ctx.beginPath();
+
+  ctx.arc(w/2, h, Math.min(w/2-20,h-10), Math.PI, 0);
+
+  ctx.stroke();
+
+  // fill arc
+
+  const angle = Math.PI * (percentVal/100);
+
+  const grad = ctx.createLinearGradient(0,0,w,0);
+
+  grad.addColorStop(0, '#ef476f'); grad.addColorStop(0.5, '#ffd166'); grad.addColorStop(1, '#2ecc71');
+
+  ctx.strokeStyle = grad;
+
+  ctx.beginPath();
+
+  ctx.arc(w/2, h, Math.min(w/2-20,h-10), Math.PI, Math.PI - angle);
+
+  ctx.stroke();
+
+  // text
+
+  ctx.fillStyle = '#dff3ff'; ctx.font = '16px Arial'; ctx.textAlign = 'center';
+
+  ctx.fillText('Confidence: ' + percentVal.toFixed(0) + '%', w/2, h-20);
+
+}
+
+
+
+/* ---------- Build textual recommendation (Bahasa Indonesia) ---------- */
+
+function buildRecommendation(data){
+
+  // data: {home,away,pHome,pDraw,pAway,ouProb,coverHome,coverAway,imp,edges,combinedIndex,confPct,valueLabel}
+
+  const lines = [];
+
+  lines.push(`🔎 Rekomendasi — ${data.home} vs ${data.away}`);
+
+  lines.push('');
+
+  if(data.pHome >= 0.58) lines.push(`• Model merekomendasikan kemenangan tuan rumah: ${pct(data.pHome)}.`);
+
+  else if(data.pAway >= 0.58) lines.push(`• Model merekomendasikan kemenangan tim tamu: ${pct(data.pAway)}.`);
+
+  else if(data.pDraw >= 0.35) lines.push(`• Peluang hasil imbang cukup besar: ${pct(data.pDraw)}.`);
+
+  else lines.push(`• Tidak ada pemenang jelas: Home ${pct(data.pHome)} • Draw ${pct(data.pDraw)} • Away ${pct(data.pAway)}.`);
+
+
+
+  if(data.ouProb.over >= 0.60) lines.push(`• Over ${$('ouLine').value} kuat (${pct(data.ouProb.over)}).`);
+
+  else if(data.ouProb.under >= 0.60) lines.push(`• Under ${$('ouLine').value} kuat (${pct(data.ouProb.under)}).`);
+
+  else lines.push(`• Over/Under relatif seimbang: Over ${pct(data.ouProb.over)} • Under ${pct(data.ouProb.under)}.`);
+
+
+
+  if(data.valueLabel === 'VALUE') lines.push(`• Terdeteksi POTENSI VALUE berdasarkan model vs market — periksa odds & lineup.`);
+
+  else lines.push(`• Tidak ditemukan edge pasar yang kuat untuk value bet.`);
+
+
+
+  lines.push('');
+
+  lines.push(`🔢 Confidence model: ${data.confPct}% (${data.confPct >= 65? 'Tinggi' : (data.confPct>=50? 'Sedang':'Rendah')}).`);
+
+  lines.push('');
+
+  lines.push('⚠️ Catatan: selalu verifikasi lineup & kondisi pemain inti sebelum bertaruh.');
+
+  return lines.join('\n');
+
+}
+
+
+
+/* ---------- Main analyze function ---------- */
+
+let lastCSV = '';
+
+
+
+function analyzeFull(){
+
+  try {
+
+    // validate team names
+
+    const home = ($('teamHome').value||'').trim();
+
+    const away = ($('teamAway').value||'').trim();
+
+    if(!home || !away){ alert('Isi nama tim Home dan Away dahulu.'); return; }
+
+
+
+    // read inputs
+
+    const eloH = safe($('eloHome').value,1500), eloA = safe($('eloAway').value,1500);
+
+    const xgH = safe($('xgHome').value, NaN), xgA = safe($('xgAway').value, NaN);
+
+    const sotH = safe($('sotHome').value, NaN), sotA = safe($('sotAway').value, NaN);
+
+    const gfH = safe($('gfHome').value, NaN), gfA = safe($('gfAway').value, NaN);
+
+    const bigH = safe($('bigHome').value,0), missH = safe($('missHome').value,0);
+
+    const convH = safe($('convHome').value, NaN);
+
+    const tiH = safe($('tiHome').value, NaN), tiA = safe($('tiAway').value, NaN);
+
+    const csH = safe($('csHome').value,NaN), csA = safe($('csAway').value,NaN);
+
+    const gcH = safe($('gcHome').value,1.2), gcA = safe($('gcAway').value,1.2);
+
+    const errH = safe($('errHome').value,7), errA = safe($('errAway').value,8);
+
+    const absH = parseAbsent($('absHome').value), absA = parseAbsent($('absAway').value);
+
+    const formH = clamp(safe($('formHome').value, NaN), 0, 1);
+
+    const formA = clamp(safe($('formAway').value, NaN), 0, 1);
+
+    const h2hRate = clamp(safe($('h2hRate').value, NaN), 0, 1);
+
+    const alphaUser = safe($('alpha').value, NaN), rhoUser = safe($('rho').value,0.12);
+
+    const mcRuns = Math.round(clamp(safe($('mcRuns').value,40000),2000,120000));
+
+    const leagueAvg = safe($('avgLeagueGoals').value,2.6);
+
+    const hdpLine = safe($('hdpLine').value, 0.25);
+
+    const ouLine = safe($('ouLine').value, 2.5);
+
+
+
+    // dynamic alpha (shrinking) unless user specified
+
+    let alpha = isNaN(alphaUser) ? 0.10 : clamp(alphaUser, 0.02, 0.30);
+
+    // adjust alpha lightly with xg diff and form diff to avoid overconfidence
+
+    const xgDiff = Math.abs((xgH || gfH || 1.0) - (xgA || gfA || 1.0));
+
+    const formDiff = Math.abs((isNaN(formH)?0.5:formH) - (isNaN(formA)?0.5:formA));
+
+    alpha = clamp(alpha + 0.02*xgDiff + 0.01*formDiff, 0.03, 0.22);
+
+
+
+    // compute attack & defense indices
+
+    const atkH = computeAttackIndex({xg: xgH || gfH || 1.0, sot: sotH, gf: gfH, conv: convH, big: bigH, miss: missH, form: (isNaN(formH)?0.5:formH)});
+
+    const atkA = computeAttackIndex({xg: xgA || gfA || 1.0, sot: sotA, gf: gfA, conv: safe($('convAway').value, NaN), big: safe($('bigAway').value,0), miss: safe($('missAway').value,0), form: (isNaN(formA)?0.5:formA)});
+
+    const defH = computeDefenseIndex({cs: csH || 0.28, ga: gcH || 1.2, ti: tiH || 20, absDf: absH[0], err: errH, saves: safe($('saveHome')? $('saveHome').value : 0,0)});
+
+    const defA = computeDefenseIndex({cs: csA || 0.26, ga: gcA || 1.2, ti: tiA || 18, absDf: absA[0], err: errA, saves: safe($('saveAway')? $('saveAway').value : 0,0)});
+
+
+
+    // league average proxy and base lambda
+
+    const baseXG = Math.max(0.35, ((xgH || gfH || 1.0) + (xgA || gfA || 1.0))/2);
+
+    let lambdaH = baseXG * (atkH / Math.max(0.3, baseXG)) * (1/defA);
+
+    let lambdaA = baseXG * (atkA / Math.max(0.3, baseXG)) * (1/defH);
+
+
+
+    // blend with simple rating proxy to avoid overfitting to indices (alpha shrink)
+
+    const ratingProxyH = (gfH || xgH || 1.0);
+
+    const ratingProxyA = (gfA || xgA || 1.0);
+
+    lambdaH = alpha*ratingProxyH + (1-alpha)*lambdaH;
+
+    lambdaA = alpha*ratingProxyA + (1-alpha)*lambdaA;
+
+
+
+    // h2h & form impacts
+
+    const h2hImpact = clamp((h2hRate - 0.5) * 0.22, -0.12, 0.12);
+
+    const recentFormImpact = clamp(( (isNaN(formH)?0.5:formH) - (isNaN(formA)?0.5:formA) ) * 0.20, -0.12, 0.12);
+
+    lambdaH *= (1 + 0.6*recentFormImpact + 0.4*h2hImpact);
+
+    lambdaA *= (1 - 0.6*recentFormImpact - 0.4*h2hImpact);
+
+
+
+    // ELO coarse factor
+
+    const eloDiff = (eloH - eloA);
+
+    const eloFactorH = 1 + clamp(eloDiff/4000, -0.18, 0.18);
+
+    const eloFactorA = 1 - clamp(eloDiff/4000, -0.18, 0.18);
+
+    lambdaH *= eloFactorH; lambdaA *= eloFactorA;
+
+
+
+    // absence penalty (home and away)
+
+    const penaltyH = 1 - clamp((absH[0]*0.04 + absH[1]*0.03 + absH[2]*0.05), 0, 0.25);
+
+    const penaltyA = 1 - clamp((absA[0]*0.04 + absA[1]*0.03 + absA[2]*0.05), 0, 0.25);
+
+    lambdaH *= penaltyH; lambdaA *= penaltyA;
+
+
+
+    // small shrink if average too high
+
+    [lambdaH, lambdaA] = balanceScaleLambda(lambdaH, lambdaA, leagueAvg);
+
+
+
+    // run Monte Carlo
+
+    const rho = clamp(rhoUser := safe($('rho').value, rhoUser = rhoUser || 0.12), 0.01, 0.45);
+
+    const mc = monteCarlo(lambdaH, lambdaA, rho, mcRuns);
+
+
+
+    // probabilities & averages
+
+    const pHome = mc.pHome, pDraw = mc.pDraw, pAway = mc.pAway;
+
+    const avgH = Object.entries(mc.scoreFreq).reduce((s,[sc,v])=>s + parseInt(sc.split('-')[0])*v,0) / mcRuns;
+
+    const avgA = Object.entries(mc.scoreFreq).reduce((s,[sc,v])=>s + parseInt(sc.split('-')[1])*v,0) / mcRuns;
+
+ // OU & HDP probabilities
+
+    const ouProb = probOUFromTotals(mc.totals, ouLine, mcRuns);
+
+    const coverHome = probCoverFromScores(mc.scoreFreq, hdpLine, mcRuns);
+
+    const coverAway = 1 - coverHome;
+
+
+
+    // implied probabilities from odds (open & now)
+
+    function implied(od){ return od && od>0 ? 1/od : null; }
+
+    const imp = {
+
+      hdpHomeOpen: implied(safe($('hdpHomeOpen').value,NaN)),
+
+      hdpHomeNow: implied(safe($('hdpHomeNow').value,NaN)),
+
+      hdpAwayOpen: implied(safe($('hdpAwayOpen').value,NaN)),
+
+      hdpAwayNow: implied(safe($('hdpAwayNow').value,NaN)),
+
+      ouOverOpen: implied(safe($('ouOverOpen').value,NaN)),
+
+      ouOverNow: implied(safe($('ouOverNow').value,NaN)),
+
+      ouUnderOpen: implied(safe($('ouUnderOpen').value,NaN)),
+
+      ouUnderNow: implied(safe($('ouUnderNow').value,NaN))
+
+    };
+
+
+
+    // compute market edges (model - implied)
+
+    const e = {
+
+      hdpHome: imp.hdpHomeNow? (coverHome - imp.hdpHomeNow) : null,
+
+      hdpAway: imp.hdpAwayNow? (coverAway - imp.hdpAwayNow) : null,
+
+      ouOver: imp.ouOverNow? (ouProb.over - imp.ouOverNow) : null,
+
+      ouUnder: imp.ouUnderNow? (ouProb.under - imp.ouUnderNow) : null
+
+    };
+
+
+
+    // combined index for 'value' detection
+
+    const avgEdgeHDP = ((e.hdpHome||0) + (e.hdpAway||0)) / 2;
+
+    const avgEdgeOU = ((e.ouOver||0) + (e.ouUnder||0)) / 2;
+
+    const combinedIndex = 0.6 * avgEdgeHDP + 0.4 * avgEdgeOU;
+
+
+
+    // detect value
+
+    let valueLabel = 'HOLD';
+
+    if(isFinite(combinedIndex) && Math.abs(combinedIndex) > 0.015 && Math.max(pHome,pAway,ouProb.over,ouProb.under) >= 0.55){
+
+      valueLabel = combinedIndex > 0 ? 'VALUE' : 'NO VALUE';
+
+    }
+
+
+
+    // confidence (use top probability among outcomes)
+
+    const topProb = Math.max(pHome,pAway,ouProb.over,ouProb.under);
+
+    const confPct = Math.round(topProb * 100);
+
+    $('confFill').style.width = confPct + '%';
+
+    $('confFill').style.background = confPct < 45 ? '#ef476f' : (confPct < 65 ? '#ffd166' : '#2ecc71');
+
+    $('confText').textContent = 'Confidence: ' + confPct + '%';
+
+    renderGauge(confPct, 'gauge');
+
+
+
+    // update summary text
+
+    const summaryLines = [];
+
+    summaryLines.push(`Match: ${home} vs ${away}`);
+
+    summaryLines.push(`λ (sharp): Home ${lambdaH.toFixed(2)} | Away ${lambdaA.toFixed(2)}`);
+
+    summaryLines.push(`Attack idx H:${atkH.toFixed(2)} A:${atkA.toFixed(2)} | Def H:${defH.toFixed(2)} A:${defA.toFixed(2)}`);
+
+    summaryLines.push(`Exp goals (sim): H ${avgH.toFixed(2)} | A ${avgA.toFixed(2)}`);
+
+    summaryLines.push(`Prob 1X2 — Home ${pct(pHome)} Draw ${pct(pDraw)} Away ${pct(pAway)}`);
+
+    summaryLines.push(`OU(${ouLine}) → Over ${pct(ouProb.over)} | Under ${pct(ouProb.under)}`);
+
+    summaryLines.push(`HDP(${hdpLine}) → Home ${pct(coverHome)} | Away ${pct(coverAway)}`);
+
+    summaryLines.push(`Alpha:${alpha.toFixed(2)} | Rho:${rho.toFixed(2)} | Runs:${mcRuns}`);
+
+    summaryLines.push(`Combined Index: ${(combinedIndex*100).toFixed(2)}% → ${valueLabel}`);
+
+    summaryLines.push(`Absent H:${absH.join('/')} A:${absA.join('/')} • TI H:${tiH} A:${tiA}`);
+
+    summaryLines.push(`Confidence: ${confPct}%`);
+
+    $('summary').textContent = summaryLines.join('\n');
+
+
+
+    // strength bars
+
+    updateStrengthBar('atkHomeBar','atkHomeVal', atkH);
+
+    updateStrengthBar('defHomeBar','defHomeVal', 1/defH*6);
+
+    updateStrengthBar('atkAwayBar','atkAwayVal', atkA);
+
+    updateStrengthBar('defAwayBar','defAwayVal', 1/defA*6);
+
+
+
+    // render recs: prioritize by combined score (prob + edge)
+
+    const cand = [
+
+      {tag:`HDP Home ${hdpLine}`, prob: coverHome, edge: e.hdpHome, market: 'HDP'},
+
+      {tag:`HDP Away ${-hdpLine}`, prob: coverAway, edge: e.hdpAway, market: 'HDP'},
+
+      {tag:`OU Over ${ouLine}`, prob: ouProb.over, edge: e.ouOver, market: 'OU'},
+
+      {tag:`OU Under ${ouLine}`, prob: ouProb.under, edge: e.ouUnder, market: 'OU'}
+
+    ];
+
+    renderRecommendations(cand, combinedIndex);
+
+
+
+    // histogram
+
+    renderHistogram(mc.totals, 'hist');
+
+
+
+    // trap detection (open -> now deltas)
+
+    detectTraps(imp);
+
+
+
+    // build recommendation narrative
+
+    const recText = buildRecommendation({
+
+      home, away, pHome, pDraw, pAway, ouProb, coverHome, coverAway, imp, e, combinedIndex, confPct, valueLabel
+
+    });
+
+    $('recommendation').textContent = recText;
+
+
+
+    // lastCSV creation
+
+    let csv = 'score,count,prob\n';
+
+    Object.keys(mc.scoreFreq).sort((a,b)=>mc.scoreFreq[b]-mc.scoreFreq[a]).forEach(k=>{
+
+      const c = mc.scoreFreq[k];
+
+      csv += `${k},${c},${(c/mcRuns).toFixed(6)}\n`;
+
+    });
+
+    lastCSV = csv;
+
+
+
+  } catch(err){
+
+    console.error('Analyze error', err);
+
+    alert('Terjadi error saat analisis — cek console.');
+
+  }
+
+}
+
+
+
+/* ---------- Supporting UI functions ---------- */
+
+function updateStrengthBar(barId,valId,score){
+
+  const pctv = Math.max(3, Math.min(95, (score/3.5) * 100 ));
+
+  const bar = $(barId); if(bar) bar.style.width = pctv + '%';
+
+  const val = $(valId); if(val) val.textContent = isNaN(score)?'-':score.toFixed(2);
+
+}
+
+
+
+function renderRecommendations(list, combinedIndex){
+
+  $('recs').innerHTML = '';
+
+  list.sort((a,b)=>{
+
+    const sa = (a.prob||0)*0.7 + (a.edge||0)*0.3;
+
+    const sb = (b.prob||0)*0.7 + (b.edge||0)*0.3;
+
+    return sb - sa;
+
+  }).slice(0,3).forEach(it=>{
+
+    const div = document.createElement('div'); div.className = 'card';
+
+    const edgeStr = (it.edge===null)? 'No market' : ('edge ' + (it.edge*100).toFixed(2) + '%');
+
+    const sig = (it.edge!==null && Math.abs(it.edge) > 0.015 && it.prob>=0.55) ? 'BET' : 'HOLD';
+
+    div.innerHTML = `<div style="font-weight:700">${it.tag}</div><div style="text-align:right">${pct(it.prob)}<div class="small">${edgeStr}</div><div class="small">${sig}</div></div>`;
+
+    $('recs').appendChild(div);
+
+  });
+
+}
+
+
+
+/* detect traps and show table */
+
+function detectTraps(imp){
+
+  const threshold = clamp(safe($('trapThreshold').value,5), 1, 100);
+
+  const diffs = [];
+
+  if(imp.ouOverNow && imp.ouOverOpen) diffs.push({market:'OU Over', delta: (imp.ouOverNow - imp.ouOverOpen)*100});
+
+  if(imp.ouUnderNow && imp.ouUnderOpen) diffs.push({market:'OU Under', delta: (imp.ouUnderNow - imp.ouUnderOpen)*100});
+
+  if(imp.hdpHomeNow && imp.hdpHomeOpen) diffs.push({market:'HDP Home', delta: (imp.hdpHomeNow - imp.hdpHomeOpen)*100});
+
+  if(imp.hdpAwayNow && imp.hdpAwayOpen) diffs.push({market:'HDP Away', delta: (imp.hdpAwayNow - imp.hdpAwayOpen)*100});
+
+  let html = '';
+
+  let trapDetected = false;
+
+  diffs.forEach(d=>{
+
+    html += `${d.market} Δ%: ${d.delta.toFixed(2)}%\n`;
+
+    if(Math.abs(d.delta) >= threshold) trapDetected = true;
+
+  });
+
+  if(trapDetected){
+
+    $('trapInfo').style.display = 'block';
+
+    $('trapInfo').textContent = '⚠️ Odds Trap detected:\n' + html;
+
+  } else {
+
+    $('trapInfo').style.display = 'none';
+
+    $('trapInfo').textContent = '';
+
+  }
+
+}
+
+/* CSV download & Reset & Example fill */
+
+function downloadLastCSV(){
+
+  if(!lastCSV){ alert('Jalankan Analisis dulu'); return; }
+
+  const filename = ( ($('matchName').value || ($('teamHome').value + '_vs_' + $('teamAway').value)) .replace(/\s+/g,'_') ) + '_v78_' + nowISO() + '.csv';
+
+  const blob = new Blob([lastCSV], {type:'text/csv'}); const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+
+  URL.revokeObjectURL(url);
+
+}
+
+
+
+function resetAll(){
+
+  document.querySelectorAll('input').forEach(inp=>{
+
+    if(inp.id === 'avgLeagueGoals') return; // keep this default
+
+    if(inp.type !== 'button') inp.value = '';
+
+  });
+
+  $('summary').textContent = 'Direset. Isi input lalu klik Analisis.';
+
+  $('recs').innerHTML = ''; $('recommendation').textContent = ''; $('debug').textContent = '';
+
+  $('confFill').style.width = '0%'; $('confText').textContent = 'Confidence: 0%';
+
+  const ctx = $('hist').getContext('2d'); ctx.clearRect(0,0,$('hist').width,$('hist').height);
+
+  const g = $('gauge').getContext('2d'); g.clearRect(0,0,$('gauge').width,$('gauge').height);
+
+  lastCSV = '';
+
+  $('marketAlign').style.display='none'; $('marketExplain').textContent='';
+
+  alert('Reset selesai.');
+
+}
+
+
+
+function fillExample(){
+
+  // sample realistic fill (user can clear)
+
+  $('teamHome').value='Atalanta'; $('teamAway').value='Lazio'; $('league').value='Serie A';
+
+  $('xgHome').value=1.8; $('xgAway').value=1.2; $('sotHome').value=5.8; $('sotAway').value=3.7;
+
+  $('gfHome').value=1.9; $('gfAway').value=1.3;
+
+  $('bigHome').value=3; $('missHome').value=1; $('bigAway').value=1; $('missAway').value=2;
+
+  $('tackleHome').value=20; $('interHome').value=9; $('tackleAway').value=16; $('interAway').value=7;
+
+  autoTI(); $('csCountHome').value=12; $('csMatchesHome').value=38; $('csCountAway').value=10; $('csMatchesAway').value=38;
+
+  $('gcHomeCount').value=30; $('gcMatchesHome').value=38; $('gcAwayCount').value=40; $('gcMatchesAway').value=38;
+
+  autoCSRandGA();
+
+  $('formRawHome').value='W,W,D,W,L'; $('formRawAway').value='L,D,W,L,D'; autoFormH2H();
+
+  $('hdpLine').value=0.25; $('hdpHomeOpen').value=1.95; $('hdpHomeNow').value=1.88; $('hdpAwayOpen').value=1.95; $('hdpAwayNow').value=2.05;
+
+  $('ouLine').value=2.5; $('ouOverOpen').value=1.95; $('ouOverNow').value=1.88; $('ouUnderOpen').value=1.90; $('ouUnderNow').value=2.00;
+
+  $('mcRuns').value = 40000;
+
+  alert('Contoh terisi. Klik Analisis.');
+
+}
+
+
+
+/* ---------- Event wiring ---------- */
+
+window.addEventListener('load', ()=>{
+
+  // buttons
+
+  $('btnAnalyze').addEventListener('click', analyzeFull);
+
+  $('btnReset').addEventListener('click', resetAll);
+
+  $('btnDownloadLast').addEventListener('click', downloadLastCSV);
+
+  $('btnAutoTI').addEventListener('click', ()=>{ autoTI(); alert('TI otomatis terisi'); });
+
+  $('btnCalcCSR').addEventListener('click', ()=>{ autoCSRandGA(); });
+
+  $('btnAutoForm').addEventListener('click', ()=>{ autoFormH2H(); });
+
+  $('btnExample').addEventListener('click', fillExample);
+
+
+
+  // auto TI on input
+
+  ['tackleHome','interHome','tackleAway','interAway'].forEach(id=>{
+
+    const el = $(id);
+
+    if(el) el.addEventListener('input', ()=>{ autoTI(); });
+
+  });
+
+  // Preset Mode toggle: adjust alpha, rho, mcRuns
+
+  $('presetMode').addEventListener('change', ()=>{
+
+    const p = $('presetMode').value;
+
+    if(p==='league'){ $('alpha').value = '0.09'; $('rho').value='0.12'; $('mcRuns').value='40000'; }
+
+    else if(p==='cup'){ $('alpha').value = '0.13'; $('rho').value='0.18'; $('mcRuns').value='80000'; }
+
+    else { $('alpha').value = '0.10'; $('rho').value='0.12'; $('mcRuns').value='40000'; }
+  });
+});
+
+/* Expose for console debugging if needed */
+window.v78 = { analyzeFull, resetAll, fillExample, downloadLastCSV, autoTI, autoCSRandGA };
+</script>
+</body>
+</html>
+
