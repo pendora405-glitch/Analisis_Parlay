@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>V23 Symbolic Ultra Precision Engine</title>
+<style>
+  :root{--bg:#03121a;--card:#0b2732;--accent:#4fd1c5;--muted:#9fb3c8;--good:#27ae60;--bad:#e74c3c;--neutral:#cbd5e1}
+  body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#021019,#041526);color:#e6f0f6;padding:18px}
+  .wrap{max-width:980px;margin:0 auto}
+  h1{color:var(--accent);margin:0 0 8px}
+  .card{background:var(--card);border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
+  label{display:block;color:var(--muted);margin-top:8px}
+  input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;margin-top:6px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .row{display:flex;gap:10px;align-items:center}
+  .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+  .btn-primary{background:var(--accent);color:#022}
+  .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.04);text-align:left}
+  .symbols{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .sym{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:700}
+  .best{box-shadow:0 4px 18px rgba(79,209,197,0.12);border:1px solid rgba(79,209,197,0.12)}
+  .note{font-size:0.9rem;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>V23 — Symbolic Ultra Precision Engine</h1>
+    <div class="note">Isi semua field dengan data nyata (pra-pertandingan). Hasil netral — simbol hanya menunjukkan sisi efisiensi relatif.</div>
+
+    <div class="card">
+      <div class="grid">
+        <div>
+          <label>Team Home</label>
+          <input id="teamHome" placeholder="(wajib)">
+          <label>Avg Gol Home (5 laga)</label>
+          <input id="homeGF" type="number" step="0.01" placeholder="(wajib)">
+          <label>Kebobolan Rata Home (5 laga)</label>
+          <input id="homeGA" type="number" step="0.01" placeholder="(wajib)">
+          <label>Form Home (format: W,D,L sequence, contoh: WWDWL)</label>
+          <input id="homeForm" placeholder="(wajib)">
+          <label>H2H (last5 untuk Home — format menang-seri-kalah, contoh: 3-1-1)</label>
+          <input id="h2hHome" placeholder="(wajib jika ada)">
+        </div>
+
+        <div>
+          <label>Team Away</label>
+          <input id="teamAway" placeholder="(wajib)">
+          <label>Avg Gol Away (5 laga)</label>
+          <input id="awayGF" type="number" step="0.01" placeholder="(wajib)">
+          <label>Kebobolan Rata Away (5 laga)</label>
+          <input id="awayGA" type="number" step="0.01" placeholder="(wajib)">
+          <label>Form Away (format: W,D,L sequence, contoh: WLWDD)</label>
+          <input id="awayForm" placeholder="(wajib)">
+          <label>H2H (last5 untuk Away — wins-draws-losses vs Home, contoh: 1-1-3)</label>
+          <input id="h2hAway" placeholder="(wajib jika ada)">
+        </div>
+      </div>
+
+      <hr style="opacity:.06;margin:12px 0">
+
+      <div class="grid">
+        <div>
+          <label>Mode Kompetisi</label>
+          <select id="mode">
+            <option value="Liga">Liga</option>
+            <option value="Cup">Cup</option>
+          </select>
+
+          <label>Odds HDP Open (contoh decimal untuk Home)</label>
+          <input id="hdpOpenOdds" type="number" step="0.01" placeholder="(wajib)">
+          <label>Odds HDP Now (decimal untuk Home)</label>
+          <input id="hdpNowOdds" type="number" step="0.01" placeholder="(wajib)">
+        </div>
+
+        <div>
+          <label>O/U Open (total)</label>
+          <input id="ouOpen" type="number" step="0.25" placeholder="(wajib)">
+          <label>Odds O/U Open - Over (decimal)</label>
+          <input id="ouOpenOdds" type="number" step="0.01" placeholder="(wajib)">
+          <label>O/U Now (total)</label>
+          <input id="ouNow" type="number" step="0.25" placeholder="(wajib)">
+          <label>Odds O/U Now - Over (decimal)</label>
+          <input id="ouNowOdds" type="number" step="0.01" placeholder="(wajib)">
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="row">
+        <button class="btn btn-primary" id="calcStats">🧠 Hitung Statistik</button>
+        <button class="btn btn-primary" id="process">⚙️ Proses Prediksi</button>
+        <button class="btn btn-ghost" id="reset">🔄 Reset Data</button>
+      </div>
+    </div>
+
+    <div id="output" class="card">Hasil akan muncul di sini setelah klik tombol.</div>
+  </div>
+
+<script>
+// Utility
+function toNum(v){const n=parseFloat(v);return Number.isFinite(n)?n:null}
+function parseFormRecord(str){ if(!str) return {wins:0,draws:0,losses:0}; const s = str.trim().toUpperCase(); const wins = (s.match(/W/g)||[]).length; const draws = (s.match(/D/g)||[]).length; const losses = (s.match(/L/g)||[]).length; return {wins,draws,losses}; }
+function parseH2H(str){ if(!str) return {wins:0,draws:0,losses:0}; const p = str.split('-').map(x=>parseInt(x)); if(p.length>=3 && p.every(n=>!isNaN(n))) return {wins:p[0],draws:p[1],losses:p[2]}; return {wins:0,draws:0,losses:0}; }
+
+// Scoring helpers
+function h2hScore(h2h){ // convert wins-draws-losses into 0-100
+  const total = h2h.wins + h2h.draws + h2h.losses; if(total===0) return 50; const pts = (h2h.wins*3 + h2h.draws*1); const maxPts = total*3; return (pts / maxPts) * 100; }
+
+function formScore(formStr){ const f = parseFormRecord(formStr); const total = f.wins+f.draws+f.losses; if(total===0) return 50; const pts = f.wins*3 + f.draws*1; const max = total*3; return (pts/max)*100 }
+
+function goalRatioScore(gf,ga){ // (gf / (ga+1)) scaled to 0-100 with reasonable caps
+  if(gf==null || ga==null) return 50; const r = gf / (ga + 1); // typical values 0-3
+  const scaled = (Math.atan(r)/Math.PI) * 2 * 100; // map to 0-100 smoothly
+  return Math.max(10, Math.min(95, scaled)); }
+
+function marketEfficiency(open, now){ // open/now numeric (for HDP we use decimal odds; for OU we use totals difference)
+  if(open==null || now==null) return 50; const diff = Math.abs(open - now); const eff = Math.max(5, 100 - diff * 100); return Math.min(100, eff); }
+
+function trapIndex(hdpOpen, hdpNow, ouOpen, ouNow){ const a = Math.abs(hdpNow - hdpOpen); const b = Math.abs(ouNow - ouOpen); return +(a*3 + b*2).toFixed(3); }
+
+// Main calculations
+function calcStats(){ const get=id=>document.getElementById(id).value.trim();
+  const home = get('teamHome'), away = get('teamAway');
+  const homeGF = toNum(get('homeGF')), homeGA = toNum(get('homeGA'));
+  const awayGF = toNum(get('awayGF')), awayGA = toNum(get('awayGA'));
+  const homeForm = get('homeForm'), awayForm = get('awayForm');
+  const h2hHome = parseH2H(get('h2hHome')), h2hAway = parseH2H(get('h2hAway'));
+  // compute components
+  const h2hHomeScore = h2hScore(h2hHome), h2hAwayScore = h2hScore(h2hAway);
+  const formHomeScore = formScore(homeForm), formAwayScore = formScore(awayForm);
+  const goalHomeScore = goalRatioScore(homeGF, awayGA), goalAwayScore = goalRatioScore(awayGF, homeGA);
+
+  // Stat component weights (within stats 65%) -> H2H 20, Form 25, GoalRatio 20 (percent of 65)
+  const statHome = (h2hHomeScore*0.20 + formHomeScore*0.25 + goalHomeScore*0.20) / (0.20+0.25+0.20); // normalized
+  const statAway = (h2hAwayScore*0.20 + formAwayScore*0.25 + goalAwayScore*0.20) / (0.20+0.25+0.20);
+
+  // convert to 0-100 stat index
+  const statIndexHome = +(statHome).toFixed(2);
+  const statIndexAway = +(statAway).toFixed(2);
+
+  // display baseline
+  const out = [];
+  out.push('<div class="small"><strong>Baseline Statistik</strong></div>');
+  out.push('<table>');
+  out.push('<tr><th>Komponen</th><th>Home</th><th>Away</th></tr>');
+  out.push(`<tr><td>H2H Score</td><td>${h2hHomeScore.toFixed(1)}</td><td>${h2hAwayScore.toFixed(1)}</td></tr>`);
+  out.push(`<tr><td>Form Score</td><td>${formHomeScore.toFixed(1)}</td><td>${formAwayScore.toFixed(1)}</td></tr>`);
+  out.push(`<tr><td>Goal/Defense Score</td><td>${goalHomeScore.toFixed(1)}</td><td>${goalAwayScore.toFixed(1)}</td></tr>`);
+  out.push(`<tr><td><strong>Stat Index</strong></td><td><strong>${statIndexHome.toFixed(2)}</strong></td><td><strong>${statIndexAway.toFixed(2)}</strong></td></tr>`);
+  out.push('</table>');
+
+  document.getElementById('output').innerHTML = out.join('\n');
+  // store for process
+  window._v23_stats = {home,away,homeGF,homeGA,awayGF,awayGA,statIndexHome,statIndexAway};
+}
+
+function processPrediction(){ const s = window._v23_stats; if(!s){ alert('Silakan klik "Hitung Statistik" terlebih dahulu dan pastikan semua field terisi.'); return }
+  const hdpOpen = toNum(document.getElementById('hdpOpenOdds').value); const hdpNow = toNum(document.getElementById('hdpNowOdds').value);
+  const ouOpen = toNum(document.getElementById('ouOpen').value); const ouOpenOdds = toNum(document.getElementById('ouOpenOdds').value);
+  const ouNow = toNum(document.getElementById('ouNow').value); const ouNowOdds = toNum(document.getElementById('ouNowOdds').value);
+  const mode = document.getElementById('mode').value;
+  if([hdpOpen,hdpNow,ouOpen,ouNow].some(x=>x===null)){ alert('Isi semua field odds/O/U terlebih dahulu.'); return }
+
+  // statIndex combined: use average of home and away as baseline influence
+  const statIndexHome = s.statIndexHome; const statIndexAway = s.statIndexAway;
+  const statDiff = statIndexHome - statIndexAway; // positive -> home stronger
+  const statIndex = (statIndexHome + (100 - statIndexAway))/2; // mapping to combined metric (0-100). Simpler: use average
+  const statCombined = (statIndexHome + statIndexAway)/2;
+
+  // Market efficiency
+  const hdpMarketEff = marketEfficiency(hdpOpen, hdpNow); // 0-100
+  const ouMarketEff = marketEfficiency(ouOpen, ouNow);
+
+  // Trap index
+  const trap = trapIndex(hdpOpen, hdpNow, ouOpen, ouNow);
+
+  // Adaptive weights by mode
+  let wStat = 0.65, wMarket = 0.35; if(mode==='Liga'){ wStat += 0.05; wMarket -= 0.05 } else { wStat -=0.05; wMarket +=0.05 }
+  // adjust by volatility: if trap high, give market slight more weight
+  if(trap>2.0){ wMarket = Math.min(0.5, wMarket + 0.05); wStat = 1 - wMarket }
+
+  // Confidence calculation
+  const confidenceRaw = ( ( ( (statIndexHome + statIndexAway)/2 ) * wStat ) + ( ((hdpMarketEff + ouMarketEff)/2) * wMarket ) ) - (trap * 2);
+  const confidence = Math.max(5, Math.min(99, confidenceRaw));
+
+  // Determine HDP symbol
+  let homeSym=false, drawSym=false, awaySym=false;
+  const diff = Math.abs(statDiff);
+  if(diff < 2 && trap < 1.5) drawSym = true;
+  else if(statDiff >= 2 && trap < 1.8) homeSym = true;
+  else if(statDiff <= -2 && trap < 1.8) awaySym = true;
+  // tie-breaker if none: choose draw if marketEff low
+  if(!homeSym && !drawSym && !awaySym){ if(((hdpMarketEff+ouMarketEff)/2) < 58) drawSym=true }
+
+  // Determine O/U symbol
+  // compute simple expected total from stats
+  const expHome = (s.homeGF + s.awayGA) / 2; const expAway = (s.awayGF + s.homeGA)/2; const expTotal = expHome + expAway;
+  let overSym=false, underSym=false;
+  if( (ouMarketEff > 60 && expTotal > ouNow) && trap < 2 ) overSym = true;
+  else if( (ouMarketEff < 55 && expTotal < ouNow) && trap > 1.2 ) underSym = true;
+  else if(!overSym && !underSym){ // lean by expTotal diff
+    if(expTotal > ouNow + 0.25) overSym = true; else if(expTotal < ouNow - 0.25) underSym = true;
+  }
+
+  // Build output
+  const out=[];
+  out.push('<div class="small"><strong>Hasil Analisis (Netral)</strong></div>');
+  out.push('<table>');
+  out.push('<tr><th>Metric</th><th>Value</th></tr>');
+  out.push(`<tr><td>Stat Index Home</td><td>${statIndexHome.toFixed(2)}</td></tr>`);
+  out.push(`<tr><td>Stat Index Away</td><td>${statIndexAway.toFixed(2)}</td></tr>`);
+  out.push(`<tr><td>HDP Market Eff (avg)</td><td>${hdpMarketEff.toFixed(1)}</td></tr>`);
+  out.push(`<tr><td>O/U Market Eff (avg)</td><td>${ouMarketEff.toFixed(1)}</td></tr>`);
+  out.push(`<tr><td>Trap Index</td><td>${trap.toFixed(3)}</td></tr>`);
+  out.push(`<tr><td>Confidence</td><td>${confidence.toFixed(1)}</td></tr>`);
+  out.push(`<tr><td>Expected Total (stat)</td><td>${expTotal.toFixed(2)}</td></tr>`);
+  out.push('</table>');
+
+  out.push('<hr>');
+  out.push('<div class="note"><strong>Rekomendasi Visual (simbol menunjukkan sisi efisiensi relatif)</strong></div>');
+  out.push('<div class="symbols">');
+  // HDP symbols
+  const homeHtml = `<div class="sym ${homeSym? 'best':''}">Home 🔴 ${homeSym? ' (terbaik)':''}</div>`;
+  const drawHtml = `<div class="sym ${drawSym? 'best':''}">Draw ⚪ ${drawSym? ' (terbaik)':''}</div>`;
+  const awayHtml = `<div class="sym ${awaySym? 'best':''}">Away 🔵 ${awaySym? ' (terbaik)':''}</div>`;
+  out.push(`<div style=\"min-width:220px\"><div class=\"small\"><strong>HDP:</strong></div>${homeHtml}${drawHtml}${awayHtml}</div>`);
+
+  // O/U symbols
+  const overHtml = `<div class="sym ${overSym? 'best':''}">Over 👍 ${overSym? ' (terbaik)':''}</div>`;
+  const underHtml = `<div class="sym ${underSym? 'best':''}">Under 👎 ${underSym? ' (terbaik)':''}</div>`;
+  out.push(`<div style=\"min-width:220px\"><div class=\"small\"><strong>O/U:</strong></div>${overHtml}${underHtml}</div>`);
+  out.push('</div>');
+
+  out.push('<hr>');
+  out.push('<div class="note">Catatan: Simbol menandakan sisi efisiensi relatif berdasarkan Stat + Market. Ini bukan perintah taruhan — gunakan sebagai alat bantu.</div>');
+
+  document.getElementById('output').innerHTML = out.join('\n');
+}
+
+// events
+document.getElementById('calcStats').addEventListener('click', calcStats);
+document.getElementById('process').addEventListener('click', processPrediction);
+document.getElementById('reset').addEventListener('click', ()=>{document.querySelectorAll('input').forEach(i=>i.value=''); document.getElementById('output').textContent='Hasil akan muncul di sini setelah klik tombol.'; window._v23_stats = null});
+
+</script>
+</body>
+</html>
