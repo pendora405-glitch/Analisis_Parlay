@@ -158,17 +158,20 @@ canvas{background:transparent;border-radius:8px}
       </div>
     </div>
 
-    <div class="card">
-      <h3>Odds Input</h3>
-      <div class="row">
-        <label class="kv">Home Odds<input id="odds_home" type="number" step="0.01" placeholder="1.85"></label>
-        <label class="kv">Away Odds<input id="odds_away" type="number" step="0.01" placeholder="2.05"></label>
-      </div>
-      <div class="row">
-        <label class="kv">HDP Open<input id="odds_hdp_open" type="number" step="0.01" placeholder="-0.25"></label>
-        <label class="kv">HDP Now<input id="odds_hdp_now" type="number" step="0.01" placeholder="-0.5"></label>
-      </div>
-    </div>
+    <div class="row">
+  <label class="kv">Home Odds<input id="odds_home" type="number" step="0.01" placeholder="1.85"></label>
+  <label class="kv">Away Odds<input id="odds_away" type="number" step="0.01" placeholder="2.05"></label>
+</div>
+
+<div class="row">
+  <label class="kv">HDP Open<input id="odds_hdp_open" type="number" step="0.01" placeholder="-0.25"></label>
+  <label class="kv">HDP Now<input id="odds_hdp_now" type="number" step="0.01" placeholder="-0.5"></label>
+</div>
+
+<div class="row">
+  <label class="kv">Over Odds<input id="odds_over" type="number" step="0.01" placeholder="1.90"></label>
+  <label class="kv">Under Odds<input id="odds_under" type="number" step="0.01" placeholder="1.95"></label>
+                                     </div>
 
     <div class="card row">
       <button id="autoCalcStats">Auto Hitung Statistik</button>
@@ -647,21 +650,40 @@ function drawTrend(history){
 
 /* ---------------- Trap calculation (uses odds) ---------------- */
 
-function computeTrap(hOpen,hNow,oH,oA){
-
+function computeTrap(hOpen,hNow,oH,oA,ouLine,oddOver,oddUnder){
+  // Normalize inputs safely
   const shift = safeNum(hNow,0) - safeNum(hOpen,0);
+  const oddsHome = safeNum(oH, null);
+  const oddsAway = safeNum(oA, null);
+  const oddsOver = safeNum(oddOver, null);
+  const oddsUnder = safeNum(oddUnder, null);
+  const marketOU = safeNum(ouLine, 2.5);
 
-  const oddsDiff = Math.abs(safeNum(oH,2) - safeNum(oA,2));
+  // HDP directional + magnitude
+  const hdpShiftMag = Math.min(Math.abs(shift)/0.75, 1); // 0..1
+  const linePressure = 1 - hdpShiftMag * 0.35;
 
-  const linePressure = 1 - Math.min(Math.abs(shift)/0.75,1)*0.35;
+  // Moneyline symmetry (home vs away)
+  const oddsDiff = (oddsHome !== null && oddsAway !== null) ? Math.abs(oddsHome - oddsAway) : 0;
+  const symmetry = 1 - Math.min(oddsDiff / 0.6, 1) * 0.45;
 
-  const symmetry = 1 - Math.min(oddsDiff/0.6,1)*0.45;
+  // OU market bias (if over/under odds diverge strongly)
+  const ouDiff = (oddsOver !== null && oddsUnder !== null) ? Math.abs(oddsOver - oddsUnder) : 0;
+  // If OU odds show strong preference, reduce trap neutrality (ouBias closer to <1)
+  const ouBias = 1 - Math.min(ouDiff / 0.6, 1) * 0.28;
 
-  const directional = (shift<0 && oH < oA) || (shift>0 && oA < oH) ? 1.09 : 1.0;
+  // Directional factor: if handicap shift aligns with moneyline movement favoring that side -> slight increase
+  const directional = (shift < 0 && oddsHome !== null && oddsHome < oddsAway) ||
+                      (shift > 0 && oddsAway !== null && oddsAway < oddsHome) ? 1.09 : 1.0;
 
-  return clamp(symmetry * linePressure * directional, 0.6, 1.35);
+  // Combined trap index, keep in sensible bounds
+  const raw = symmetry * linePressure * directional * ouBias;
 
-}
+  // If OU line far from market average (e.g., very low/high), slightly penalize trust
+  const ouLinePenalty = (Math.abs(marketOU - 2.5) > 0.6) ? (1 - Math.min(Math.abs(marketOU - 2.5) * 0.05, 0.12)) : 1.0;
+
+  return clamp(raw * ouLinePenalty, 0.55, 1.40);
+  }
 
 
 
@@ -977,14 +999,14 @@ document.getElementById('analyzeBtn').addEventListener('click', async function()
     // trap index
 
     const oddsHome = safeNum(document.getElementById('odds_home')?.value, null);
+const oddsAway = safeNum(document.getElementById('odds_away')?.value, null);
+const hdpOpen = safeNum(document.getElementById('odds_hdp_open')?.value, 0);
+const hdpNow = safeNum(document.getElementById('odds_hdp_now')?.value, 0);
+const oddsOver = safeNum(document.getElementById('odds_over')?.value, null);
+const oddsUnder = safeNum(document.getElementById('odds_under')?.value, null);
+const marketOU = safeNum(document.getElementById('market_ou')?.value, 2.5);
 
-    const oddsAway = safeNum(document.getElementById('odds_away')?.value, null);
-
-    const hdpOpen = safeNum(document.getElementById('odds_hdp_open')?.value, 0);
-
-    const hdpNow = safeNum(document.getElementById('odds_hdp_now')?.value, 0);
-
-    const trapIndex = computeTrap(hdpOpen, hdpNow, oddsHome, oddsAway);
+const trapIndex = computeTrap(hdpOpen, hdpNow, oddsHome, oddsAway, marketOU, oddsOver, oddsUnder);
 
 
 
