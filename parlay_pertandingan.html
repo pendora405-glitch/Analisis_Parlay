@@ -1,0 +1,1343 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Prediksi Global v20.2.2 — Enhanced Stats Ready</title>
+<style>
+:root{
+  --bg:#060e20; --card:#0b162d; --muted:#9aa3b2; --accent:#06b6d4;
+  --attack:#f97316; --defense:#3b82f6; --strong:#10b981; --weak:#8b5cf6; --balanced:#93c5fd;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+body{font-family:Inter,system-ui,Arial,Segoe UI;background:var(--bg);color:#e6eef8;margin:10px}
+h1{font-size:19px;color:#7dd3fc;margin:8px 0}
+.card{background:var(--card);padding:12px;border-radius:10px;margin-bottom:10px;box-shadow:0 4px 18px rgba(0,0,0,0.45)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+label{font-size:13px;color:var(--muted)}
+input,select,button{font-size:13px}
+input,select{padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit}
+input[type=number]{width:110px}
+button{background:var(--accent);border:0;padding:8px 12px;border-radius:8px;color:#04201a;cursor:pointer}
+button:hover{opacity:.95}
+.small{font-size:12px;color:var(--muted)}
+pre{background:#001122;padding:10px;border-radius:8px;color:#d6f8ee;white-space:pre-wrap;max-height:420px;overflow:auto}
+canvas{background:transparent;border-radius:8px}
+.grid-2{display:grid;grid-template-columns:1fr 560px;gap:12px}
+@media(max-width:940px){.grid-2{grid-template-columns:1fr}}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.toast{position:fixed;bottom:14px;right:14px;background:#0c2438;color:#e8faff;padding:10px 16px;border-radius:6px;opacity:0;transition:opacity .25s;z-index:999;font-size:13px}
+.toast.show{opacity:1}
+.conf-meter{font-size:14px;text-align:center;margin-top:6px}
+.summary{background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;margin-top:6px}
+.kv{min-width:150px}
+.footer-small{font-size:12px;color:var(--muted);text-align:center;margin-top:8px}
+</style>
+</head>
+<body>
+<h1>⚽ Prediksi Global v20.2.2 — Enhanced Stats Ready</h1>
+
+<div class="card small">
+  Versi <b>v20.2.2</b> — Enhanced Stats Ready: semua fitur v20.2.1 + modul tambahan (BCCI, PRI, SPF, DI, FF), tombol "Enhanced Stats (Auto)" untuk hitung dari data SofaScore, serta output attack/defense eksplisit.
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<!-- Top Controls -->
+<div class="card row">
+  <label class="kv">League GPG<input id="league_gpg" type="number" step="0.01" value="2.6"></label>
+  <label class="kv">Market OU<input id="market_ou" type="number" step="0.1" value="2.5"></label>
+  <label class="kv">MC Iter<input id="mc_select" type="number" value="20000" step="1000"></label>
+  <label class="kv">Match Type<select id="match_type"><option>Regular</option><option>Derby</option><option>Final</option><option>Friendly</option><option>Relegation</option></select></label>
+  <label class="kv">Competition<select id="comp_mode"><option>Club</option><option>Cup</option><option>Playoff</option><option>Super Cup</option><option>International</option></select></label>
+  <label class="kv">Weather<select id="weather"><option>Normal</option><option>Rain</option><option>Snow</option><option>Hot</option></select></label>
+  <button id="analyzeBtn">Analisis</button>
+  <button id="toggleModeBtn">Analyst Mode</button>
+</div>
+
+<!-- MAIN GRID -->
+<div class="grid-2">
+  <div>
+    <div class="card">
+      <h3>Home — Input</h3>
+      <div class="row">
+        <label class="kv">Team<input id="h_name" type="text" placeholder="Home team"></label>
+        <label class="kv">GPG<input id="h_gpg" type="number" step="0.01"></label>
+        <label class="kv">GC<input id="h_gc" type="number" step="0.01"></label>
+      </div>
+      <div class="row">
+        <label class="kv">Shots<input id="h_shots" type="number" step="0.1"></label>
+        <label class="kv">SOT<input id="h_sot" type="number" step="0.1"></label>
+        <label class="kv">Conv%<input id="h_conv" type="number" step="0.1" placeholder="auto"></label>
+        <button onclick="autoConv('h')">Auto Conv</button>
+      </div>
+      <div class="row">
+        <label class="kv">Poss%<input id="h_poss" type="number" step="0.1"></label>
+        <label class="kv">ShotsC<input id="h_shotsC" type="number" step="0.1" placeholder="auto"></label>
+        <button onclick="autoShotsC('h')">Auto ShotsC</button>
+        <label class="kv">Cross%<input id="h_cr" type="number" step="0.1" placeholder="auto"></label>
+        <button onclick="autoCross('h')">Auto Cross</button>
+      </div>
+      <div class="row">
+        <label class="kv">Profile<select id="h_profile"><option value="auto">Auto</option><option value="attack">Attack-heavy</option><option value="defense">Defense-heavy</option><option value="strong">Strong Both</option><option value="weak">Weak Both</option><option value="balanced">Balanced</option></select></label>
+        <label class="kv">ELO<input id="h_elo" type="number"></label>
+      </div>
+      <div style="margin-top:8px"><strong>Absensi</strong></div>
+      <div class="row small">
+        <label class="kv">GK abs<input id="h_gk_abs" type="number" min="0" max="1" value="0"></label>
+        <label class="kv">DF abs<input id="h_df_abs" type="number" min="0" max="4" value="0"></label>
+        <label class="kv">MD abs<input id="h_md_abs" type="number" min="0" max="5" value="0"></label>
+        <label class="kv">FW abs<input id="h_fw_abs" type="number" min="0" max="3" value="0"></label>
+        <label class="kv">PAF%<input id="h_paf" type="number" step="0.1" placeholder="auto"></label>
+        <button onclick="autoPAF('h')">Auto PAF</button>
+      </div>
+      <div style="margin-top:8px"><strong>Enhanced Stats (opsional, isi dari SofaScore)</strong></div>
+      <div class="row small">
+        <label class="kv">Big chance scored<input id="h_big_sc" type="number" step="0.1"></label>
+        <label class="kv">Big chance missed<input id="h_big_mis" type="number" step="0.1"></label>
+        <label class="kv">Duels won<input id="h_duels" type="number" step="0.1"></label>
+        <label class="kv">Interceptions<input id="h_inter" type="number" step="0.1"></label>
+        <label class="kv">Poss lost<input id="h_poss_lost" type="number" step="0.1"></label>
+        <label class="kv">Errors->shot<input id="h_err_shot" type="number" step="0.1"></label>
+        <label class="kv">Pen goals<input id="h_pen_goals" type="number" step="0.1"></label>
+        <label class="kv">FK goals<input id="h_fk_goals" type="number" step="0.1"></label>
+        <label class="kv">Matches played<input id="h_matches" type="number" step="1"></label>
+        <label class="kv">Yellow cards<input id="h_yellow" type="number" step="1"></label>
+        <label class="kv">Red cards<input id="h_red" type="number" step="1"></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Away — Input</h3>
+      <div class="row">
+        <label class="kv">Team<input id="a_name" type="text" placeholder="Away team"></label>
+        <label class="kv">GPG<input id="a_gpg" type="number" step="0.01"></label>
+        <label class="kv">GC<input id="a_gc" type="number" step="0.01"></label>
+      </div>
+      <div class="row">
+        <label class="kv">Shots<input id="a_shots" type="number" step="0.1"></label>
+        <label class="kv">SOT<input id="a_sot" type="number" step="0.1"></label>
+        <label class="kv">Conv%<input id="a_conv" type="number" step="0.1" placeholder="auto"></label>
+        <button onclick="autoConv('a')">Auto Conv</button>
+      </div>
+      <div class="row">
+        <label class="kv">Poss%<input id="a_poss" type="number" step="0.1"></label>
+        <label class="kv">ShotsC<input id="a_shotsC" type="number" step="0.1" placeholder="auto"></label>
+        <button onclick="autoShotsC('a')">Auto ShotsC</button>
+        <label class="kv">Cross%<input id="a_cr" type="number" step="0.1" placeholder="auto"></label>
+        <button onclick="autoCross('a')">Auto Cross</button>
+      </div>
+      <div class="row">
+        <label class="kv">Profile<select id="a_profile"><option value="auto">Auto</option><option value="attack">Attack-heavy</option><option value="defense">Defense-heavy</option><option value="strong">Strong Both</option><option value="weak">Weak Both</option><option value="balanced">Balanced</option></select></label>
+        <label class="kv">ELO<input id="a_elo" type="number"></label>
+      </div>
+      <div class="row small">
+        <label class="kv">GK abs<input id="a_gk_abs" type="number" min="0" max="1" value="0"></label>
+        <label class="kv">DF abs<input id="a_df_abs" type="number" min="0" max="4" value="0"></label>
+        <label class="kv">MD abs<input id="a_md_abs" type="number" min="0" max="5" value="0"></label>
+        <label class="kv">FW abs<input id="a_fw_abs" type="number" min="0" max="3" value="0"></label>
+        <label class="kv">PAF%<input id="a_paf" type="number" step="0.1" placeholder="auto"></label>
+        <button onclick="autoPAF('a')">Auto PAF</button>
+      </div>
+
+      <div style="margin-top:8px"><strong>Enhanced Stats (opsional)</strong></div>
+      <div class="row small">
+        <label class="kv">Big chance scored<input id="a_big_sc" type="number" step="0.1"></label>
+        <label class="kv">Big chance missed<input id="a_big_mis" type="number" step="0.1"></label>
+        <label class="kv">Duels won<input id="a_duels" type="number" step="0.1"></label>
+        <label class="kv">Interceptions<input id="a_inter" type="number" step="0.1"></label>
+        <label class="kv">Poss lost<input id="a_poss_lost" type="number" step="0.1"></label>
+        <label class="kv">Errors->shot<input id="a_err_shot" type="number" step="0.1"></label>
+        <label class="kv">Pen goals<input id="a_pen_goals" type="number" step="0.1"></label>
+        <label class="kv">FK goals<input id="a_fk_goals" type="number" step="0.1"></label>
+        <label class="kv">Matches played<input id="a_matches" type="number" step="1"></label>
+        <label class="kv">Yellow cards<input id="a_yellow" type="number" step="1"></label>
+        <label class="kv">Red cards<input id="a_red" type="number" step="1"></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Odds Input</h3>
+      <div class="row">
+        <label class="kv">Home Odds<input id="odds_home" type="number" step="0.01" placeholder="1.85"></label>
+        <label class="kv">Away Odds<input id="odds_away" type="number" step="0.01" placeholder="2.05"></label>
+      </div>
+      <div class="row">
+        <label class="kv">HDP Open<input id="odds_hdp_open" type="number" step="0.01" placeholder="-0.25"></label>
+        <label class="kv">HDP Now<input id="odds_hdp_now" type="number" step="0.01" placeholder="-0.5"></label>
+      </div>
+    </div>
+
+    <div class="card row">
+      <button id="autoCalcStats">Auto Hitung Statistik</button>
+      <button id="autoEnhancedBtn">Enhanced Stats (Auto)</button>
+      <button id="autoOddsBtn">Auto Isi Odds</button>
+      <button id="manualCalcBtn">Hitung Manual</button>
+      <button id="exportBtn">Export CSV</button>
+      <button id="viewHistory">Lihat History</button>
+      <button id="resetBtn">Reset Input</button>
+      <button id="inputRealBtn">Input Skor Nyata</button>
+    </div>
+  </div>
+
+  <!-- OUTPUT PANEL -->
+  <div>
+    <div class="card">
+      <strong>HASIL PREDIKSI</strong>
+      <div id="summary" class="summary">Klik “Analisis” untuk melihat hasil.</div>
+      <pre id="resultText">(hasil JSON akan tampil di sini)</pre>
+      <div id="confMeter" class="conf-meter"></div>
+    </div>
+
+    <div class="card">
+      <strong>Radar Profil</strong>
+      <div style="width:320px;margin:auto"><canvas id="radarCanvas" width="320" height="320"></canvas></div>
+      <div class="legend small">Radar: Attack / Defense / Form / PAF / Conv%</div>
+    </div>
+
+    <div class="card">
+      <strong>Trend Hasil Sebelumnya</strong>
+      <div style="width:480px;margin:auto"><canvas id="trendCanvas" width="480" height="200"></canvas></div>
+      <div class="legend small">Trend 30 prediksi terakhir (H/D/A)</div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT + FOOTER -->
+<div class="footer-small">Built: v20.2.2 Enhanced — QPE Global Analytics</div>
+
+<!-- ========================= SCRIPT: Engine + Enhanced Stats ========================= -->
+<script>
+/* ---------------- Utilities ---------------- */
+const safeNum=(v,d=0)=>{const n=Number(v);return Number.isFinite(n)?n:d;};
+const clamp=(v,a,b)=> isFinite(v)?(v<a?a:v>b?b:v):a;
+const rnd=(v,d=3)=> Math.round((v||0)*10**d)/10**d;
+const toastEl=document.getElementById('toast');
+function showToast(msg,ms=1600){ if(!toastEl){ console.log(msg); return; } toastEl.textContent=msg; toastEl.classList.add('show'); clearTimeout(window._qpe_toast_timeout); window._qpe_toast_timeout=setTimeout(()=> toastEl.classList.remove('show'), ms); }
+
+/* ---------------- Math core ---------------- */
+function factorial(n){ if(n<0) return 1; let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+function poissonPMF(k,λ){ if(k<0) return 0; return Math.exp(-λ)*Math.pow(λ,k)/factorial(k); }
+function samplePoisson(λ){ λ = safeNum(λ,0); if(λ<=0) return 0; if(λ>80){ const v=Math.round(λ + Math.sqrt(λ)*(Math.random()*2-1)); return Math.max(0,v); } const L=Math.exp(-λ); let k=0,p=1; do{ k++; p*=Math.random(); } while(p > L); return k-1; }
+function entropy(arr){ return -arr.reduce((s,x)=> s + (x>0? x*Math.log(x) : 0), 0); }
+
+/* ---------------- Profile helpers ---------------- */
+function profileMultiplier(code){
+  switch(code){
+    case 'attack': return {atk:1.12, def:0.88, color:'#f97316'};
+    case 'defense': return {atk:0.90, def:1.10, color:'#3b82f6'};
+    case 'strong': return {atk:1.10, def:1.10, color:'#10b981'};
+    case 'weak': return {atk:0.90, def:0.90, color:'#8b5cf6'};
+    default: return {atk:1.00, def:1.00, color:'#93c5fd'};
+  }
+}
+function classifyTeam(xG,xGA){
+  if(xG > 1.6 && xGA < 1.0) return 'strong';
+  if(xG > 1.6 && xGA > 1.3) return 'attack';
+  if(xG < 1.1 && xGA < 1.0) return 'defense';
+  if(xG < 1.1 && xGA > 1.3) return 'weak';
+  return 'balanced';
+}
+
+/* ---------------- Derived indices ---------------- */
+function computeXGplus(shots, sot, conv, poss, cr, leagueAvg, weights){
+  shots = safeNum(shots,10); sot = safeNum(sot,4); conv = safeNum(conv,10); poss = safeNum(poss,50); cr = safeNum(cr,20);
+  weights = weights || {shots:0.065,sot:0.045,conv:0.035,poss:0.02,cr:0.025};
+  const base = shots*weights.shots + sot*weights.sot + (conv/100)*shots*weights.conv + (poss/100)*weights.poss*10 + cr*weights.cr;
+  const blended = 0.65*base + 0.35*(leagueAvg||1.15);
+  return clamp(blended, 0.01, 12);
+}
+function computeDSI(gc, shotsC, oppElo, leagueAvgElo=1500){
+  gc = safeNum(gc,1); shotsC = safeNum(shotsC,10); oppElo = safeNum(oppElo, leagueAvgElo);
+  const defensePressure = Math.log1p(shotsC) * 0.25;
+  const base = gc*0.45 + defensePressure*0.55;
+  const eloAdj = Math.pow((oppElo/leagueAvgElo), 0.8);
+  return clamp(base * eloAdj, 0.12, 6);
+}
+function calcFEI(gpg, estXG, formDelta=0, paf=1){
+  gpg = safeNum(gpg,0); estXG = safeNum(estXG,0.8);
+  if(estXG <= 1e-6) return 1;
+  const raw = gpg/estXG;
+  const base = clamp(0.6*raw + 0.4, 0.45, 1.8);
+  const formFactor = 1 + clamp(formDelta, -0.5, 0.5) * 0.02;
+  return clamp(base * formFactor * paf, 0.4, 2.2);
+}
+function eloSigmoidFactor(e1,e2,isIntl){
+  const diff = (safeNum(e1,1500)-safeNum(e2,1500))/400;
+  const s = 1/(1+Math.exp(-diff*1.8));
+  const bias = 1 + (s - 0.5) * 0.8;
+  return isIntl ? (0.7*bias + 0.3) : bias;
+}
+
+/* ---------------- Skellam & logistic proxies ---------------- */
+function skellamOutcome(lambdaH, lambdaA, maxr=10){
+  const probs = {home:0,draw:0,away:0};
+  for(let gh=0; gh<=maxr; gh++){
+    for(let ga=0; ga<=maxr; ga++){
+      const p = poissonPMF(gh,lambdaH)*poissonPMF(ga,lambdaA);
+      if(gh>ga) probs.home += p; else if(gh===ga) probs.draw += p; else probs.away += p;
+    }
+  }
+  const s = probs.home + probs.draw + probs.away;
+  if(s>0){ probs.home/=s; probs.draw/=s; probs.away/=s; }
+  return probs;
+}
+function logisticEloProb(hE,aE){
+  const diff = (safeNum(hE,1500)-safeNum(aE,1500))/400;
+  const ph = 1/(1+Math.pow(10,-diff));
+  const draw = 0.20;
+  const home = clamp(ph*(1-draw), 0.05, 0.9);
+  const away = clamp((1-ph)*(1-draw), 0.05, 0.9);
+  return {home, draw:draw, away};
+}
+
+/* ---------------- Confidence ---------------- */
+function computeConfidence(probs, lambdaH, lambdaA, trapIndex, pastErr=0){
+  const maxP = Math.max(probs.home, probs.draw, probs.away);
+  const ent = entropy([probs.home,probs.draw,probs.away]) / Math.log(3);
+  let conf = clamp((maxP - 1/3)*(1 - ent)*2, 0, 1);
+  const lambdaDiff = Math.abs(lambdaH - lambdaA);
+  conf *= clamp(1 + (lambdaDiff/3)*0.2, 0.85, 1.25);
+  conf *= clamp(1 - Math.abs(trapIndex-1)*0.28, 0.7, 1.1);
+  conf *= clamp(1 - pastErr*0.5, 0.7, 1.05);
+  return clamp(conf, 0, 1);
+}
+
+/* ---------------- Web Worker (Monte Carlo) ---------------- */
+let workerUrl = null, workerInstance = null;
+const workerCode = `
+self.onmessage = function(e){
+  const D = e.data;
+  function safeNum(v,d=0){ const n=Number(v); return Number.isFinite(n)? n: d; }
+  function factorial(n){ if(n<0) return 1; let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+  function poissonPMF(k,λ){ if(k<0) return 0; return Math.exp(-λ)*Math.pow(λ,k)/factorial(k); }
+  function samplePoisson(lambda){ lambda = safeNum(lambda,0); if(lambda<=0) return 0; if(lambda>80){ const v=Math.round(lambda + Math.sqrt(lambda)*(Math.random()*2-1)); return Math.max(0,v);} const L=Math.exp(-lambda); let k=0,p=1; do{ k++; p*=Math.random(); } while(p > L); return k-1; }
+  const counts={home:0,draw:0,away:0,over:0,under:0,scores:{}};
+  for(let i=0;i<D.iters;i++){
+    const gh = samplePoisson(D.lambdaH);
+    const ga = samplePoisson(D.lambdaA);
+    if(gh>ga) counts.home++; else if(gh==ga) counts.draw++; else counts.away++;
+    if(gh+ga > D.ou) counts.over++; else counts.under++;
+    const k = gh + '-' + ga; counts.scores[k] = (counts.scores[k]||0) + 1;
+  }
+  ['home','draw','away','over','under'].forEach(k=>counts[k] = counts[k]/D.iters);
+  for(const k in counts.scores) counts.scores[k] = counts.scores[k]/D.iters;
+  postMessage(counts);
+};`;
+try{
+  const b = new Blob([workerCode], {type:'application/javascript'});
+  workerUrl = URL.createObjectURL(b);
+  workerInstance = new Worker(workerUrl);
+} catch(e){
+  workerInstance = null;
+  console.warn('Worker not available, fallback to main-thread MC.');
+}
+
+/* ---------------- Auto-Assist (Conv, ShotsC, Cross, PAF) ---------------- */
+function autoConv(side){
+  try{
+    const gpg = safeNum(document.getElementById(side + '_gpg').value, null);
+    const shots = safeNum(document.getElementById(side + '_shots').value, null);
+    if(gpg && shots){
+      const conv = (gpg / Math.max(shots,1)) * 100;
+      document.getElementById(side + '_conv').value = conv.toFixed(1);
+      showToast(side.toUpperCase() + ' Conv% otomatis: ' + conv.toFixed(1) + '%');
+      return;
+    }
+    showToast('Auto Conv: data kurang (gunakan Auto Enhanced bila tersedia)');
+  }catch(e){ console.error(e); showToast('Gagal hitung Conv%'); }
+}
+function autoShotsC(side){
+  try{
+    const shots = safeNum(document.getElementById(side + '_shots').value, 10);
+    const poss = safeNum(document.getElementById(side + '_poss').value, 50);
+    let est = 18 - (shots * (poss/55));
+    est = Math.max(5, Math.min(est,20));
+    const comp = document.getElementById('comp_mode').value;
+    if(comp === 'International') est *= 0.92;
+    document.getElementById(side + '_shotsC').value = est.toFixed(1);
+    showToast(side.toUpperCase() + ' ShotsC terestimasi: ' + est.toFixed(1));
+  }catch(e){ console.error(e); showToast('Gagal hitung ShotsC'); }
+}
+function autoCross(side){
+
+  try{
+
+    const poss = safeNum(document.getElementById(side + '_poss').value,50);
+
+    let val = 18 + (poss-50)*0.1;
+
+    val = clamp(val, 10, 35);
+
+    document.getElementById(side + '_cr').value = val.toFixed(1);
+
+    showToast(side.toUpperCase() + ' Cross% terisi: ' + val.toFixed(1) + '%');
+
+  }catch(e){ console.error(e); showToast('Gagal hitung Cross%'); }
+
+}
+
+function autoPAF(side){
+
+  try{
+
+    const gk = safeNum(document.getElementById(side + '_gk_abs').value, 0);
+
+    const df = safeNum(document.getElementById(side + '_df_abs').value, 0);
+
+    const md = safeNum(document.getElementById(side + '_md_abs').value, 0);
+
+    const fw = safeNum(document.getElementById(side + '_fw_abs').value, 0);
+
+    let raw = 100 - (gk*6 + df*2 + md*1.5 + fw*4);
+
+    raw = Math.max(65, Math.min(raw,100));
+
+    const comp = document.getElementById('comp_mode').value;
+
+    if(comp === 'International') raw = 100 - ((100 - raw) * 0.5);
+
+    document.getElementById(side + '_paf').value = raw.toFixed(1);
+
+    showToast(side.toUpperCase() + ' PAF terisi: ' + raw.toFixed(1) + '%');
+
+  }catch(e){ console.error(e); showToast('Gagal hitung PAF'); }
+
+}
+
+
+
+/* ---------------- Enhanced Stats auto-calc ---------------- */
+
+function computeEnhancedFor(side){
+
+  // read enhanced fields (opt)
+
+  const big_sc = safeNum(document.getElementById(side + '_big_sc')?.value, 0);
+
+  const big_mis = safeNum(document.getElementById(side + '_big_mis')?.value, 0);
+
+  const duels = safeNum(document.getElementById(side + '_duels')?.value, 0);
+
+  const inter = safeNum(document.getElementById(side + '_inter')?.value, 0);
+
+  const poss_lost = safeNum(document.getElementById(side + '_poss_lost')?.value, 0);
+
+  const err_shot = safeNum(document.getElementById(side + '_err_shot')?.value, 0);
+
+  const pen_goals = safeNum(document.getElementById(side + '_pen_goals')?.value, 0);
+
+  const fk_goals = safeNum(document.getElementById(side + '_fk_goals')?.value, 0);
+
+  const matches = Math.max(1, safeNum(document.getElementById(side + '_matches')?.value, 1));
+
+  const yellow = safeNum(document.getElementById(side + '_yellow')?.value, 0);
+
+  const red = safeNum(document.getElementById(side + '_red')?.value, 0);
+
+
+
+  // BCCI (big chances conversion index)
+
+  const bcci = (big_sc + 1) / (big_sc + big_mis + 2); // smoothed
+
+  // PRI (pressure resistance index)
+
+  const pri = (duels + inter + 1) / (poss_lost + err_shot + 2);
+
+  // SPF (set piece factor)
+
+  const spf = (pen_goals + fk_goals + 0.1) / ( (safeNum(document.getElementById(side + '_gpg')?.value,0) ) + 1 );
+
+  // DI (discipline index)
+
+  const di = clamp(1 - (yellow*0.02 + red*0.05), 0.6, 1.0);
+
+  // FF (fatigue)
+
+  const ff = clamp(1 - (matches*0.0025), 0.96, 1.02);
+
+  return { bcci: rnd(bcci,3), pri: rnd(pri,3), spf: rnd(spf,3), di: rnd(di,3), ff: rnd(ff,3) };
+
+}
+
+
+
+/* ---------------- Auto Enhanced button handler ---------------- */
+
+document.getElementById('autoEnhancedBtn').addEventListener('click', ()=>{
+
+  const hE = computeEnhancedFor('h');
+
+  const aE = computeEnhancedFor('a');
+
+  // briefly show summary
+
+  showToast('Enhanced computed — BCCI/PRI/SPF (home/away): ' + hE.bcci + '/' + aE.bcci + ' • ' + hE.pri + '/' + aE.pri, 2800);
+
+  // store to data attributes for analysis usage
+
+  window._qpe_enh = {home: hE, away: aE};
+
+  // also display in resultText preview
+
+  const prev = {home: hE, away: aE};
+
+  document.getElementById('resultText').textContent = 'Enhanced factors (auto):\\n' + JSON.stringify(prev,null,2);
+
+});
+
+
+
+/* ---------------- Auto Save / Restore Inputs ---------------- */
+
+const INPUT_SAVE_KEY = 'qpe_v20_2_2_inputs';
+
+function saveInputsAuto(){
+
+  const keys = [
+
+    'h_name','h_gpg','h_gc','h_shots','h_sot','h_conv','h_poss','h_shotsC','h_cr','h_profile','h_elo','h_gk_abs','h_df_abs','h_md_abs','h_fw_abs','h_paf',
+
+    'a_name','a_gpg','a_gc','a_shots','a_sot','a_conv','a_poss','a_shotsC','a_cr','a_profile','a_elo','a_gk_abs','a_df_abs','a_md_abs','a_fw_abs','a_paf',
+
+    'league_gpg','market_ou','mc_select','match_type','comp_mode','weather','odds_home','odds_away','odds_hdp_open','odds_hdp_now'
+
+  ];
+
+  const out = {};
+
+  keys.forEach(k=>{ const el=document.getElementById(k); if(el) out[k]=el.value; });
+
+  try{ localStorage.setItem(INPUT_SAVE_KEY, JSON.stringify(out)); }catch(e){ console.warn('save failed', e); }
+
+}
+
+function restoreInputsAuto(){
+
+  try{
+
+    const s = localStorage.getItem(INPUT_SAVE_KEY);
+
+    if(!s) return;
+
+    const obj = JSON.parse(s);
+
+    Object.keys(obj).forEach(k=>{ const el=document.getElementById(k); if(el) el.value = obj[k]; });
+
+    showToast('Input restored', 900);
+
+  }catch(e){ console.warn('restore failed', e); }
+
+}
+
+restoreInputsAuto();
+
+setInterval(saveInputsAuto, 2000);
+
+
+
+/* ---------------- History Save & Export ---------------- */
+
+const HIST_KEY = 'qpe_v20_2_2_history';
+
+function saveHistory(entry){
+
+  try{
+
+    const arr = JSON.parse(localStorage.getItem(HIST_KEY) || "[]");
+
+    arr.push(Object.assign({time:(new Date()).toISOString()}, entry));
+
+    if(arr.length>2000) arr.splice(0, arr.length-2000);
+
+    localStorage.setItem(HIST_KEY, JSON.stringify(arr));
+
+  }catch(e){ console.warn('history save failed', e); }
+
+}
+
+function exportHistoryCSV(){
+
+  const arr = JSON.parse(localStorage.getItem(HIST_KEY) || "[]");
+
+  if(!arr.length){ showToast('History kosong'); return; }
+
+  const rows=[['time','mode','home','away','p_home','p_draw','p_away','confidence','lambdaH','lambdaA']];
+
+  arr.forEach(it=> rows.push([it.time, it.meta.mode || '', it.inputs.home.name || '', it.inputs.away.name || '', it.probabilities.home, it.probabilities.draw, it.probabilities.away, it.meta.confidence, it.meta.lambdaH, it.meta.lambdaA]));
+
+  const csv = rows.map(r=> r.map(c=> typeof c === 'string'? ('"'+c.replace(/"/g,'""')+'"') : c).join(',')).join('\\n');
+
+  const blob = new Blob([csv],{type:'text/csv'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='qpe_v20_2_2_history.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+
+  showToast('Export CSV dibuat');
+
+}
+
+
+
+/* ---------------- Visual drawing (radar & trend) ---------------- */
+
+const radarCtx = document.getElementById('radarCanvas').getContext('2d');
+
+const trendCtx = document.getElementById('trendCanvas').getContext('2d');
+
+function drawRadar(attackH,defH,attackA,defA){
+
+  try{
+
+    const ctx = radarCtx; ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+
+    const cx = ctx.canvas.width/2, cy = ctx.canvas.height/2, r = Math.min(cx,cy)-20;
+
+    function drawPoly(vals,col){
+
+      ctx.beginPath();
+
+      vals.forEach((v,i)=>{ const ang=-Math.PI/2 + i*(2*Math.PI/5); const rad = r * clamp(v/1.5,0,1); const x = cx + Math.cos(ang)*rad; const y = cy + Math.sin(ang)*rad; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+
+      ctx.closePath(); ctx.fillStyle = col; ctx.globalAlpha = 0.35; ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle='#0f172a'; ctx.stroke();
+
+    }
+
+    drawPoly([attackH,defH,attackH*0.45,attackH*0.6,attackH*0.8],'rgba(249,115,22,0.9)');
+
+    drawPoly([attackA,defA,attackA*0.45,attackA*0.6,attackA*0.8],'rgba(59,130,246,0.9)');
+
+    ctx.fillStyle='#9aa3b2'; ctx.font='12px Inter';
+
+    ['Attack','Defense','Form','PAF','Conv%'].forEach((lab,i)=>{ const ang=-Math.PI/2+i*(2*Math.PI/5); const x=cx+Math.cos(ang)*(r+14); const y=cy+Math.sin(ang)*(r+14); ctx.fillText(lab,x-12,y+4); });
+
+  }catch(e){}
+
+}
+
+function drawTrend(history){
+
+  try{
+
+    const ctx = trendCtx; ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+
+    if(!history || history.length===0) return;
+
+    const N = Math.min(history.length,30);
+
+    const slice = history.slice(-N);
+
+    const w = ctx.canvas.width, h = ctx.canvas.height, pad=30;
+
+    function scaleX(i){ return pad + (i/(N-1))*(w-2*pad); }
+
+    function scaleY(v){ return h - pad - (v)*(h-2*pad); }
+
+    ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.beginPath(); ctx.moveTo(pad,pad); ctx.lineTo(pad,h-pad); ctx.lineTo(w-pad,h-pad); ctx.stroke();
+
+    const cols=['#7dd3c8','#60a5fa','#f59e0b'];
+
+    ['home','draw','away'].forEach((k,idx)=>{ ctx.beginPath(); ctx.strokeStyle=cols[idx]; ctx.lineWidth=2; slice.forEach((it,i)=>{ const v = it.probabilities[k] || 0; const x = scaleX(i); const y = scaleY(v); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }); ctx.stroke(); });
+
+  }catch(e){}
+
+}
+
+
+
+/* ---------------- Trap calculation (uses odds) ---------------- */
+
+function computeTrap(hOpen,hNow,oH,oA){
+
+  const shift = safeNum(hNow,0) - safeNum(hOpen,0);
+
+  const oddsDiff = Math.abs(safeNum(oH,2) - safeNum(oA,2));
+
+  const linePressure = 1 - Math.min(Math.abs(shift)/0.75,1)*0.35;
+
+  const symmetry = 1 - Math.min(oddsDiff/0.6,1)*0.45;
+
+  const directional = (shift<0 && oH < oA) || (shift>0 && oA < oH) ? 1.09 : 1.0;
+
+  return clamp(symmetry * linePressure * directional, 0.6, 1.35);
+
+}
+
+
+
+/* ---------------- Monte Carlo runner (worker fallback) ---------------- */
+
+function runMainSim(lambdaH_use, lambdaA_use, iters, ou){
+
+  const counts={home:0,draw:0,away:0,over:0,under:0,scores:{}};
+
+  for(let i=0;i<iters;i++){
+
+    const gh = samplePoisson(lambdaH_use);
+
+    const ga = samplePoisson(lambdaA_use);
+
+    if(gh>ga) counts.home++; else if(gh===ga) counts.draw++; else counts.away++;
+
+    if(gh+ga > ou) counts.over++; else counts.under++;
+
+    const k = gh + '-' + ga; counts.scores[k] = (counts.scores[k]||0) + 1;
+
+  }
+
+  ['home','draw','away','over','under'].forEach(k=>counts[k] = counts[k]/iters);
+
+  for(const k in counts.scores) counts.scores[k] = counts.scores[k]/iters;
+
+  return counts;
+
+}
+
+function runWorkerSim(lambdaH_use, lambdaA_use, iters, ou){
+
+  return new Promise((resolve)=>{
+
+    if(!workerInstance){ resolve(runMainSim(lambdaH_use,lambdaA_use,iters,ou)); return; }
+
+    const handler=(ev)=>{ workerInstance.removeEventListener('message',handler); resolve(ev.data); };
+
+    workerInstance.addEventListener('message', handler);
+
+    try{ workerInstance.postMessage({lambdaH:lambdaH_use, lambdaA:lambdaA_use, iters:iters, ou:ou}); }
+
+    catch(e){ workerInstance.removeEventListener('message', handler); resolve(runMainSim(lambdaH_use,lambdaA_use,iters,ou)); }
+
+  });
+
+}
+
+
+
+/* ---------------- Main Analyze Handler ---------------- */
+
+document.getElementById('analyzeBtn').addEventListener('click', async function(){
+
+  try{
+
+    showToast('Analisis berjalan...');
+
+    // Inputs & defaults
+
+    const leagueGPG = Math.max(0.3, safeNum(document.getElementById('league_gpg').value, 2.6));
+
+    const mcIters = Math.max(2000, Math.floor(safeNum(document.getElementById('mc_select').value, 20000)));
+
+    const matchType = document.getElementById('match_type').value;
+
+    const comp = document.getElementById('comp_mode').value;
+
+    const weather = document.getElementById('weather').value;
+
+    // collect teams
+
+    const h = {
+
+      name: (document.getElementById('h_name')||{}).value || 'HOME',
+
+      gpg: safeNum(document.getElementById('h_gpg').value, 1.4),
+
+      gc: safeNum(document.getElementById('h_gc').value, 1.2),
+
+      shots: safeNum(document.getElementById('h_shots').value, 11),
+
+      sot: safeNum(document.getElementById('h_sot').value, 4),
+
+      conv: safeNum(document.getElementById('h_conv').value, null),
+
+      poss: safeNum(document.getElementById('h_poss').value, 52),
+
+      shotsC: safeNum(document.getElementById('h_shotsC').value, null),
+
+      cr: safeNum(document.getElementById('h_cr').value, null),
+
+      elo: safeNum(document.getElementById('h_elo').value, 1500),
+
+      profile: (document.getElementById('h_profile')||{}).value || 'auto',
+
+      gk_abs: safeNum(document.getElementById('h_gk_abs').value,0),
+
+      df_abs: safeNum(document.getElementById('h_df_abs').value,0),
+
+      md_abs: safeNum(document.getElementById('h_md_abs').value,0),
+
+      fw_abs: safeNum(document.getElementById('h_fw_abs').value,0),
+
+      paf: safeNum(document.getElementById('h_paf').value, null)
+
+    };
+
+    const a = {
+
+      name: (document.getElementById('a_name')||{}).value || 'AWAY',
+
+      gpg: safeNum(document.getElementById('a_gpg').value, 1.2),
+
+      gc: safeNum(document.getElementById('a_gc').value, 1.3),
+
+      shots: safeNum(document.getElementById('a_shots').value, 10),
+
+      sot: safeNum(document.getElementById('a_sot').value, 4),
+
+      conv: safeNum(document.getElementById('a_conv').value, null),
+
+      poss: safeNum(document.getElementById('a_poss').value, 48),
+
+      shotsC: safeNum(document.getElementById('a_shotsC').value, null),
+
+      cr: safeNum(document.getElementById('a_cr').value, null),
+
+      elo: safeNum(document.getElementById('a_elo').value, 1500),
+
+      profile: (document.getElementById('a_profile')||{}).value || 'auto',
+
+      gk_abs: safeNum(document.getElementById('a_gk_abs').value,0),
+
+      df_abs: safeNum(document.getElementById('a_df_abs').value,0),
+
+      md_abs: safeNum(document.getElementById('a_md_abs').value,0),
+
+      fw_abs: safeNum(document.getElementById('a_fw_abs').value,0),
+
+      paf: safeNum(document.getElementById('a_paf').value, null)
+
+    };
+
+    // auto assists if missing
+
+    if(!h.conv) autoConv('h');
+
+    if(!a.conv) autoConv('a');
+
+    if(!h.shotsC) autoShotsC('h');
+
+    if(!a.shotsC) autoShotsC('a');
+
+    if(!h.cr) autoCross('h');
+
+    if(!a.cr) autoCross('a');
+
+    if(!h.paf) autoPAF('h');
+
+    if(!a.paf) autoPAF('a');
+
+    // re-read after auto fills
+
+    h.conv = safeNum(document.getElementById('h_conv').value, 12);
+
+    a.conv = safeNum(document.getElementById('a_conv').value, 11);
+
+    h.shotsC = safeNum(document.getElementById('h_shotsC').value, 11);
+
+    a.shotsC = safeNum(document.getElementById('a_shotsC').value, 12);
+
+    h.cr = safeNum(document.getElementById('h_cr').value, 20);
+
+    a.cr = safeNum(document.getElementById('a_cr').value, 20);
+
+    h.paf = safeNum(document.getElementById('h_paf').value, 100)/100;
+
+    a.paf = safeNum(document.getElementById('a_paf').value, 100)/100;
+
+
+
+    // compute xG proxies and defensive indices
+
+    const h_xg = computeXGplus(h.shots,h.sot,h.conv,h.poss,h.cr, leagueGPG);
+
+    const a_xg = computeXGplus(a.shots,a.sot,a.conv,a.poss,a.cr, leagueGPG);
+
+    const h_xga = computeXGplus(a.shots,a.sot,a.conv,a.poss,a.cr, leagueGPG);
+
+    const a_xga = computeXGplus(h.shots,h.sot,h.conv,h.poss,h.cr, leagueGPG);
+
+    if(h.profile === 'auto') h.profile = classifyTeam(h_xg, h_xga);
+
+    if(a.profile === 'auto') a.profile = classifyTeam(a_xg, a_xga);
+
+    const h_dsi = computeDSI(h.gc, h.shotsC, a.elo);
+
+    const a_dsi = computeDSI(a.gc, a.shotsC, h.elo);
+
+    let h_fei = calcFEI(h.gpg, h_xg, 0, h.paf);
+
+    let a_fei = calcFEI(a.gpg, a_xg, 0, a.paf);
+
+
+
+    // base lambdas
+
+    let lambdaH = clamp((h_xg * (h_fei / (a_dsi || 1)) ) * (1 + h_xga*0.04), 0.01, 14);
+
+    let lambdaA = clamp((a_xg * (a_fei / (h_dsi || 1)) ) * (1 + a_xga*0.04), 0.01, 14);
+
+
+
+    // profile adjustment
+
+    const ph = profileMultiplier(h.profile);
+
+    const pa = profileMultiplier(a.profile);
+
+    const adj_h_atk = ph.atk * (1 - 0.12 * Math.min(a_dsi/4, 1));
+
+    const adj_a_atk = pa.atk * (1 - 0.12 * Math.min(h_dsi/4, 1));
+
+    const adj_h_def = ph.def * (1 + 0.08 * Math.min(a_fei/1.2, 1));
+
+    const adj_a_def = pa.def * (1 + 0.08 * Math.min(h_fei/1.2, 1));
+
+    lambdaH *= (adj_h_atk / adj_a_def);
+
+    lambdaA *= (adj_a_atk / adj_h_def);
+// context corrections
+
+    const isIntl = (comp === 'International');
+
+    function homeAdvFactor(isIntl, comp, matchType){
+
+      if(isIntl) return 1.03;
+
+      if(matchType === 'Final') return 1.05;
+
+      if(comp === 'Cup') return 1.07;
+
+      return 1.10;
+
+    }
+
+    function pressureFactor(matchType){
+
+      if(matchType === 'Final' || matchType === 'Derby') return 0.96;
+
+      if(matchType === 'Relegation') return 0.92;
+
+      return 1.0;
+
+    }
+
+    lambdaH *= homeAdvFactor(isIntl, comp, matchType);
+
+    lambdaH *= pressureFactor(matchType);
+
+    lambdaA *= pressureFactor(matchType);
+
+    if(weather === 'Rain' || weather === 'Snow'){ lambdaH *= 0.94; lambdaA *= 0.94; }
+
+    if(weather === 'Hot'){ lambdaH *= 0.97; lambdaA *= 0.97; }
+
+    // league normalization & elo
+
+    const leagueBias = Math.pow((leagueGPG/2.6), 0.7);
+
+    lambdaH *= leagueBias; lambdaA *= leagueBias;
+
+    const eloF = eloSigmoidFactor(h.elo, a.elo, isIntl);
+
+    lambdaH *= eloF; lambdaA *= (1/eloF || 1);
+
+    if(matchType === 'Derby'){ lambdaH *= 1.06; lambdaA *= 1.06; }
+
+    if(matchType === 'Final'){ lambdaH *= 0.98; lambdaA *= 0.98; }
+
+    if(leagueGPG < 2.3){ const z = 1 - (2.3 - leagueGPG)*0.06; lambdaH *= z; lambdaA *= z; }
+
+
+
+    // Enhanced factors (if computed)
+
+    const enh = window._qpe_enh || { home: computeEnhancedFor('h'), away: computeEnhancedFor('a') };
+
+    // apply enhanced to FEI & DSI & Confidence & Lambda
+
+    const h_en = enh.home; const a_en = enh.away;
+
+    h_fei *= (1 + (h_en.bcci - 0.5)*0.4 + (h_en.spf - 0.1)*0.2);
+
+    a_fei *= (1 + (a_en.bcci - 0.5)*0.4 + (a_en.spf - 0.1)*0.2);
+
+    // DSI adjusted by pressure resistance (lower pri -> stronger defense)
+
+    const h_dsi_adj = h_dsi * (1 - (h_en.pri - 0.5)*0.3);
+
+    const a_dsi_adj = a_dsi * (1 - (a_en.pri - 0.5)*0.3);
+
+    // apply fatigue to lambda
+
+    lambdaH *= h_en.ff;
+
+    lambdaA *= a_en.ff;
+
+
+
+    // trap index
+
+    const oddsHome = safeNum(document.getElementById('odds_home')?.value, null);
+
+    const oddsAway = safeNum(document.getElementById('odds_away')?.value, null);
+
+    const hdpOpen = safeNum(document.getElementById('odds_hdp_open')?.value, 0);
+
+    const hdpNow = safeNum(document.getElementById('odds_hdp_now')?.value, 0);
+
+    const trapIndex = computeTrap(hdpOpen, hdpNow, oddsHome, oddsAway);
+
+
+
+    // Monte Carlo (worker)
+
+    const half = Math.floor(mcIters/2);
+
+    const simA = runWorkerSim(lambdaH, lambdaA, half, safeNum(document.getElementById('market_ou')?.value,2.5));
+
+    const simB = runWorkerSim(lambdaA, lambdaH, mcIters-half, safeNum(document.getElementById('market_ou')?.value,2.5));
+
+    const [outA, outB] = await Promise.all([simA, simB]);
+
+    const neutral = { home: (outA.home + outB.away)/2, draw: (outA.draw + outB.draw)/2, away: (outA.away + outB.home)/2, over: (outA.over+outB.over)/2, under: (outA.under+outB.under)/2 };
+
+    const sk = skellamOutcome(lambdaH, lambdaA, 10);
+
+    const eloLog = logisticEloProb(h.elo, a.elo);
+
+    const blended = { home: clamp(neutral.home*0.55 + sk.home*0.30 + eloLog.home*0.15,0,1), draw: clamp(neutral.draw*0.55 + sk.draw*0.30 + eloLog.draw*0.15,0,1), away: clamp(neutral.away*0.55 + sk.away*0.30 + eloLog.away*0.15,0,1), over: neutral.over, under: neutral.under };
+
+    const ssum = blended.home + blended.draw + blended.away;
+
+    const finalProbs = ssum>0 ? { home: blended.home/ssum, draw: blended.draw/ssum, away: blended.away/ssum, over: blended.over, under: blended.under } : {home:0.33,draw:0.34,away:0.33, over:blended.over, under:blended.under};
+
+
+
+    // pastErr from history
+
+    const hist = JSON.parse(localStorage.getItem(HIST_KEY) || "[]");
+
+    let pastErr = 0;
+
+    if(hist.length>0){
+
+      const last20 = hist.slice(-20);
+
+      const errs = last20.map(it => Math.abs((it.real_total_goals||0) - ((it.meta.lambdaH||0)+(it.meta.lambdaA||0))));
+
+      pastErr = errs.reduce((s,x)=>s+x,0)/Math.max(1,errs.length);
+
+      pastErr = clamp(pastErr/3,0,1);
+
+    }
+
+    let confidence = computeConfidence(finalProbs, lambdaH, lambdaA, trapIndex, pastErr);
+
+    // apply discipline index (reduce confidence if many cards)
+
+    confidence *= h_en.di * a_en.di;
+
+    confidence = clamp(confidence, 0, 1);
+
+
+
+    // compute explicit attack/defense strengths for display
+
+    const attackH = rnd(h_xg,3), attackA = rnd(a_xg,3), defenseH = rnd(h_dsi_adj,3), defenseA = rnd(a_dsi_adj,3);
+
+    const result = {
+
+      meta: { mode: comp, matchType, leagueGPG, confidence: rnd(confidence,3), trapIndex: rnd(trapIndex,3), lambdaH: rnd(lambdaH,4), lambdaA: rnd(lambdaA,4), mcIters: mcIters },
+
+      inputs: { home: h, away: a },
+
+      core: { h_xg: rnd(h_xg,3), a_xg: rnd(a_xg,3), h_dsi: rnd(h_dsi,3), a_dsi: rnd(a_dsi,3), h_fei: rnd(h_fei,3), a_fei: rnd(a_fei,3) },
+
+      enhanced: { home: h_en, away: a_en },
+
+      attack_strength: { home: attackH, away: attackA },
+
+      defense_strength: { home: defenseH, away: defenseA },
+
+      probabilities: finalProbs,
+
+      topScores: Object.entries(Object.assign({}, outA.scores, outB.scores)).map(e=>({score:e[0],prob:(((outA.scores[e[0]]||0)+(outB.scores[e[0]]||0))/2)})).sort((x,y)=>y.prob-x.prob).slice(0,12)
+
+    };
+
+    // save & UI update
+
+    try{ saveHistory(result); }catch(e){}
+
+    document.getElementById('summary').innerHTML = `<strong>${h.name}</strong> vs <strong>${a.name}</strong> — ${comp} · ${matchType}<br/>
+
+      Prob H/D/A: <strong>${(finalProbs.home*100).toFixed(1)}%</strong> / <strong>${(finalProbs.draw*100).toFixed(1)}%</strong> / <strong>${(finalProbs.away*100).toFixed(1)}%</strong><br/>
+
+      Over ${(finalProbs.over*100).toFixed(1)}% • Under ${(finalProbs.under*100).toFixed(1)}%<br/>
+
+      Confidence: <strong>${(result.meta.confidence*100).toFixed(1)}%</strong> • Trap: ${result.meta.trapIndex}`;
+
+    const pretty = JSON.stringify(result, null, 2);
+
+    document.getElementById('resultText').textContent = pretty;
+
+    drawRadar(attackH, clamp(1/(h_dsi_adj||1),0,2), attackA, clamp(1/(a_dsi_adj||1),0,2));
+
+    drawTrend(JSON.parse(localStorage.getItem(HIST_KEY) || "[]"));
+
+    const confEl = document.getElementById('confMeter'); confEl.innerHTML = `<div style="padding:6px;border-radius:6px;background:rgba(255,255,255,0.03)">Confidence: <strong>${(result.meta.confidence*100).toFixed(1)}%</strong></div>`;
+
+    confEl.style.color = result.meta.confidence>0.66? '#10b981': result.meta.confidence>0.4? '#f59e0b':'#fb7185';
+
+    window._qpe_last = result;
+
+    showToast('Analisis selesai');
+
+  }catch(err){
+
+    console.error('Analyze error:', err);
+
+    showToast('Terjadi error saat analisis (cek console)', 3000);
+
+  }
+
+});
+
+
+
+/* ---------------- Buttons & Shortcuts ---------------- */
+
+document.getElementById('autoCalcStats').addEventListener('click', ()=>{
+
+  autoConv('h'); autoConv('a'); autoShotsC('h'); autoShotsC('a'); autoCross('h'); autoCross('a'); autoPAF('h'); autoPAF('a');
+
+  showToast('Auto Assist: Conv%, ShotsC, Cross%, PAF diisi');
+
+});
+
+document.getElementById('autoOddsBtn').addEventListener('click', ()=> showToast('Auto Odds: placeholder — masukkan odds manual jika tersedia'));
+
+document.getElementById('manualCalcBtn').addEventListener('click', ()=> showToast('Klik Analisis setelah koreksi input'));
+
+document.getElementById('exportBtn').addEventListener('click', ()=> exportHistoryCSV());
+
+document.getElementById('viewHistory').addEventListener('click', ()=>{
+
+  const hist = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+
+  if(!hist.length){ showToast('History kosong'); return; }
+
+  document.getElementById('resultText').textContent = JSON.stringify(hist.slice(-200), null, 2);
+
+  showToast('History ditampilkan');
+
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+
+  if(!confirm('Reset semua input?')) return;
+
+  const elems = document.querySelectorAll('input, select');
+
+  elems.forEach(e=>{ if(e.id){ if(e.tagName==='INPUT') e.value=''; if(e.tagName==='SELECT') e.selectedIndex=0; } });
+
+  localStorage.removeItem(INPUT_SAVE_KEY);
+
+  showToast('Input dikosongkan');
+
+});
+
+document.getElementById('inputRealBtn').addEventListener('click', inputRealScoreDialog);
+
+document.addEventListener('keydown',(e)=>{ if(e.ctrlKey && e.key==='s'){ e.preventDefault(); inputRealScoreDialog(); } if(e.ctrlKey && e.key==='e'){ e.preventDefault(); exportHistoryCSV(); } if(e.ctrlKey && e.key==='m'){ e.preventDefault(); document.getElementById('toggleModeBtn').click(); } });
+
+/* ---------------- Input real & calibration ---------------- */
+
+function inputRealScoreDialog(){
+
+  const h = prompt('Gol Home (angka):',''); const a = prompt('Gol Away (angka):','');
+
+  if(h===null || a===null) return;
+
+  const hist = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+
+  if(!hist.length){ showToast('Belum ada prediksi tersimpan untuk dicocokkan'); return; }
+
+  const last = hist[hist.length-1];
+
+  last.real_home = Number(h); last.real_away = Number(a); last.real_total_goals = last.real_home + last.real_away;
+
+  hist[hist.length-1] = last; localStorage.setItem(HIST_KEY, JSON.stringify(hist));
+
+  autoCalibrate();
+
+  showToast('Skor tersimpan & kalibrasi diperbarui');
+
+}
+
+function autoCalibrate(){
+
+  try{
+
+    const hist = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+
+    if(hist.length < 6) return;
+
+    const last = hist.slice(-50);
+
+    const errors = last.map(x => Math.abs((x.real_total_goals||0) - ((x.meta.lambdaH||0) + (x.meta.lambdaA||0))));
+
+    const avgErr = errors.reduce((s,v)=>s+v,0)/errors.length || 0;
+
+    const adj = clamp(1 - avgErr*0.05, 0.85, 1.15);
+
+    localStorage.setItem('qpe_v20_auto_adj', adj);
+
+    console.log('Auto calibration adj ×' + adj);
+
+  }catch(e){ console.warn('Auto-calibrate fail', e); }
+
+}
+
+/* ---------------- Toggle & tooltip ---------------- */
+
+let analystMode = true;
+
+document.getElementById('toggleModeBtn').addEventListener('click', ()=>{
+
+  analystMode = !analystMode;
+
+  document.getElementById('radarCanvas').parentElement.parentElement.style.display = analystMode ? 'block' : 'none';
+
+  document.getElementById('trendCanvas').parentElement.parentElement.style.display = analystMode ? 'block' : 'none';
+
+  document.getElementById('resultText').style.display = analystMode ? 'block' : 'none';
+
+  document.getElementById('toggleModeBtn').textContent = analystMode ? 'Analyst Mode' : 'Compact Mode';
+
+});
+
+['h_gpg','h_gc','h_shots','h_sot','h_conv','h_poss','h_shotsC','h_cr','h_paf'].forEach(id=>{
+
+  const el = document.getElementById(id); if(!el) return;
+
+  el.addEventListener('mouseenter', ()=> showToast(el.getAttribute('title') || id + ' — isi dari SofaScore jika ada', 900));
+
+});
+
+
+/* ---------------- Integrity & Maintenance (Part 3/4) ---------------- */
+
+function updateLeagueLearning(){
+
+  try{
+
+    const hist = JSON.parse(localStorage.getItem(HIST_KEY) || "[]");
+
+    if(hist.length < 10) return;
+
+    const last = hist.slice(-60);
+
+    const goals = last.map(x => x.real_total_goals).filter(v => typeof v === 'number' && v>0);
+
+    if(goals.length < 5) return;
+
+    const avg = goals.reduce((s,v)=>s+v,0)/goals.length;
+
+    const current = safeNum(document.getElementById('league_gpg').value,2.6);
+
+    if(Math.abs(avg-current) > 0.15){
+
+      document.getElementById('league_gpg').value = rnd((avg*0.7 + current*0.3),2);
+
+      showToast('League GPG auto-update: ' + rnd(avg,2));
+
+    }
+
+  }catch(e){ console.warn('League Learning fail', e); }
+
+}
+
+setInterval(updateLeagueLearning, 18000);
+
+setInterval(()=>{
+
+  try{
+
+    const hist = JSON.parse(localStorage.getItem(HIST_KEY) || "[]");
+
+    if(hist.length>0) drawTrend(hist);
+
+  }catch(e){}
+
+}, 20000);
+
+function refreshInsightSummary(){
+
+  const data = window._qpe_last;
+
+  if(!data || !data.meta) return;
+
+  const conf = data.meta.confidence || 0;
+
+  const t = data.meta.trapIndex || 1;
+
+  const info = `λH ${data.meta.lambdaH.toFixed(2)} λA ${data.meta.lambdaA.toFixed(2)} | Trap ${t.toFixed(2)} | Conf ${(conf*100).toFixed(1)}%`;
+
+  document.getElementById('confMeter').innerHTML = info;
+
+  document.getElementById('confMeter').style.color = conf>0.66? '#10b981' : conf>0.4? '#f59e0b' : '#fb7185';
+
+}
+
+setInterval(refreshInsightSummary, 7000);
+
+
+/* ---------- Resize handling ---------- */
+
+window.addEventListener('load', ()=>{
+
+  try{
+
+    const radar=document.getElementById('radarCanvas'),
+
+          trend=document.getElementById('trendCanvas');
+
+    if(!radar||!trend) return;
+
+    const resizeCanvas=(c,w,h)=>{c.width=w;c.height=h;};
+
+    const handleResize=()=>{
+
+      const w=Math.min(480,window.innerWidth-60);
+
+      resizeCanvas(radar,Math.min(360,w),Math.min(360,w));
+
+      resizeCanvas(trend,w,200);
+
+      drawTrend(JSON.parse(localStorage.getItem(HIST_KEY) || "[]"));
+
+    };
+
+    handleResize();
+
+    window.addEventListener('resize',handleResize);
+
+    showToast('v20.2.2 siap — Enhanced Stats Ready',1600);
+
+  }catch(e){}
+
+});
+
+
+/* ---------- Clean up worker ---------- */
+
+window.addEventListener('beforeunload', ()=>{
+
+  try{ if(workerInstance) workerInstance.terminate(); if(workerUrl) URL.revokeObjectURL(workerUrl); }catch(e){}
+
+});
+
+</script>
+</body>
+</html>
+
