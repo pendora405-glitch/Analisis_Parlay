@@ -1,0 +1,1426 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Prediksi Global v20.6 — ELITE EDITION (Full)</title>
+<style>
+:root{
+  --bg:#071427; --card:#0b1620; --muted:#9fb0bf; --accent:#18b2c9;
+  --attack:#ff8a4c; --defense:#4ea1ff; --good:#10b981; --bad:#fb7185;
+}
+*{box-sizing:border-box}
+body{font-family:Inter,system-ui,Segoe UI,Arial;margin:12px;background:linear-gradient(180deg,#031521 0%, #071427 100%);color:#eaf6fb}
+h1{font-size:18px;margin:6px 0;color:var(--accent)}
+.card{background:var(--card);padding:12px;border-radius:10px;margin-bottom:10px;box-shadow:0 8px 30px rgba(0,0,0,0.55)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+label{font-size:13px;color:var(--muted)}
+input,select,button,textarea{font-size:13px}
+input,select,textarea{padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+input[type=number]{width:120px}
+button{background:var(--accent);border:0;padding:8px 12px;border-radius:8px;color:#021216;cursor:pointer}
+.small{font-size:12px;color:var(--muted)}
+.grid-3{display:grid;grid-template-columns:1fr 560px 360px;gap:12px}
+@media(max-width:1160px){.grid-3{grid-template-columns:1fr}}
+.toast{position:fixed;bottom:14px;right:14px;background:#082635;color:#dbf7fb;padding:10px 16px;border-radius:6px;opacity:0;transition:opacity .25s;z-index:999;font-size:13px}
+.toast.show{opacity:1}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.kv{min-width:140px}
+.pre{background:#02121a;padding:10px;border-radius:8px;color:#d8f7f9;white-space:pre-wrap;max-height:360px;overflow:auto}
+.footer-small{font-size:12px;color:var(--muted);text-align:center;margin-top:8px}
+.tooltip{font-size:12px;color:var(--muted);margin-left:6px}
+.section-title{font-weight:600;color:#bfeef8;margin-bottom:6px}
+/* Tournament badge CSS (patch) */
+#tournamentBadge{
+  margin-top:6px;
+  font-size:15px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.flag{
+  width:20px;
+  height:14px;
+  border-radius:3px;
+  object-fit:cover;
+}
+</style>
+</head>
+<body>
+<h1>⚽ Prediksi Global v20.6 — ELITE EDITION (Full)</h1>
+<div class="card small">
+v20.6 — ELITE: Semua modul Tier-1..Tier-3 terintegrasi (xT/xTA, PBCM, GDPM, SFI, AGV, SPT, CFEM, OZR, ARG, CCG, ORL) + MPE/IRC/TSCE/MIE + Auto QC + WebWorker MC + Bayesian + Export/History. Clean file — tanpa contoh data.
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- Controls -->
+<div class="card row">
+  <label class="kv">League GPG<input id="league_gpg" type="number" step="0.01" placeholder=""></label>
+  <label class="kv">League Profile<select id="league_profile"><option value="medium">Medium</option><option value="high">High-scoring</option><option value="low">Low-scoring</option></select></label>
+  <label class="kv">Market OU<input id="market_ou" type="number" step="0.1" placeholder=""></label>
+  <label class="kv">MC Iter<select id="mc_select"><option value="5000">5000</option><option value="10000" selected>10000</option><option value="20000">20000</option></select></label>
+  <label class="kv">Match Type<select id="match_type"><option>Regular</option><option>Derby</option><option>Final</option><option>Friendly</option><option>Relegation</option></select></label>
+  <label class="kv">Competition<select id="comp_mode"><option>Club</option><option>Cup</option><option>Playoff</option><option>Super Cup</option><option>International</option></select></label>
+
+  <label class="kv">Tournament
+    <select id="tournament_mode">
+      <option value="none" selected>None</option>
+      <option value="wq">World Cup Qualifiers</option>
+      <option value="wc">World Cup</option>
+      <option value="euro">EURO</option>
+      <option value="copa">Copa América</option>
+      <option value="afcon">AFCON (Africa Cup)</option>
+      <option value="asia">Asian Cup</option>
+      <option value="goldcup">Gold Cup</option>
+      <option value="nl">UEFA Nations League</option>
+      <option value="friendly">International Friendly</option>
+    </select>
+  </label>
+
+  <label class="kv">Weather<select id="weather"><option>Normal</option><option>Rain</option><option>Snow</option><option>Hot</option></select></label>
+  <button id="analyzeBtn">Analisis</button>
+  <label class="kv" style="display:flex;align-items:center;gap:6px;"><input id="bayes_mode" type="checkbox" style="width:16px;height:16px;margin:0"> Bayesian</label>
+  <label class="kv" style="display:flex;align-items:center;gap:6px;"><input id="zero_bias_mode" type="checkbox" style="width:16px;height:16px;margin:0" checked> ZeroBias</label>
+</div>
+
+<div class="grid-3">
+  <!-- Left column: Home & Away Inputs -->
+  <div>
+    <div class="card">
+      <div class="section-title">HOME — Input</div>
+      <div class="row">
+        <label class="kv">Team<input id="h_name" type="text" placeholder=""></label>
+        <label class="kv">GPG<input id="h_gpg" type="number" step="0.01" placeholder=""></label>
+        <label class="kv">GC<input id="h_gc" type="number" step="0.01" placeholder=""></label>
+      </div>
+
+      <div class="row">
+        <label class="kv">Shots<input id="h_shots" type="number" step="0.1" placeholder=""></label>
+        <label class="kv">SOT<input id="h_sot" type="number" step="0.1" placeholder=""></label>
+        <label class="kv">Conv%<input id="h_conv" type="number" step="0.1" placeholder=""></label>
+        <button onclick="autoConv('h')">Auto Conv</button>
+      </div>
+
+      <div class="row">
+        <label class="kv">Poss%<input id="h_poss" type="number" step="0.1" placeholder=""></label>
+        <label class="kv">ShotsC<input id="h_shotsC" type="number" step="0.1" placeholder=""></label>
+        <button onclick="autoShotsC('h')">Auto ShotsC</button>
+        <label class="kv">Cross%<input id="h_cr" type="number" step="0.1" placeholder=""></label>
+        <button onclick="autoCross('h')">Auto Cross</button>
+      </div>
+
+      <div class="row">
+        <label class="kv">Profile<select id="h_profile"><option value="auto">Auto</option><option value="attack">Attack</option><option value="defense">Defense</option><option value="strong">Strong</option><option value="weak">Weak</option><option value="balanced">Balanced</option></select></label>
+        <label class="kv">ELO<input id="h_elo" type="number" placeholder=""></label>
+        <label class="kv">PAC%<input id="h_pac" type="number" step="0.1" placeholder=""></label>
+      </div>
+
+      <div style="margin-top:8px" class="small"><strong>Tactical / Style (Home)</strong></div>
+      <div class="row small">
+        <label class="kv">Style<select id="h_style"><option value="possession">Possession</option><option value="direct">Direct</option><option value="counter">Counter</option><option value="press">Pressing</option><option value="lowblock">Low Block</option></select></label>
+        <label class="kv">Press<select id="h_press"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></label>
+        <label class="kv">Height<select id="h_height"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></label>
+      </div>
+
+      <div style="margin-top:8px" class="small"><strong>Absensi & Match Importance</strong></div>
+      <div class="row small">
+        <label class="kv">GK abs<input id="h_gk_abs" type="number" min="0" max="1"></label>
+        <label class="kv">DF abs<input id="h_df_abs" type="number" min="0" max="4"></label>
+        <label class="kv">MD abs<input id="h_md_abs" type="number" min="0" max="5"></label>
+        <label class="kv">FW abs<input id="h_fw_abs" type="number" min="0" max="3"></label>
+        <label class="kv">PAF%<input id="h_paf" type="number" step="0.1"></label>
+        <button onclick="autoPAF('h')">Auto PAF</button>
+      </div>
+      <div class="row small" style="margin-top:6px">
+        <label class="kv">Importance<select id="h_importance"><option value="low">Low</option><option value="med" selected>Medium</option><option value="high">High</option><option value="must">Must Win</option></select></label>
+        <label class="kv">Rotation<select id="h_rotation"><option value="0">None</option><option value="1">Light</option><option value="2">Medium</option><option value="3">Heavy</option></select></label>
+        <label class="kv">Key Player Missing<select id="h_keymiss"><option value="0" selected>No</option><option value="1">Yes</option></select></label>
+      </div>
+
+      <div style="margin-top:8px" class="small"><strong>Advanced Metrics (opsional)</strong></div>
+      <div class="row small">
+        <label class="kv">Prog Passes<input id="h_prog" type="number" step="0.1"></label>
+        <label class="kv">Final 3rd Ent<input id="h_final3" type="number" step="0.1"></label>
+        <label class="kv">Interceptions<input id="h_inter" type="number" step="0.1"></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">AWAY — Input</div>
+      <div class="row">
+        <label class="kv">Team<input id="a_name" type="text" placeholder=""></label>
+        <label class="kv">GPG<input id="a_gpg" type="number" step="0.01" placeholder=""></label>
+        <label class="kv">GC<input id="a_gc" type="number" step="0.01" placeholder=""></label>
+      </div>
+
+      <div class="row">
+        <label class="kv">Shots<input id="a_shots" type="number" step="0.1" placeholder=""></label>
+        <label class="kv">SOT<input id="a_sot" type="number" step="0.1" placeholder=""></label>
+        <label class="kv">Conv%<input id="a_conv" type="number" step="0.1" placeholder=""></label>
+        <button onclick="autoConv('a')">Auto Conv</button>
+      </div>
+
+      <div class="row">
+        <label class="kv">Poss%<input id="a_poss" type="number" step="0.1" placeholder=""></label>
+        <label class="kv">ShotsC<input id="a_shotsC" type="number" step="0.1" placeholder=""></label>
+        <button onclick="autoShotsC('a')">Auto ShotsC</button>
+        <label class="kv">Cross%<input id="a_cr" type="number" step="0.1" placeholder=""></label>
+        <button onclick="autoCross('a')">Auto Cross</button>
+      </div>
+
+      <div class="row">
+        <label class="kv">Profile<select id="a_profile"><option value="auto">Auto</option><option value="attack">Attack</option><option value="defense">Defense</option><option value="strong">Strong</option><option value="weak">Weak</option><option value="balanced">Balanced</option></select></label>
+        <label class="kv">ELO<input id="a_elo" type="number" placeholder=""></label>
+        <label class="kv">PAC%<input id="a_pac" type="number" step="0.1" placeholder=""></label>
+      </div>
+
+      <div style="margin-top:8px" class="small"><strong>Tactical / Style (Away)</strong></div>
+      <div class="row small">
+        <label class="kv">Style<select id="a_style"><option value="possession">Possession</option><option value="direct">Direct</option><option value="counter">Counter</option><option value="press">Pressing</option><option value="lowblock">Low Block</option></select></label>
+        <label class="kv">Press<select id="a_press"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></label>
+        <label class="kv">Height<select id="a_height"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></label>
+      </div>
+
+      <div style="margin-top:8px" class="small"><strong>Absensi & Match Importance</strong></div>
+      <div class="row small">
+        <label class="kv">GK abs<input id="a_gk_abs" type="number" min="0" max="1"></label>
+        <label class="kv">DF abs<input id="a_df_abs" type="number" min="0" max="4"></label>
+        <label class="kv">MD abs<input id="a_md_abs" type="number" min="0" max="5"></label>
+        <label class="kv">FW abs<input id="a_fw_abs" type="number" min="0" max="3"></label>
+        <label class="kv">PAF%<input id="a_paf" type="number" step="0.1"></label>
+        <button onclick="autoPAF('a')">Auto PAF</button>
+      </div>
+      <div class="row small" style="margin-top:6px">
+        <label class="kv">Importance<select id="a_importance"><option value="low">Low</option><option value="med" selected>Medium</option><option value="high">High</option><option value="must">Must Win</option></select></label>
+        <label class="kv">Rotation<select id="a_rotation"><option value="0">None</option><option value="1">Light</option><option value="2">Medium</option><option value="3">Heavy</option></select></label>
+        <label class="kv">Key Player Missing<select id="a_keymiss"><option value="0" selected>No</option><option value="1">Yes</option></select></label>
+      </div>
+
+      <div style="margin-top:8px" class="small"><strong>Advanced Metrics (opsional)</strong></div>
+      <div class="row small">
+        <label class="kv">Prog Passes<input id="a_prog" type="number" step="0.1"></label>
+        <label class="kv">Final 3rd Ent<input id="a_final3" type="number" step="0.1"></label>
+        <label class="kv">Interceptions<input id="a_inter" type="number" step="0.1"></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Odds & Market</div>
+      <div class="row">
+        <label class="kv">Home Odds<input id="odds_home" type="number" step="0.01"></label>
+        <label class="kv">Away Odds<input id="odds_away" type="number" step="0.01"></label>
+      </div>
+      <div class="row">
+        <label class="kv">HDP Open<input id="odds_hdp_open" type="number" step="0.01"></label>
+        <label class="kv">HDP Now<input id="odds_hdp_now" type="number" step="0.01"></label>
+      </div>
+      <div class="row">
+        <label class="kv">Over Odds<input id="odds_over" type="number" step="0.01"></label>
+        <label class="kv">Under Odds<input id="odds_under" type="number" step="0.01"></label>
+      </div>
+    </div>
+
+    <div class="card row">
+      <button id="autoCalcStats">Auto Hitung Statistik</button>
+      <button id="autoEnhancedBtn">Enhanced Stats (Auto)</button>
+      <button id="manualCalcBtn">Hitung Manual</button>
+      <button id="exportBtn">Export CSV</button>
+      <button id="viewHistory">Lihat History</button>
+      <button id="resetBtn">Reset Input</button>
+      <button id="inputRealBtn">Input Skor Nyata</button>
+    </div>
+  </div>
+
+  <!-- Center column: results + badge -->
+  <div>
+    <div class="card" id="resultCard">
+      <div id="tournamentBadge"></div>
+      <div class="section-title">Hasil Analisis</div>
+      <div id="resultText" class="small"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Distribusi Skor</div>
+      <div id="scoreDist" class="pre small"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Radar Match Profile</div>
+      <canvas id="radarCanvas" width="380" height="380"></canvas>
+      <div class="legend small">
+        <div>• <span style="color:var(--attack)">Attack</span></div>
+        <div>• <span style="color:var(--defense)">Defense</span></div>
+        <div>• Clash • Momentum • xT/xTA</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right column -->
+  <div>
+    <div class="card">
+      <div class="section-title">Trend Analisis</div>
+      <div id="trendText" class="pre small"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">History</div>
+      <div id="historyList" class="pre small"></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer-small">
+v20.6 Elite Edition — semua modul Tier-1..Tier-3 aktif. Tidak condong, tanpa contoh data, hasil murni dari input terbaru.
+</div>
+
+<!-- ======= SCRIPTS: CORE ENGINE (merged Parts + patches) ======= -->
+<script>
+/* ----------------- UTIL ----------------- */
+function showToast(msg,ms=1600){
+  const t=document.getElementById("toast"); if(!t) return;
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(window._qpe_toast); window._qpe_toast=setTimeout(()=>t.classList.remove("show"), ms);
+}
+function clamp(v,a,b){ return Math.min(b,Math.max(a,v)); }
+function pct(x){ return (x*100).toFixed(1) + "%"; }
+
+/* ------------- Auto Assist (simple helpers) ------------- */
+function autoConv(side){
+  let shots=parseFloat(document.getElementById(side+"_shots").value)||0;
+  let sot=parseFloat(document.getElementById(side+"_sot").value)||0;
+  if(shots<=0||sot>shots){ document.getElementById(side+"_conv").value=""; showToast('AutoConv: data kurang'); return; }
+  let conv=(sot/shots)*100; document.getElementById(side+"_conv").value=conv.toFixed(1);
+}
+function autoShotsC(side){
+  let gc=parseFloat(document.getElementById(side+"_gc").value)||0;
+  let sc=gc*2.5; document.getElementById(side+"_shotsC").value=sc.toFixed(1);
+}
+function autoCross(side){
+  let shots=parseFloat(document.getElementById(side+"_shots").value)||0;
+  let cr=clamp(shots*4.2,8,38); document.getElementById(side+"_cr").value=cr.toFixed(1);
+}
+function autoPAF(side){
+  let df=parseFloat(document.getElementById(side+"_df_abs").value)||0;
+  let md=parseFloat(document.getElementById(side+"_md_abs").value)||0;
+  let fw=parseFloat(document.getElementById(side+"_fw_abs").value)||0;
+  let paf=100-(df*3+md*2+fw*2.5); paf=clamp(paf,50,110);
+  document.getElementById(side+"_paf").value=paf.toFixed(1);
+}
+
+/* ----------------- Validation / QC ----------------- */
+function validateInput(h,a){
+  let ok=true; let alerts=[];
+  if(h.sot>h.shots) { alerts.push("Home SOT > Shots"); ok=false; }
+  if(a.sot>a.shots) { alerts.push("Away SOT > Shots"); ok=false; }
+  if(h.poss>80||h.poss<20) alerts.push("Home Poss out of range (20-80)");
+  if(a.poss>80||a.poss<20) alerts.push("Away Poss out of range (20-80)");
+  if(h.gc>h.shotsC) alerts.push("Home GC > ShotsC");
+  if(a.gc>a.shotsC) alerts.push("Away GC > ShotsC");
+  if(h.conv>70||a.conv>70) alerts.push("Conv% >70 terlalu besar");
+  if(h.xg>4||a.xg>4) alerts.push("xG terlalu besar (cek input)");
+  if(alerts.length) showToast(alerts.join(" • "), 3000);
+  return ok;
+}
+
+/* ----------------- Converters ----------------- */
+function styleToNum(x){
+  if(x==="possession")return 0.2;
+  if(x==="direct")return 0.5;
+  if(x==="counter")return 0.7;
+  if(x==="press")return 0.8;
+  if(x==="lowblock")return 0.1;
+  return 0.4;
+}
+function pressToNum(x){ if(x==="low")return 0.2; if(x==="medium")return 0.5; return 0.8; }
+function heightToNum(x){ if(x==="low")return 0.2; if(x==="medium")return 0.5; return 0.8; }
+
+/* ----------------- XG+, FEI, DSI ----------------- */
+function calcXGPlus(team){
+  let xg = (team.shots*0.035) + (team.sot*0.12) + (team.conv/100)*0.4;
+  xg += (team.poss)*0.0045 + (team.cr/100)*0.22;
+  if(team.prog) xg += team.prog*0.02;
+  if(team.final3) xg += team.final3*0.014;
+  return clamp(xg, 0.01, 6.5);
+}
+function calcFEI(team){
+  if(team.xg<=0) return 1;
+  let raw = team.gpg / team.xg;
+  return clamp( 0.92 + (raw - 1)*0.5, 0.7, 1.35 );
+}
+function calcDSI(team){
+  let base = 1 + Math.log(1 + (team.shotsC||0))*0.055 - (team.gc||0)*0.06;
+  let abs = (team.df_abs*0.03) + (team.md_abs*0.015) + (team.gk_abs*0.05);
+  let adj = 1 + abs;
+  return clamp(base*adj, 0.45, 2.8);
+}
+
+/* ----------------- Profile & ELO ----------------- */
+
+function classifyTeam(xG,xGA){
+
+  if(xG>1.6 && xGA<1.0) return "strong";
+
+  if(xG>1.6 && xGA>1.3) return "attack";
+
+  if(xG<1.1 && xGA<1.0) return "defense";
+
+  if(xG<1.1 && xGA>1.3) return "weak";
+
+  return "balanced";
+
+}
+
+function profileMultiplier(profile){
+
+  if(profile==="strong")return {atk:1.06,def:1.06};
+
+  if(profile==="attack")return {atk:1.07,def:0.94};
+
+  if(profile==="defense")return {atk:0.94,def:1.06};
+
+  if(profile==="weak")return {atk:0.92,def:0.92};
+
+  return {atk:1.0,def:1.0};
+
+}
+
+function eloFactor(e1,e2){
+
+  if(!e1||!e2) return 1;
+
+  let diff = e1 - e2;
+
+  return clamp(1/(1+Math.exp(-diff/500)), 0.85, 1.18);
+
+}
+
+function homeAdv(matchType){
+
+  if(matchType==="Derby") return 1.01;
+
+  if(matchType==="Final") return 1.00;
+
+  if(matchType==="Relegation") return 1.02;
+
+  return 1.03;
+
+}
+
+
+
+/* ----------------- Parkir Bus / Tactical Clash ----------------- */
+
+function parkirBusSignal(team,opp){
+
+  let p=0;
+
+  if(team.poss<38) p+=0.28;
+
+  if(team.style==="lowblock") p+=0.35;
+
+  if(team.shots<8) p+=0.18;
+
+  if((team.final3||0)<6) p+=0.12;
+
+  if(opp.xg>1.5 && team.xg<0.9) p+=0.14;
+
+  return clamp(p,0,1);
+
+}
+
+function tacticalClash(h,a){
+
+  let clash = Math.abs(styleToNum(h.style)-styleToNum(a.style));
+
+  clash += Math.abs(pressToNum(h.press)-pressToNum(a.press))*0.4;
+
+  clash += Math.abs(heightToNum(h.height)-heightToNum(a.height))*0.3;
+
+  return clamp(clash,0,2);
+
+}
+
+
+
+/* ----------------- MPE / IRC / TSCE / MIE ----------------- */
+
+function calcMomentum(h,a){
+
+  let tempoH = (h.shots*0.06 + h.sot*0.08 + (h.cr||0)*0.035 + (h.inter||0)*0.02);
+
+  let tempoA = (a.shots*0.06 + a.sot*0.08 + (a.cr||0)*0.035 + (a.inter||0)*0.02);
+
+  return { h: clamp((tempoH/6.5), 0.75, 1.20), a: clamp((tempoA/6.5), 0.75, 1.20) };
+
+}
+
+function importanceFactor(x){
+
+  if(x==="low") return 1.00;
+
+  if(x==="med") return 1.02;
+
+  if(x==="high") return 1.05;
+
+  return 1.08;
+
+}
+
+function rotationPenalty(r){
+
+  if(r==="0"||r===0) return 0;
+
+  if(r==="1"||r===1) return 0.04;
+
+  if(r==="2"||r===2) return 0.08;
+
+  return 0.12;
+
+}
+
+function keyMissingPenalty(x){ return (x==="1"||x===1) ? 0.10 : 0; }
+
+
+
+/* ----------------- TIER-3 modules ----------------- */
+
+function calcXT(team){
+
+  let xt=0;
+
+  if(team.prog) xt+=team.prog*0.015;
+
+  if(team.final3) xt+=team.final3*0.022;
+
+  xt += (team.sot||0)*0.06;
+
+  return clamp(xt,0,2.2);
+
+}
+
+function calcXTA(team){
+
+  let x = (team.shotsC||0)*0.014 + (team.gc||0)*0.25;
+
+  return clamp(x,0,2);
+
+}
+
+function calcPBCM(team){
+
+  let val = (team.poss*0.01) + (team.shots*0.008) + (team.cr*0.0028||0);
+
+  return clamp(val,0.3,1.6);
+
+}
+
+function calcGDPM(h,a){
+
+  return clamp( ( (h.pbc||0) + (a.pbc||0) )/2 + Math.abs((h.poss||0)-(a.poss||0))*0.01 , 0.4, 1.8);
+
+}
+
+function calcSFI(team){
+
+  let f = (team.dsi||1) * 0.1 + (team.gk_abs||0)*0.2 + (team.df_abs||0)*0.06;
+
+  return clamp(f,0,1);
+
+}
+
+function calcAGV(h,a,clash){
+
+  let v = 0.8 + clash*0.15 + ((h.mom||1)+(a.mom||1))/10;
+
+  return clamp(v,0.6,1.5);
+
+}
+
+function calcSPT(team){
+
+  return clamp((team.cr||0)*0.002 + (team.final3||0)*0.015, 0, 0.5);
+
+}
+
+function calcCFEM(matchType){
+
+  if(matchType==="Derby") return 0.12;
+
+  if(matchType==="Relegation") return 0.10;
+
+  return 0.05;
+
+}
+
+function calcOZR(team){
+
+  return clamp((team.inter||0)*0.03, 0, 0.6);
+
+}
+
+
+
+/* ----------------- Zero Bias & Anti-bias ----------------- */
+
+function applyZeroBias(lambdaH,lambdaA,market_ou){
+
+  let total = Math.max(0.01, lambdaH + lambdaA);
+
+  let factor = Math.pow((market_ou || 2.5) / total, 0.18);
+
+  return { h: lambdaH*factor, a: lambdaA*factor };
+
+}
+
+function antiBias(lambda){ return clamp(lambda, 0.3, 3.5); }
+
+function trapIndex(oddsH,oddsA,hdpOpen,hdpNow){
+
+  let mov = Math.abs(hdpNow - hdpOpen) * 1.8;
+
+  let imp = Math.abs((oddsH||0) - (oddsA||0));
+
+  let idx = 1 + mov*0.4 + imp*0.12;
+
+  return clamp(idx, 0.7, 1.6);
+
+}
+
+function confidenceGrid(lambdaH,lambdaA,variance,trap){
+
+  let base = 1 - Math.abs(lambdaH - lambdaA)*0.06;
+
+  let after = base - variance*0.1 - (trap - 1)*0.12;
+
+  return clamp(after, 0.25, 0.92);
+
+}
+
+function ORL(prob){
+
+  let s = prob.home + prob.draw + prob.away;
+
+  if(s<=0) return prob;
+
+  return { home: prob.home/s, draw: prob.draw/s, away: prob.away/s };
+
+}
+
+
+
+/* ----------------- Tournament Preset (patch) ----------------- */
+
+function tournamentPreset(t){
+
+  let cfg = { lambda_mult:1.00, momentum_mult:1.00, volatility_mult:1.00, importance_boost:1.00, defense_tightness:1.00, setpiece_boost:1.00 };
+
+  switch(t){
+
+    case "wq":
+
+      cfg.lambda_mult=0.96; cfg.momentum_mult=1.05; cfg.volatility_mult=1.08; cfg.importance_boost=1.12; cfg.defense_tightness=1.02; break;
+
+    case "wc":
+
+      cfg.lambda_mult=0.93; cfg.momentum_mult=1.10; cfg.volatility_mult=1.15; cfg.importance_boost=1.20; cfg.defense_tightness=1.04; cfg.setpiece_boost=1.08; break;
+
+    case "euro":
+
+      cfg.lambda_mult=0.95; cfg.momentum_mult=1.08; cfg.volatility_mult=1.12; cfg.importance_boost=1.18; cfg.defense_tightness=1.03; break;
+
+    case "copa":
+
+      cfg.lambda_mult=0.98; cfg.momentum_mult=1.12; cfg.volatility_mult=1.20; cfg.importance_boost=1.15; break;
+
+    case "afcon":
+
+      cfg.lambda_mult=1.02; cfg.momentum_mult=1.12; cfg.volatility_mult=1.20; cfg.importance_boost=1.10; break;
+
+    case "asia":
+
+      cfg.lambda_mult=1.00; cfg.momentum_mult=1.08; cfg.volatility_mult=1.15; cfg.importance_boost=1.15; break;
+
+    case "goldcup":
+
+      cfg.lambda_mult=1.05; cfg.momentum_mult=1.10; cfg.volatility_mult=1.22; cfg.importance_boost=1.12; break;
+
+    case "nl":
+
+      cfg.lambda_mult=0.99; cfg.momentum_mult=1.06; cfg.volatility_mult=1.10; cfg.importance_boost=1.08; break;
+
+    case "friendly":
+
+      cfg.lambda_mult=1.02; cfg.momentum_mult=0.88; cfg.volatility_mult=0.70; cfg.importance_boost=0.80; cfg.defense_tightness=0.92; break;
+
+  }
+
+  return cfg;
+
+}
+
+
+
+/* ----------------- HT Predictor (patch) ----------------- */
+
+function calcHT(lambdaH,lambdaA,matchType,tournament){
+
+  let multH=0.52, multA=0.52;
+
+  if(tournament==="wc"||tournament==="euro"){ multH=0.46; multA=0.46; }
+
+  if(matchType==="Derby"){ multH-=0.02; multA-=0.02; }
+
+  let h = lambdaH * multH;
+
+  let a = lambdaA * multA;
+
+  let denom = h + a + 0.6;
+
+  let pH = clamp(h/denom, 0, 1);
+
+  let pA = clamp(a/denom, 0, 1);
+
+  let pD = clamp(1 - (pH + pA), 0, 1);
+
+  return { htH: h, htA: a, probH: pH, probD: pD, probA: pA };
+
+}
+
+/* ----------------- Penalty Predictor (patch) ----------------- */
+
+function calcPenalties(h,a,tournament){
+
+  if(!(tournament==="wc"||tournament==="euro"||tournament==="copa"||tournament==="afcon")) return null;
+
+  let gkH = 1 - (h.gk_abs||0)*0.3;
+
+  let gkA = 1 - (a.gk_abs||0)*0.3;
+
+  let nerveH = 1 - (h.sfi||0)*0.2;
+
+  let nerveA = 1 - (a.sfi||0)*0.2;
+
+  let scoreH = gkH*0.55 + nerveH*0.45;
+
+  let scoreA = gkA*0.55 + nerveA*0.45;
+
+  let pH = scoreH/(scoreH+scoreA);
+
+  let pA = scoreA/(scoreH+scoreA);
+
+  return { pH: clamp(pH,0,1), pA: clamp(pA,0,1) };
+
+}
+
+
+
+/* ----------------- Worker MC (simple Poisson-based) ----------------- */
+
+let workerURL=null;
+
+function buildWorker(){
+
+  const code = `
+
+    onmessage=function(e){
+
+      const lh=e.data.lh, la=e.data.la, n=e.data.n;
+
+      function factorial(x){let r=1;for(let i=2;i<=x;i++)r*=i;return r;}
+
+      function pois(l,k){return Math.exp(-l)*Math.pow(l,k)/factorial(k);}
+
+      const max=10;
+
+      let ph=new Array(max).fill(0), pa=new Array(max).fill(0);
+
+      for(let k=0;k<max;k++){ ph[k]=pois(lh,k); pa[k]=pois(la,k); }
+
+      let pH=0,pD=0,pA=0; let scores={};
+
+      for(let gh=0;gh<max;gh++){
+
+        for(let ga=0;ga<max;ga++){
+
+          let p=ph[gh]*pa[ga];
+
+          if(gh>ga) pH+=p; else if(gh<ga) pA+=p; else pD+=p;
+
+          scores[gh+'-'+ga]= (scores[gh+'-'+ga]||0) + p;
+
+        }
+
+      }
+
+      postMessage({pH,pD,pA,scores});
+
+    };
+
+  `;
+
+  const blob = new Blob([code],{type:'application/javascript'});
+
+  if(workerURL) URL.revokeObjectURL(workerURL);
+
+  workerURL = URL.createObjectURL(blob);
+
+}
+
+async function runMC(lh,la,n){
+
+  if(!workerURL) buildWorker();
+
+  return new Promise(res=>{
+
+    const w = new Worker(workerURL);
+
+    w.onmessage = (ev) => { res({ prob:{ home:ev.data.pH, draw:ev.data.pD, away:ev.data.pA }, scores:ev.data.scores}); w.terminate(); };
+
+    w.onerror = () => { res({ prob:{home:0.33,draw:0.34,away:0.33}, scores:{} }); w.terminate(); };
+
+    w.postMessage({lh,la,n});
+
+  });
+
+}
+
+
+
+/* ----------------- MASTER CALC (core merged + tournament integration) ----------------- */
+
+async function masterCalc(){
+
+  try{
+
+    const get=(id)=>document.getElementById(id).value;
+
+    const input = {
+
+      league_gpg: parseFloat(get("league_gpg"))||2.6,
+
+      market_ou: parseFloat(get("market_ou"))||2.5,
+
+      match_type: get("match_type"),
+
+      comp: get("comp_mode"),
+
+      weather: get("weather"),
+
+      bayes: document.getElementById("bayes_mode").checked,
+
+      zb: document.getElementById("zero_bias_mode").checked,
+
+      mc_iter: parseInt(get("mc_select"))||10000,
+
+      oddsH: parseFloat(get("odds_home"))||0,
+
+      oddsA: parseFloat(get("odds_away"))||0,
+
+      hdpOpen: parseFloat(get("odds_hdp_open"))||0,
+
+      hdpNow: parseFloat(get("odds_hdp_now"))||0,
+
+      tournament: document.getElementById("tournament_mode").value
+
+    };
+
+
+
+    function pack(side){
+
+      return {
+
+        name: get(side+"_name"),
+
+        gpg: parseFloat(get(side+"_gpg"))||0,
+
+        gc: parseFloat(get(side+"_gc"))||0,
+
+        shots: parseFloat(get(side+"_shots"))||0,
+
+        sot: parseFloat(get(side+"_sot"))||0,
+
+        conv: parseFloat(get(side+"_conv"))||0,
+
+        poss: parseFloat(get(side+"_poss"))||50,
+
+        shotsC: parseFloat(get(side+"_shotsC"))||10,
+
+        cr: parseFloat(get(side+"_cr"))||15,
+
+        profile: get(side+"_profile"),
+
+        elo: parseFloat(get(side+"_elo"))||1500,
+
+        pac: parseFloat(get(side+"_pac"))||90,
+
+        style: get(side+"_style"),
+
+        press: get(side+"_press"),
+
+        height: get(side+"_height"),
+
+        gk_abs: parseFloat(get(side+"_gk_abs"))||0,
+
+        df_abs: parseFloat(get(side+"_df_abs"))||0,
+
+        md_abs: parseFloat(get(side+"_md_abs"))||0,
+
+        fw_abs: parseFloat(get(side+"_fw_abs"))||0,
+
+        paf: parseFloat(get(side+"_paf"))||100,
+
+        importance: get(side+"_importance"),
+
+        rotation: get(side+"_rotation"),
+
+        keymiss: get(side+"_keymiss"),
+
+        prog: parseFloat(get(side+"_prog"))||0,
+
+        final3: parseFloat(get(side+"_final3"))||0,
+
+        inter: parseFloat(get(side+"_inter"))||0
+
+      };
+
+    }
+
+
+
+    let h = pack("h"), a = pack("a");
+
+
+
+    // enhanced stats
+
+    h.xg = calcXGPlus(h); a.xg = calcXGPlus(a);
+
+    h.fei = calcFEI(h); a.fei = calcFEI(a);
+
+    h.dsi = calcDSI(h); a.dsi = calcDSI(a);
+
+    h.xga = h.gc*0.8 + h.shotsC*0.04; a.xga = a.gc*0.8 + a.shotsC*0.04;
+
+
+
+    // validate
+
+    validateInput(h,a);
+
+
+
+    if(h.profile==="auto") h.profile = classifyTeam(h.xg, h.xga);
+
+    if(a.profile==="auto") a.profile = classifyTeam(a.xg, a.xga);
+
+    let pmH = profileMultiplier(h.profile), pmA = profileMultiplier(a.profile);
+
+
+
+    // parkir bus
+
+    h.pb = parkirBusSignal(h,a); a.pb = parkirBusSignal(a,h);
+
+
+
+    // tactical clash
+
+    let clash = tacticalClash(h,a);
+
+
+
+    // xT/xTA
+
+    h.xt = calcXT(h); a.xt = calcXT(a);
+
+    h.xTa = calcXTA(h); a.xTa = calcXTA(a);
+
+
+
+    // PBCM, momentum, GDPM, SFI, AGV, SPT, OZR
+
+    h.pbc = calcPBCM(h); a.pbc = calcPBCM(a);
+
+    let mom = calcMomentum(h,a); h.mom = mom.h; a.mom = mom.a;
+
+    let gdpm = calcGDPM(h,a);
+
+    h.sfi = calcSFI(h); a.sfi = calcSFI(a);
+
+    let agv = calcAGV(h,a,clash);
+
+    h.spt = calcSPT(h); a.spt = calcSPT(a);
+
+    let cfem = calcCFEM(input.match_type);
+
+    h.ozr = calcOZR(h); a.ozr = calcOZR(a);
+
+
+
+    // base lambda
+
+    let lambdaH = h.xg * h.fei * pmH.atk;
+
+    let lambdaA = a.xg * a.fei * pmA.atk;
+
+
+
+    // defense effect
+
+    lambdaH *= 1/(1 + a.dsi*0.12);
+
+    lambdaA *= 1/(1 + h.dsi*0.12);
+
+
+
+    // parkir bus reduce
+
+    lambdaH *= 1 - (a.pb*0.14);
+
+    lambdaA *= 1 - (h.pb*0.14);
+
+
+
+    // xT / xTA influence
+
+    lambdaH *= 1 + (h.xt*0.04) - (h.xTa*0.03);
+
+    lambdaA *= 1 + (a.xt*0.04) - (a.xTa*0.03);
+
+
+
+    // clash effect
+
+    lambdaH *= 1 + (clash*0.05);
+
+    lambdaA *= 1 + (clash*0.05);
+
+
+
+    // ball circulation
+
+    lambdaH *= 1 + (h.pbc*0.02);
+
+    lambdaA *= 1 + (a.pbc*0.02);
+
+
+
+    // momentum
+
+    lambdaH *= h.mom; lambdaA *= a.mom;
+
+
+
+    // fragility effect
+
+    lambdaH *= 1 + a.sfi*0.05;
+
+    lambdaA *= 1 + h.sfi*0.05;
+
+
+
+    // volatility (AGV)
+
+    lambdaH *= agv; lambdaA *= agv;
+
+
+
+    // importance
+
+    lambdaH *= importanceFactor(h.importance);
+
+    lambdaA *= importanceFactor(a.importance);
+
+
+
+    // rotation & keymiss
+
+    lambdaH *= 1 - rotationPenalty(h.rotation) - keyMissingPenalty(h.keymiss);
+
+    lambdaA *= 1 - rotationPenalty(a.rotation) - keyMissingPenalty(a.keymiss);
+
+
+
+    // set piece & OZR adders
+
+    lambdaH += h.spt * 0.08;
+
+    lambdaA += a.spt * 0.08;
+
+    lambdaH += h.ozr * 0.05;
+
+    lambdaA += a.ozr * 0.05;
+
+
+
+    // home adv & elo
+
+    let ha = homeAdv(input.match_type);
+
+    let eloF = eloFactor(h.elo, a.elo);
+
+    lambdaH *= ha * eloF;
+
+    lambdaA *= eloF;
+
+
+
+    // league profile & weather
+
+    if(document.getElementById("league_profile").value==="low"){ lambdaH *= 0.92; lambdaA *= 0.92; }
+
+    if(document.getElementById("league_profile").value==="high"){ lambdaH *= 1.07; lambdaA *= 1.07; }
+
+    if(input.weather==="Rain"){ lambdaH *= 0.94; lambdaA *= 0.94; }
+
+    if(input.weather==="Snow"){ lambdaH *= 0.90; lambdaA *= 0.90; }
+
+    if(input.weather==="Hot"){ lambdaH *= 0.95; lambdaA *= 0.95; }
+
+
+
+    // Tournament preset application (patch)
+
+    const tcfg = tournamentPreset(input.tournament);
+
+    lambdaH *= tcfg.lambda_mult; lambdaA *= tcfg.lambda_mult;
+
+    h.mom *= tcfg.momentum_mult; a.mom *= tcfg.momentum_mult;
+
+    lambdaH *= tcfg.volatility_mult; lambdaA *= tcfg.volatility_mult;
+
+    lambdaH /= tcfg.defense_tightness; lambdaA /= tcfg.defense_tightness;
+
+    lambdaH += (h.spt * 0.08 * tcfg.setpiece_boost);
+
+    lambdaA += (a.spt * 0.08 * tcfg.setpiece_boost);
+
+    lambdaH *= tcfg.importance_boost; lambdaA *= tcfg.importance_boost;
+
+
+
+    // zero-bias
+
+    if(input.zb){
+
+      const z = applyZeroBias(lambdaH, lambdaA, input.market_ou);
+
+      lambdaH = z.h; lambdaA = z.a;
+
+    }
+
+
+
+    // anti-bias clamp & final smoothing
+
+    lambdaH = antiBias(lambdaH); lambdaA = antiBias(lambdaA);
+
+
+
+    // trap index, variance, confidence
+
+    const trap = trapIndex(input.oddsH, input.oddsA, input.hdpOpen, input.hdpNow);
+
+    const variance = (h.sfi + a.sfi)/2;
+
+    const conf = confidenceGrid(lambdaH, lambdaA, variance, trap);
+
+
+
+    // Monte Carlo (worker)
+
+    const mc = await runMC(lambdaH, lambdaA, input.mc_iter);
+
+
+
+    // ORL normalize
+
+    const orl = ORL(mc.prob);
+
+
+
+    // HT predictor
+
+    const ht = calcHT(lambdaH, lambdaA, input.match_type, input.tournament);
+
+
+
+    // penalty predictor (if KO)
+
+    const pens = calcPenalties(h,a,input.tournament);
+
+
+
+    // assemble result
+
+    const result = {
+
+      lambdaH: lambdaH, lambdaA: lambdaA,
+
+      prob: orl, scores: mc.scores, conf: conf,
+
+      clash: clash, trap: trap,
+
+      h: h, a: a,
+
+      ht: ht, penalties: pens
+
+    };
+
+
+
+    // save last
+
+    window._lastRes = result;
+
+    return result;
+
+
+
+  }catch(err){
+
+    console.error("masterCalc error", err);
+
+    return { lambdaH:0, lambdaA:0, prob:{home:0.33,draw:0.34,away:0.33}, scores:{}, conf:0, clash:0, trap:1, h:{}, a:{} };
+
+  }
+
+}
+
+
+
+/* ----------------- UI: tournament badge (patch) ----------------- */
+
+function updateTournamentBadge(){
+
+  const t=document.getElementById("tournament_mode").value;
+
+  const el=document.getElementById("tournamentBadge");
+
+  const MAP = {
+
+    none: "",
+
+    wc: "Piala Dunia 🌍",
+
+    wq: "Kualifikasi Piala Dunia 🌐",
+
+    euro: "EURO 🇪🇺",
+
+    copa: "Copa América 🇨🇱",
+
+    afcon: "AFCON 🌍",
+
+    asia: "Asian Cup 🇦🇸",
+
+    goldcup: "Gold Cup 🇺🇸",
+
+    nl: "Nations League 🇪🇺",
+
+    friendly: "Friendly Match 🤝"
+
+  };
+
+  el.innerHTML = MAP[t] ? `<div style="font-weight:600;color:#dff6fb">${MAP[t]}</div>` : "";
+
+}
+
+
+
+/* ----------------- Render & History ----------------- */
+
+let HISTORY = [];
+
+function pushHistory(res){
+
+  HISTORY.unshift({time:new Date().toLocaleString(), home: res.h.name||'HOME', away: res.a.name||'AWAY', prob: res.prob, conf: res.conf});
+
+  if(HISTORY.length>100) HISTORY.pop();
+
+  renderHistory();
+
+}
+
+function renderHistory(){
+
+  let out="";
+
+  for(let it of HISTORY) out += `[${it.time}] ${it.home} vs ${it.away} → H:${pct(it.prob.home)} D:${pct(it.prob.draw)} A:${pct(it.prob.away)} (C:${(it.conf*100).toFixed(0)}%)\n`;
+
+  document.getElementById("historyList").textContent = out;
+
+}
+
+
+
+/* ----------------- Radar draw ----------------- */
+
+function drawRadar(h,a,clash){
+
+  const cv=document.getElementById("radarCanvas"); const c=cv.getContext("2d");
+
+  c.clearRect(0,0,cv.width,cv.height);
+
+  const cx=cv.width/2, cy=cv.height/2, r=Math.min(cx,cy)-30;
+
+  c.strokeStyle="#082a36"; for(let i=1;i<=4;i++){ c.beginPath(); c.arc(cx,cy,(r/4)*i,0,Math.PI*2); c.stroke(); }
+
+  const vals=[ clamp(h.xg/2.4,0,1), clamp(a.xg/2.4,0,1), clamp(1/(h.dsi||1),0,1.6), clamp(1/(a.dsi||1),0,1.6), clamp(clash/2,0,1) ];
+
+  const ang=2*Math.PI/5;
+
+  c.beginPath(); c.strokeStyle="#18b2c9"; c.fillStyle="rgba(24,178,201,0.05)";
+
+  for(let i=0;i<5;i++){ const rad = vals[i]*r; const x = cx + rad*Math.cos(ang*i - Math.PI/2); const y = cy + rad*Math.sin(ang*i - Math.PI/2); if(i===0) c.moveTo(x,y); else c.lineTo(x,y); }
+
+  c.closePath(); c.fill(); c.stroke();
+
+}
+/* ----------------- Render Result (includes HT + Penalty) ----------------- */
+
+function renderResult(res){
+
+  if(!res) return;
+
+  updateTournamentBadge();
+
+  let t = `<strong>λ Home:</strong> ${res.lambdaH.toFixed(3)} &nbsp; <strong>λ Away:</strong> ${res.lambdaA.toFixed(3)}<br/><br/>`;
+
+  t += `<strong>Probabilitas FT:</strong><br/>Home: ${pct(res.prob.home)} &nbsp; Draw: ${pct(res.prob.draw)} &nbsp; Away: ${pct(res.prob.away)}<br/>`;
+
+  t += `Confidence: ${(res.conf*100).toFixed(1)}% &nbsp; • Trap: ${res.trap.toFixed(2)} &nbsp; • Clash: ${res.clash.toFixed(2)}<br/>`;
+
+  // HT
+
+  if(res.ht){
+
+    t += `<br/><strong>Prediksi HT:</strong><br/>HT λ Home: ${res.ht.htH.toFixed(3)} &nbsp; HT λ Away: ${res.ht.htA.toFixed(3)}<br/>HT Home: ${pct(res.ht.probH)} • HT Draw: ${pct(res.ht.probD)} • HT Away: ${pct(res.ht.probA)}<br/>`;
+
+  }
+
+  // Penalty (KO)
+
+  if(res.penalties){
+
+    t += `<br/><strong>⚽ Prediksi Penalti (KO Mode):</strong><br/>Home: ${(res.penalties.pH*100).toFixed(1)}% • Away: ${(res.penalties.pA*100).toFixed(1)}%<br/>`;
+
+  }
+
+  document.getElementById("resultText").innerHTML = t;
+
+
+
+  // score dist
+
+  let sd = ""; const s = res.scores || {};
+
+  Object.keys(s).sort().forEach(k=>{ if(s[k]>0.005) sd += `${k}: ${(s[k]*100).toFixed(2)}%\n`; });
+
+  document.getElementById("scoreDist").textContent = sd;
+
+
+
+  // radar & trend
+
+  drawRadar(res.h,res.a,res.clash);
+
+  document.getElementById("trendText").textContent = `xG Home: ${res.h.xg.toFixed(2)} | xG Away: ${res.a.xg.toFixed(2)}
+
+DSI Home: ${res.h.dsi.toFixed(2)} | DSI Away: ${res.a.dsi.toFixed(2)}
+
+Momentum H:${res.h.mom.toFixed(2)} A:${res.a.mom.toFixed(2)}
+
+xT: H:${res.h.xt.toFixed(2)} A:${res.a.xt.toFixed(2)}
+
+Fragility: H:${res.h.sfi.toFixed(2)} A:${res.a.sfi.toFixed(2)}
+
+`;
+
+
+
+  pushHistory(res);
+
+}
+
+
+
+/* ----------------- Buttons & events ----------------- */
+
+document.getElementById("analyzeBtn").onclick = async ()=>{
+
+  showToast("Menghitung...");
+
+  const res = await masterCalc();
+
+  renderResult(res);
+
+  showToast("Selesai");
+
+};
+
+document.getElementById("autoCalcStats").onclick = ()=>{
+
+  autoConv('h'); autoConv('a'); autoShotsC('h'); autoShotsC('a'); autoCross('h'); autoCross('a'); autoPAF('h'); autoPAF('a'); showToast('Auto Assist Applied');
+
+};
+
+document.getElementById("autoEnhancedBtn").onclick = async ()=>{
+
+  showToast('Enhanced computed'); const res = await masterCalc(); renderResult(res);
+
+};
+
+document.getElementById("exportBtn").onclick = ()=>{
+
+  if(!window._lastRes){ showToast('Belum ada hasil'); return; }
+
+  const r = window._lastRes;
+
+  let rows=[['lambdaH','lambdaA','pH','pD','pA','conf']];
+
+  rows.push([r.lambdaH, r.lambdaA, r.prob.home, r.prob.draw, r.prob.away, r.conf]);
+
+  let csv = rows.map(rw=>rw.join(',')).join('\n');
+
+  const blob = new Blob([csv],{type:'text/csv'}); const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a'); a.href=url; a.download='prediksi_v20.6_result.csv'; a.click(); URL.revokeObjectURL(url); showToast('Export CSV dibuat');
+
+};
+
+document.getElementById("viewHistory").onclick = ()=> renderHistory();
+
+document.getElementById("resetBtn").onclick = ()=>{
+
+  if(!confirm('Reset semua input?')) return;
+
+  document.querySelectorAll('input,select').forEach(e=>{ if(e.type==='checkbox') e.checked=false; else e.value=''; });
+
+  showToast('Input dikosongkan');
+
+};
+
+document.getElementById("inputRealBtn").onclick = ()=>{
+
+  const h = prompt('Gol Home (angka):',''); const a = prompt('Gol Away (angka):',''); if(h===null||a===null) return;
+
+  const hist = HISTORY; if(hist.length===0){ showToast('Belum ada history'); return; }
+
+  const last = HISTORY[0]; last.real_home = Number(h); last.real_away = Number(a);
+
+  showToast('Skor nyataterkait dengan history (tidak otomatis merubah prior)');
+
+};
+
+
+
+/* ----------------- Init ----------------- */
+
+window.addEventListener('load', ()=>{ buildWorker(); updateTournamentBadge(); showToast('v20.6 Elite siap — gunakan Tournament dropdown untuk mode internasional',1400); });
+</script>
+</body>
+</html>
+
+
