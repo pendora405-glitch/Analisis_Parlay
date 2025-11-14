@@ -1654,72 +1654,155 @@ document.getElementById("importModel").addEventListener("click", ()=>{
   inp.click();
 });
 
-/* ----------------- Input Real Score (auto-train hookup) ------------- */
-document.getElementById("inputRealBtn").addEventListener("click", ()=>{
-  const h = prompt("Gol Home (angka):","");
-  const a = prompt("Gol Away (angka):","");
-  if(h===null || a===null) return;
-  if(HISTORY.length===0){ showToast("Belum ada history untuk kaitkan skor nyata"); return; }
-  HISTORY[0].real_home = Number(h);
-  HISTORY[0].real_away = Number(a);
+/* ============/* ============================================================
+   PART 6/12 — LAMBDA FINALIZER v21
+   Menggabungkan: XG+, DSI, PNS, OSC, TTM, FATIGUE, IMPORTANCE,
+   CONTEXT NORMALIZATION, LEAGUE GPG ADJUST, ANTI-SPIKE v2,
+   ADAPTIVEXG v3, ZERO-BIAS TOTAL-GOALS
+   ============================================================ */
 
-  // auto-train if enabled
-  const autot = document.getElementById("autotrain") ? document.getElementById("autotrain").value : "1";
-  const enableLearning = document.getElementById("enable_learning") ? document.getElementById("enable_learning").checked : false;
-  if((autot==="1" || enableLearning) && window._lastRes){
-    // train QPE and xg calibrator
-    qpeTrain({ lambdaH: window._lastRes.lambdaH, lambdaA: window._lastRes.lambdaA, realH: Number(h), realA: Number(a), leagueGPG: safeNum(document.getElementById("league_gpg").value,2.6) });
-    updateXGCalibrator(window._lastRes.lambdaH, Number(h));
-    showToast("Skor tersimpan & model ter-update");
-  } else {
-    showToast("Skor tersimpan");
-  }
-  renderHistory();
-});
+/* -------- 1) Fungsi normalisasi liga (berdasarkan league GPG) -------- */
+function leagueNormalize(lambda, leagueGPG, modelGPG=2.72){
+  if(!leagueGPG || leagueGPG <= 0) return lambda;
+  const factor = leagueGPG / modelGPG;
+  return lambda * factor;
+}
 
-/* ----------------- Export CSV (history latest) ----------------- */
-document.getElementById("exportBtn").addEventListener("click", ()=>{
-  if(HISTORY.length===0){ showToast("Belum ada hasil untuk di-export"); return; }
-  const last = HISTORY[0];
-  const rows = [
-    ["time","home","away","lambdaH","lambdaA","pHome","pDraw","pAway","conf","trap"],
-    [last.time,last.hname,last.aname,last.lambdaH,last.lambdaA,last.prob.home,last.prob.draw,last.prob.away,last.conf,last.trap]
-  ];
-  const csv = rows.map(r=>r.join(",")).join("\n");
-  const blob = new Blob([csv], {type:"text/csv"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url; a.download = "prediksi_v21_result.csv"; a.click();
-  URL.revokeObjectURL(url);
-  showToast("CSV di-download (file dibuat pada browser)");
-});
+/* -------- 2) Konteks pertandingan (cuaca, altitude, pitch quality) -------- */
+function contextModifier(ctx){
+  if(!ctx) return 1;
 
-/* ----------------- reset binding ----------------- */
-document.getElementById("resetBtn").addEventListener("click", ()=>{
-  if(!confirm("Reset semua input?")) return;
-  document.querySelectorAll("input,select,textarea").forEach(el=>{
-    if(el.type==="checkbox") el.checked = false;
-    else el.value = "";
-  });
-  HISTORY = [];
-  renderHistory();
-  if(document.getElementById("resultText")) document.getElementById("resultText").textContent = "";
-  if(document.getElementById("scoreDist")) document.getElementById("scoreDist").textContent = "";
-  if(document.getElementById("trendText")) document.getElementById("trendText").textContent = "";
-  showToast("Input dikosongkan");
-});
+  let m = 1;
 
-/* ----------------- Toggle Radar redraw ----------------- */
-document.getElementById("toggleRadar").addEventListener("click", ()=>{
-  if(window._lastRes) drawRadar10(window._lastRes.h, window._lastRes.a, window._lastRes.clash||0);
-  showToast("Radar diperbarui");
-});
+  if(ctx.weather === "rain")  m *= 0.94;
+  if(ctx.weather === "storm") m *= 0.88;
+  if(ctx.weather === "snow")  m *= 0.90;
+  if(ctx.weather === "hot")   m *= 0.96;
 
-/* init small */
-window.addEventListener("load", ()=>{
-  showToast("v21.0 PRO siap — bagian output ter-load", 1200);
-  renderHistory();
-});
+  if(ctx.altitude === "high") m *= 0.92;
+
+  if(ctx.pitch === "slow")    m *= 0.95;
+  if(ctx.pitch === "fast")    m *= 1.03;
+
+  return m;
+}
+
+/* -------- 3) FATIGUE & SCHEDULE difficulty -------- */
+function fatigueModifier(fat){
+  if(!fat) return 1;
+  return clamp(1 - (fat * 0.04), 0.82, 1.05);
+}
+
+function scheduleMod(diff){
+  if(!diff) return 1;
+  return clamp(1 - (diff * 0.03), 0.85, 1.05);
+}
+
+/* -------- 4) IMPORTANCE (big match, derby, elimination) -------- */
+function importanceBoost(val){
+  if(!val) return 1;
+  return 1 + clamp(val * 0.08, -0.15, 0.15);
+}
+
+/* -------- 5) AntiSpike v2 (menstabilkan lonjakan aneh) -------- */
+function antiSpike(base, indicators){
+  let penalty = 0;
+  if(indicators.dsi < 0.55) penalty += 0.05;
+  if(indicators.pns < 0.55) penalty += 0.04;
+  if(indicators.bms < 0.5)  penalty += 0.03;
+  return base * (1 - penalty);
+}
+
+/* -------- 6) AdaptiveXG v3 (adjust berdasarkan finishing konversi terakhir) -------- */
+function adaptiveXG(base, conv){
+  if(!conv || conv <= 0) return base;
+  const adj = clamp((conv - 0.11) * 0.8, -0.20, 0.22);
+  return base * (1 + adj);
+}
+
+/* -------- 7) ZERO-BIAS MODEL (menyeimbangkan total gol supaya netral) -------- */
+function zeroBias(lambdaH, lambdaA, marketOU){
+  if(!marketOU || marketOU <= 0) return {lh: lambdaH, la: lambdaA};
+
+  const totalModel = lambdaH + lambdaA;
+
+  const adj = clamp((marketOU - totalModel) * 0.25, -0.55, 0.55);
+
+  const lh = clamp(lambdaH + adj/2, 0.12, 6.0);
+  const la = clamp(lambdaA + adj/2, 0.12, 6.0);
+
+  return {lh, la};
+}
+
+/* ==================================================================
+   LAMBDA FINALIZER — DIGUNAKAN OLEH masterLambdaBuild()
+   ================================================================== */
+function finalizeLambda(h, a, adv, ctx, leagueGPG, marketOU){
+  let lambdaH = adv.xgH;
+  let lambdaA = adv.xgA;
+
+  /* --- gabung semua modul advanced --- */
+  lambdaH *= adv.dsiH;
+  lambdaA *= adv.dsiA;
+
+  lambdaH *= adv.pnsH;
+  lambdaA *= adv.pnsA;
+
+  lambdaH *= adv.oscH;
+  lambdaA *= adv.oscA;
+
+  lambdaH *= adv.ttmH;
+  lambdaA *= adv.ttmA;
+
+  lambdaH *= adv.bmsH;
+  lambdaA *= adv.bmsA;
+
+  /* fatigues */
+  lambdaH *= fatigueModifier(adv.fatH);
+  lambdaA *= fatigueModifier(adv.fatA);
+
+  /* schedule difficulty */
+  lambdaH *= scheduleMod(adv.schedH);
+  lambdaA *= scheduleMod(adv.schedA);
+
+  /* importance */
+  lambdaH *= importanceBoost(adv.impH);
+  lambdaA *= importanceBoost(adv.impA);
+
+  /* context (cuaca, pitch, altitude) */
+  const cmH = contextModifier(ctx);
+  const cmA = contextModifier(ctx);
+  lambdaH *= cmH;
+  lambdaA *= cmA;
+
+  /* league normalization */
+  lambdaH = leagueNormalize(lambdaH, leagueGPG);
+  lambdaA = leagueNormalize(lambdaA, leagueGPG);
+
+  /* antiSpike v2 */
+  lambdaH = antiSpike(lambdaH, adv);
+  lambdaA = antiSpike(lambdaA, adv);
+
+  /* AdaptiveXG v3 (berdasarkan conv%) */
+  lambdaH = adaptiveXG(lambdaH, h.conv);
+  lambdaA = adaptiveXG(lambdaA, a.conv);
+
+  /* zero-bias (menyeimbangkan total gol agar tidak condong) */
+  const zb = zeroBias(lambdaH, lambdaA, marketOU);
+  lambdaH = zb.lh;
+  lambdaA = zb.la;
+
+  /* batas aman */
+  lambdaH = clamp(lambdaH, 0.15, 6.5);
+  lambdaA = clamp(lambdaA, 0.15, 6.5);
+
+  return {lambdaH, lambdaA};
+}
+
 /* ============================================================
+   END OF PART 6/12
+   ============================================================ 
+   */================================================
    PART 7/12 — CONFIDENCE TUNING, ODDS-TRAP REFINEMENT,
                HDP (Asian Handicap) CALCULATOR,
                OVER/UNDER PROB MODEL, ODDS-TRAP VISUALS
