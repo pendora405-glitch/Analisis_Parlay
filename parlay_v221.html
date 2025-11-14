@@ -1,0 +1,2707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Prediksi Sepak Bola v22.1 TITAN Ultra+</title>
+
+<!-- ============================================================
+     v22.1 TITAN ENGINE — SCRIPT BLOK AWAL (LENGKAP)
+=============================================================== -->
+<script>
+/* ============================================================
+   CORE UTIL
+=========================================================== */
+function safeNum(v, d){ v = parseFloat(v); return isNaN(v) ? d : v; }
+function clamp(x, a, b){ return Math.max(a, Math.min(b, x)); }
+function rnd(x,p=4){ return parseFloat(x.toFixed(p)); }
+
+/* --- factorial cache --- */
+const _factCache = {};
+function factorial(n){
+  if(n <= 1) return 1;
+  if(_factCache[n]) return _factCache[n];
+  let r = 1;
+  for(let i=2;i<=n;i++) r *= i;
+  _factCache[n] = r;
+  return r;
+}
+
+/* ============================================================
+   POISSON + SCORE MAP
+=========================================================== */
+function pois(lambda,k){
+  if(lambda <= 0) return 0;
+  return Math.exp(-lambda) * Math.pow(lambda,k) / factorial(k);
+}
+
+function scoreDistribution(lambdaH, lambdaA, maxG = 8){
+  const out = {};
+  for(let i=0;i<=maxG;i++){
+    for(let j=0;j<=maxG;j++){
+      out[`${i}-${j}`] = pois(lambdaH,i) * pois(lambdaA,j);
+    }
+  }
+  return out;
+}
+
+function normalize3(p){
+  const s = p.home + p.draw + p.away;
+  if(s <= 0) return {home:0.33, draw:0.34, away:0.33};
+  return {
+    home: p.home/s,
+    draw: p.draw/s,
+    away: p.away/s
+  };
+}
+
+/* ============================================================
+   STYLE & PRESS MAPPING
+=========================================================== */
+function styleToNum(s){
+  s = (s||"").toLowerCase();
+  if(s==="possession") return 0.9;
+  if(s==="direct") return 0.4;
+  return 0.65; // balanced
+}
+
+function pressToNum(p){
+  p = (p||"").toLowerCase();
+  if(p==="high") return 1.0;
+  if(p==="low") return 0.3;
+  return 0.65; // medium
+}
+
+/* ============================================================
+   MODULE: ETv4
+=========================================================== */
+function calcETv4(team){
+  const prog  = safeNum(team.prog,0);
+  const f3    = safeNum(team.final3,0);
+  const poss  = safeNum(team.poss,50)/100;
+  const style = styleToNum(team.style);
+  const press = pressToNum(team.press);
+
+  let val = 0;
+  val += prog * 0.035;
+  val += f3   * 0.055;
+  val += poss * 0.35;
+  val += style * 0.25;
+  val += press * 0.18;
+
+  return clamp(val, 0.05, 4.0);
+}
+
+/* ============================================================
+   MODULE: XG+
+=========================================================== */
+function calcXGplus(team){
+  const conv  = safeNum(team.conv,10)/100;
+  const sot   = safeNum(team.sot,3);
+  const shots = safeNum(team.shots,8);
+
+  let base = (shots*0.03 + sot*0.08) * (0.9 + conv*0.45);
+  return clamp(base, 0.02, 3.5);
+}
+
+/* ============================================================
+   MODULE: DSBI
+=========================================================== */
+function calcDSBI(team){
+  const inter = safeNum(team.inter,5);
+  const dzc   = safeNum(team.dzc,1);
+  let v = inter*0.04 + dzc*0.15;
+  return clamp(v, 0.05, 2.8);
+}
+
+/* ============================================================
+   MODULE: PRI (Press Resistance Index)
+=========================================================== */
+function calcPRI(team){
+  const poss  = safeNum(team.poss,50)/100;
+  const build = safeNum(team.build,5)/12;
+  let v = poss*0.7 + build*0.6;
+  return clamp(v, 0.2, 2.4);
+}
+
+/* ============================================================
+   MODULE: TVM (Tempo Variation Model)
+=========================================================== */
+function calcTVM(team){
+  const trans   = safeNum(team.trans,5);
+  const counter = safeNum(team.counter,5);
+  let v = (trans*0.05 + counter*0.04);
+  return clamp(1 + v*0.05, 0.8, 1.3);
+}
+
+/* ============================================================
+   MODULE: ALBB (Attack Line Break Bonus)
+=========================================================== */
+function calcALBB(team){
+  return clamp(1 + (safeNum(team.prog,0)*0.01 + safeNum(team.final3,0)*0.015), 0.9, 1.35);
+}
+
+/* ============================================================
+   MODULE: BCM (Build Control Multiplier)
+=========================================================== */
+function calcBCM(team){
+  return clamp(1 + (safeNum(team.build,5)/15)*0.22, 0.8, 1.32);
+}
+
+/* ============================================================
+   MODULE: PCS ENGINE
+=========================================================== */
+function calcPCS(team){
+  const prog  = safeNum(team.prog,0);
+  const f3    = safeNum(team.final3,0);
+  const poss  = safeNum(team.poss,50)/100;
+  const xTF   = clamp((prog*0.06 + f3*0.08 + poss*0.4), 0.02, 3.5);
+  return { xTF };
+}
+
+/* ============================================================
+   MODULE: SPHv2
+=========================================================== */
+function calcSPH(team){
+  const inter = safeNum(team.inter,5);
+  const press = pressToNum(team.press);
+  const v = 1 + inter*0.02 + press*0.3;
+  return clamp(v, 0.8, 2.0);
+}
+
+/* ============================================================
+   MODULE: MEL (Mini Learner)
+=========================================================== */
+let MEL_WEIGHT = 0.38;
+
+function melPredict(lambda, conv){
+  const c = clamp(conv/100, 0.05, 0.5);
+  return clamp(lambda * (1 + (c-0.12)*0.45), 0.1, 7.5);
+}
+
+function melUpdateFromHistory(entry){
+  if(entry.real_home == null || entry.real_away == null) return;
+
+  const pred = entry.lambdaH + entry.lambdaA;
+  const real = entry.real_home + entry.real_away;
+  const err = Math.abs(pred-real);
+  const adj = clamp(1 - (err/8), 0.85, 1.05);
+  MEL_WEIGHT = clamp(MEL_WEIGHT*0.9 + adj*0.1, 0.2, 0.5);
+}
+
+function melTrainFromHistory(hist, epochs=260){
+  for(let e=0;e<epochs;e++){
+    for(const h of hist){ melUpdateFromHistory(h); }
+  }
+}
+
+/* ============================================================
+   FUSION ENGINE
+=========================================================== */
+function buildFusion(h,a){
+  const H={
+    et: calcETv4(h),
+    xg: calcXGplus(h),
+    ds: calcDSBI(h),
+    pri: calcPRI(h),
+    tvm: calcTVM(h),
+    albb: calcALBB(h),
+    bcm: calcBCM(h),
+    pcs: calcPCS(h),
+    sph: calcSPH(h)
+  };
+  const A={
+    et: calcETv4(a),
+    xg: calcXGplus(a),
+    ds: calcDSBI(a),
+    pri: calcPRI(a),
+    tvm: calcTVM(a),
+    albb: calcALBB(a),
+    bcm: calcBCM(a),
+    pcs: calcPCS(a),
+    sph: calcSPH(a)
+  };
+
+  function fuseSide(T,opp){
+    let val=0;
+    val += T.et*0.22 + T.xg*0.26 + T.pcs.xTF*0.14 + T.albb*0.11 + T.bcm*0.08;
+    val *= (1 + T.tvm*0.02);
+    val *= (1 - (opp.ds-1)*0.06);
+    val *= clamp((1 + (T.sph - opp.sph)*0.04), 0.85, 1.18);
+    return clamp(val, 0.2, 8.0);
+  }
+
+  return {
+    H: fuseSide(H,A),
+    A: fuseSide(A,H),
+    raw:{H,A}
+  };
+}
+
+/* ============================================================
+   FINALIZE LAMBDA (Base — before patch v22.1)
+=========================================================== */
+function finalizeLambdaUltra(h,a,fusion,ctx){
+  let lh = fusion.H;
+  let la = fusion.A;
+
+  lh *= clamp(1 + (calcPRI(h)-1)*0.1 - (calcDSBI(a)-1)*0.08, 0.6, 1.4);
+  la *= clamp(1 + (calcPRI(a)-1)*0.1 - (calcDSBI(h)-1)*0.08, 0.6, 1.4);
+
+  lh = lh*(1-MEL_WEIGHT) + melPredict(lh, h.conv)*MEL_WEIGHT;
+  la = la*(1-MEL_WEIGHT) + melPredict(la, a.conv)*MEL_WEIGHT;
+
+  return { lambdaH:lh, lambdaA:la, meta:{}, contributions:{} };
+}
+
+/* ============================================================
+   END OF PART A
+   (Next: PART B = v22.1 PATCH: TacticalTree v3 + National Mode + VSM + ICM)
+=========================================================== */
+</script>
+<!-- ===============================
+     v22.1 — PART B (PATCH)
+     TacticalTree v3 + NationalMode + VSM + ICM
+     Wrapper finalizeLambdaUltra_v22_1 (override)
+================================= -->
+<script>
+/* =========================
+   TacticalTree v3
+   Returns { mult, parts }
+   mult in range ~0.88..1.26 (clamped by wrapper)
+========================= */
+function tacticalTreeV3(h,a){
+  try{
+    const ph = pressToNum(h.press), pa = pressToNum(a.press);
+    const sh = styleToNum(h.style), sa = styleToNum(a.style);
+
+    const possDiff   = ((safeNum(h.poss,50) - safeNum(a.poss,50)) / 100); // -1..1
+    const buildDiff  = (safeNum(h.build,5) - safeNum(a.build,5)) / 12;
+    const transDiff  = (safeNum(h.trans,5) - safeNum(a.trans,5)) / 20;
+    const final3Diff = (safeNum(h.final3,0) - safeNum(a.final3,0)) / 20;
+
+    let score = 1.0;
+    // node: press vs possession counters
+    if(ph > 0.6 && sa > 0.7) score *= 0.92;
+    if(pa > 0.6 && sh > 0.7) score *= 0.92;
+
+    // possession advantage
+    score *= (1 + possDiff * 0.18);
+
+    // build/transition/final3 effects
+    score *= (1 + buildDiff * 0.14 + transDiff * 0.1 + final3Diff * 0.12);
+
+    // style similarity dampens variance
+    if(Math.abs(sh - sa) < 0.12) score *= 1.03;
+
+    return { mult: clamp(score, 0.80, 1.34), parts:{ possDiff, buildDiff, transDiff, final3Diff, ph, pa, sh, sa } };
+  }catch(e){
+    console.warn("tacticalTreeV3 err", e);
+    return { mult: 1.0, parts:{} };
+  }
+}
+
+/* =========================
+   National Team AutoAdj
+   If ctx.nationalMode true -> apply special adjustments
+========================= */
+function nationalModeAutoAdj(h,a,ctx){
+  const isNat = !!(ctx && ctx.nationalMode);
+  if(!isNat) return { lhAdj:1, laAdj:1, varScale:1 };
+
+  const eloH = safeNum(h.elo,1500), eloA = safeNum(a.elo,1500);
+  const eloDiff = (eloH - eloA) / 400; // -inf..inf -> ~-2..2 typical
+
+  // attenuate club-based bias: shrink lambda differences
+  const atten = clamp(1 - Math.abs(eloDiff)*0.18, 0.78, 1.02);
+
+  // increased variance (MC var scale)
+  const varScale = 1.18;
+
+  return { lhAdj: atten, laAdj: atten, varScale };
+}
+
+/* =========================
+   Variation Sensitivity Map (VSM)
+   Uses recent HISTORY to compute league medians and adjust
+========================= */
+function computeVSM(h,a,history,ctx){
+  try{
+    const slice = (history && history.length>0) ? history.slice(0, Math.min(history.length,60)) : [];
+    function median(arr){
+      if(!arr || arr.length===0) return null;
+      const s = arr.slice().sort((x,y)=>x-y);
+      const m = Math.floor(s.length/2);
+      return (s.length%2)? s[m] : (s[m-1]+s[m])/2;
+    }
+
+    const histShots = slice.map(x=> safeNum(x.h && x.h.shots,0)).filter(v=>v>0);
+    const medShots = median(histShots) || 10;
+
+    const vH = clamp(1 + ((safeNum(h.shots,10) - medShots)/Math.max(1,medShots)) * 0.18, 0.82, 1.36);
+    const vA = clamp(1 + ((safeNum(a.shots,10) - medShots)/Math.max(1,medShots)) * 0.18, 0.82, 1.36);
+
+    const lambdaAdjH = clamp(1 + (vH - 1) * 0.12, 0.92, 1.22);
+    const lambdaAdjA = clamp(1 + (vA - 1) * 0.12, 0.92, 1.22);
+    const varianceScale = clamp(1 + (Math.abs(vH - vA))*0.6, 0.9, 1.6);
+
+    return { lambdaAdjH, lambdaAdjA, varianceScale, medShots };
+  }catch(e){
+    console.warn("computeVSM err", e);
+    return { lambdaAdjH:1, lambdaAdjA:1, varianceScale:1, medShots: null };
+  }
+}
+
+/* =========================
+   Injury Cluster Mapping (ICM)
+   Penalize attack if attackers missing; increase conceded if defenders/gk missing
+========================= */
+function injuryClusterMapping(h,a){
+  try{
+    function teamICM(t){
+      const df = safeNum(t.df_abs,0);
+      const gk = safeNum(t.gk_abs,0);
+      const key = safeNum(t.keymiss,0);
+      const cluster = Math.min(6, df + gk);
+
+      const atkPenalty = clamp(1 - (key*0.35 + Math.max(0, cluster-1)*0.08), 0.6, 1.02);
+      const defPenalty = clamp(1 + (cluster*0.14 + key*0.08), 0.9, 1.6);
+
+      return { atkPenalty, defPenalty, cluster };
+    }
+
+    return { home: teamICM(h), away: teamICM(a) };
+  }catch(e){
+    console.warn("injuryClusterMapping err", e);
+    return { home:{atkPenalty:1,defPenalty:1,cluster:0}, away:{atkPenalty:1,defPenalty:1,cluster:0} };
+  }
+}
+
+/* =========================
+   Wrapper: finalizeLambdaUltra_v22_1
+   Calls existing finalizeLambdaUltra (base) then applies these adjustments
+   Returns { lambdaH, lambdaA, meta, contributions }
+========================= */
+function finalizeLambdaUltra_v22_1(h,a,fusion,ctx,history){
+  // call base finalize if exists, else use fusion
+  let base;
+  if(typeof finalizeLambdaUltra === "function"){
+    try{ base = finalizeLambdaUltra(h,a,fusion,ctx) || {}; } catch(e){ console.warn("base finalize err", e); base = {}; }
+  } else {
+    base = { lambdaH: safeNum(fusion && fusion.H,1), lambdaA: safeNum(fusion && fusion.A,1), meta:{} };
+  }
+
+  let lambdaH = safeNum(base.lambdaH, safeNum(fusion && fusion.H,1));
+  let lambdaA = safeNum(base.lambdaA, safeNum(fusion && fusion.A,1));
+  const metaBase = base.meta || {};
+
+  // TacticalTree v3 multipliers
+  const tt_H = tacticalTreeV3(h,a);
+  const tt_A = tacticalTreeV3(a,h);
+
+  // apply tactical tree with controlled weight
+  lambdaH *= clamp(1 + (tt_H.mult - 1) * 0.68, 0.86, 1.34);
+  lambdaA *= clamp(1 + (tt_A.mult - 1) * 0.68, 0.86, 1.34);
+
+  // national mode adjustments
+  const nat = nationalModeAutoAdj(h,a,ctx);
+  lambdaH *= nat.lhAdj;
+  lambdaA *= nat.laAdj;
+
+  // VSM adjustments
+  const vsm = computeVSM(h,a,history,ctx);
+  lambdaH *= vsm.lambdaAdjH;
+  lambdaA *= vsm.lambdaAdjA;
+
+  // Injury cluster mapping
+  const icm = injuryClusterMapping(h,a);
+  // home scoring reduced by its own attacker losses
+  lambdaH *= icm.home.atkPenalty;
+  // away scoring reduced by its own attacker losses
+  lambdaA *= icm.away.atkPenalty;
+  // if opponent defense weakened -> adjust accordingly (opponent defPenalty increases opponent conceded)
+  lambdaH *= icm.away.defPenalty;
+  lambdaA *= icm.home.defPenalty;
+
+  // meta bookkeeping
+  const meta = Object.assign({}, metaBase, { ttv3_H: tt_H, ttv3_A: tt_A, nat, vsm, icm });
+
+  // final clamps
+  lambdaH = clamp(lambdaH, 0.02, 9.5);
+  lambdaA = clamp(lambdaA, 0.02, 9.5);
+
+  const contributions = (document.getElementById && document.getElementById("enable_explain")?.value !== "0") ? Object.assign({}, base.contributions || {}, { ttv3_H: tt_H.mult, ttv3_A: tt_A.mult, vsm }) : base.contributions || null;
+
+  return { lambdaH, lambdaA, meta, contributions };
+}
+
+/* =========================
+   Override globally so rest of engine uses v22.1 wrapper
+========================= */
+if(typeof window !== "undefined"){
+  window.finalizeLambdaUltra_v22_1 = finalizeLambdaUltra_v22_1;
+  // For compatibility: replace the global finalizeLambdaUltra reference
+  window.finalizeLambdaUltra = finalizeLambdaUltra_v22_1;
+}
+</script>
+<!-- ===============================
+     v22.1 — PART C
+     Worker Pool, OddsTrap, MC Runner, History, Output
+================================= -->
+<script>
+/* ===========================
+   HISTORY (simple localStorage)
+=========================== */
+let HISTORY = [];
+(function loadHistory(){
+  try{
+    const raw = localStorage.getItem("PRED_HISTORY_V22_1");
+    if(raw) HISTORY = JSON.parse(raw);
+  }catch(e){ HISTORY = []; console.warn("history load err", e); }
+})();
+function saveHistory(){ try{ localStorage.setItem("PRED_HISTORY_V22_1", JSON.stringify(HISTORY)); }catch(e){ console.warn("history save err", e); } }
+function pushHistory(entry){
+  if(!entry) return;
+  HISTORY.unshift(entry);
+  if(HISTORY.length>800) HISTORY.length = 800;
+  saveHistory();
+  try{ renderHistoryList(); }catch(e){}
+}
+
+/* ===========================
+   SIMPLE HISTORY RENDER (if UI exists)
+=========================== */
+function renderHistoryList(){
+  try{
+    const el = document.getElementById("historyList");
+    if(!el) return;
+    if(HISTORY.length===0){ el.innerHTML = "<i>No history</i>"; return; }
+    let html = "";
+    HISTORY.slice(0,120).forEach((h,i)=>{
+      html += `<div class="histItem"><div><b>${h.hname||h.h?.name||"H"}</b> vs <b>${h.aname||h.a?.name||"A"}</b></div>
+        <div><small>${h.time||""}</small></div>
+        <div>λH=${(h.lambdaH||0).toFixed(2)} | λA=${(h.lambdaA||0).toFixed(2)} | Conf=${((h.conf||0)*100||0).toFixed(0)}%</div>
+        <div style="margin-top:6px"><button class="smallBtn" onclick="loadHistoryItem(${i})">Load</button>
+        <button class="smallBtn" onclick="enterRealScore(${i})">Real</button></div></div>`;
+    });
+    el.innerHTML = html;
+  }catch(e){ console.warn("renderHistoryList err", e); }
+}
+function loadHistoryItem(idx){
+  const item = HISTORY[idx];
+  if(!item) return alert("No entry");
+  fillTeamFromObj("h", item.h || {});
+  fillTeamFromObj("a", item.a || {});
+  showToast("Loaded history entry");
+}
+
+/* helpers: fillTeamFromObj (safe) */
+function fillTeamFromObj(side,t){
+  if(!t) return;
+  const set = (id,val)=>{ const el=document.getElementById(side+"_"+id); if(el) el.value = (val===undefined?"":val); };
+  set("name", t.name||"");
+  set("elo", t.elo||"");
+  set("gpg", t.gpg||"");
+  set("shots", t.shots||"");
+  set("sot", t.sot||"");
+  set("shotsC", t.shotsC||"");
+  set("conv", t.conv||"");
+  set("poss", t.poss||"");
+  set("prog", t.prog||"");
+  set("trans", t.trans||"");
+  set("build", t.build||"");
+  set("final3", t.final3||"");
+  set("counter", t.counter||"");
+  set("inter", t.inter||"");
+  set("dzc", t.dzc||1);
+  set("gc", t.gc||"");
+  set("style", t.style||"possession");
+  set("press", t.press||"medium");
+}
+
+/* ===========================
+   READ TEAM (from DOM)
+=========================== */
+function readTeam(side){
+  return {
+    name: document.getElementById(side+"_name")?.value || (side==="h"?"Home":"Away"),
+    elo: safeNum(document.getElementById(side+"_elo")?.value,1500),
+    gpg: safeNum(document.getElementById(side+"_gpg")?.value,1.2),
+    shots: safeNum(document.getElementById(side+"_shots")?.value,10),
+    sot: safeNum(document.getElementById(side+"_sot")?.value,4),
+    shotsC: safeNum(document.getElementById(side+"_shotsC")?.value,8),
+    conv: safeNum(document.getElementById(side+"_conv")?.value,12),
+    poss: safeNum(document.getElementById(side+"_poss")?.value,50),
+    prog: safeNum(document.getElementById(side+"_prog")?.value,8),
+    trans: safeNum(document.getElementById(side+"_trans")?.value,6),
+    build: safeNum(document.getElementById(side+"_build")?.value,5),
+    final3: safeNum(document.getElementById(side+"_final3")?.value,4),
+    counter: safeNum(document.getElementById(side+"_counter")?.value,6),
+    inter: safeNum(document.getElementById(side+"_inter")?.value,7),
+    dzc: safeNum(document.getElementById(side+"_dzc")?.value,1),
+    gc: safeNum(document.getElementById(side+"_gc")?.value,0),
+    style: document.getElementById(side+"_style")?.value || "possession",
+    press: document.getElementById(side+"_press")?.value || "medium",
+    df_abs: safeNum(document.getElementById(side+"_df_abs")?.value,0),
+    gk_abs: safeNum(document.getElementById(side+"_gk_abs")?.value,0),
+    keymiss: safeNum(document.getElementById(side+"_keymiss")?.value,0),
+    rotation: safeNum(document.getElementById(side+"_rotation")?.value,0),
+    iiw: safeNum(document.getElementById(side+"_iiw")?.value,0.5),
+    rest: safeNum(document.getElementById(side+"_rest")?.value,3),
+    cr: safeNum(document.getElementById(side+"_cr")?.value,0),
+    note: document.getElementById(side+"_note")?.value || ""
+  };
+}
+
+/* ===========================
+   ODDS TRAP v5 + ORL BLEND
+=========================== */
+function calcOddsTrapV5(){
+  const oddsH = safeNum(document.getElementById("odds_home")?.value,0);
+  const oddsA = safeNum(document.getElementById("odds_away")?.value,0);
+  const vol = safeNum(document.getElementById("market_vol")?.value,10);
+  const hours = safeNum(document.getElementById("hours_kick")?.value,24);
+
+  if(oddsH<=0 || oddsA<=0) return 1.0;
+  const pH = 1/oddsH, pA = 1/oddsA;
+  let div = Math.abs(pH - pA) + Math.max(0, pH + pA - 1);
+  const mov = Math.abs(safeNum(document.getElementById("odds_hdp_now")?.value,0) - safeNum(document.getElementById("odds_hdp_open")?.value,0));
+  const liq = clamp(1 + Math.log(1+vol)/Math.log(1+100)*0.6, 0.8, 2.2);
+  const timeF = clamp(1 + (24 - Math.min(24, hours))/30, 0.85, 1.45);
+  let trap = 1 + (div*0.9 + mov*0.6)*0.6;
+  trap *= liq * timeF;
+  trap = 1 + Math.tanh((trap-1)/1.3)*1.3;
+  return clamp(trap, 0.5, 3.6);
+}
+
+function ORL_blend(modelProb){
+  const oddsH = safeNum(document.getElementById("odds_home")?.value,0);
+  const oddsA = safeNum(document.getElementById("odds_away")?.value,0);
+  if(oddsH<=0 || oddsA<=0) return modelProb;
+  const pH = 1/oddsH, pA = 1/oddsA;
+  const pD = Math.max(0,1 - (pH + pA));
+  const sum = pH + pD + pA;
+  const market = { home: pH/sum, draw: pD/sum, away: pA/sum };
+  const trap = calcOddsTrapV5();
+  const w = clamp(0.06 + (trap-1)*0.15, 0.02, 0.5);
+  const out = {
+    home: modelProb.home*(1-w) + market.home*w,
+    draw: modelProb.draw*(1-w) + market.draw*w,
+    away: modelProb.away*(1-w) + market.away*w
+  };
+  const s = out.home + out.draw + out.away;
+  out.home/=s; out.draw/=s; out.away/=s;
+  return out;
+}
+
+/* ===========================
+   WORKER POOL (simple)
+=========================== */
+let poolWorkers = [], poolWorkerURLs = [];
+function createWorkerScript(){
+  return `
+    function factorial(n){ if(n<=1) return 1; let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+    onmessage = function(e){
+      const {lambdaH, lambdaA, maxG} = e.data;
+      const dist = {};
+      for(let i=0;i<=maxG;i++){ for(let j=0;j<=maxG;j++){
+        const ph = Math.exp(-lambdaH) * Math.pow(lambdaH, i) / factorial(i);
+        const pa = Math.exp(-lambdaA) * Math.pow(lambdaA, j) / factorial(j);
+        dist[i+\"-\"+j] = ph * pa;
+      }}
+      postMessage({dist});
+    };
+  `;
+}
+function initWorkerPool(n){
+  try{
+    poolWorkers.forEach(w=>{ try{ w.terminate(); }catch(e){} });
+    poolWorkerURLs.forEach(u=>{ try{ URL.revokeObjectURL(u); }catch(e){} });
+  }catch(e){}
+  poolWorkers = []; poolWorkerURLs = [];
+  const count = Math.max(1, Math.min(n || (navigator.hardwareConcurrency||2), 6));
+  const blob = new Blob([createWorkerScript()], {type:"application/javascript"});
+  const url = URL.createObjectURL(blob);
+  for(let i=0;i<count;i++){
+    poolWorkerURLs.push(url);
+    poolWorkers.push(new Worker(url));
+  }
+  return poolWorkers.length;
+}
+function runPoolMC(lambdaH, lambdaA, maxG=8){
+  return new Promise((resolve)=>{
+    if(poolWorkers.length===0) initWorkerPool(Math.max(1, Math.min(navigator.hardwareConcurrency||2,2)));
+    const results = []; let completed=0;
+    poolWorkers.forEach((w,idx)=>{
+      w.onmessage = (ev) => { results[idx] = ev.data.dist || {}; completed++; if(completed===poolWorkers.length){
+        const agg = {};
+        results.forEach(r=>{ for(const k in r) agg[k] = (agg[k]||0) + r[k]; });
+        // average
+        for(const k in agg) agg[k] = agg[k] / results.length;
+        resolve(agg);
+      }};
+      w.postMessage({lambdaH, lambdaA, maxG});
+    });
+    // fallback timeout
+    setTimeout(()=>{ if(completed === poolWorkers.length) return; const fallback = scoreDistribution(lambdaH, lambdaA, maxG); resolve(fallback); }, 7000);
+  });
+}
+
+/* ===========================
+   MC Variance helper
+=========================== */
+function mcVarianceAnalysis(dist){
+  let meanTotal=0, meanDiff=0;
+  for(const k in dist){
+    const p = safeNum(dist[k],0);
+    const parts = k.split("-");
+    const gh = safeNum(Number(parts[0]),0), ga = safeNum(Number(parts[1]),0);
+    meanTotal += (gh+ga)*p;
+    meanDiff += (gh-ga)*p;
+  }
+  let varTotal=0, varDiff=0;
+  for(const k in dist){
+    const p = safeNum(dist[k],0);
+    const parts = k.split("-");
+    const gh = safeNum(Number(parts[0]),0), ga = safeNum(Number(parts[1]),0);
+    varTotal += ((gh+ga)-meanTotal)*((gh+ga)-meanTotal)*p;
+    varDiff += ((gh-ga)-meanDiff)*((gh-ga)-meanDiff)*p;
+  }
+  return { meanTotal, sdTotal: Math.sqrt(Math.max(0,varTotal)), meanDiff, sdDiff: Math.sqrt(Math.max(0,varDiff)) };
+}
+
+/* ===========================
+   OUTPUT builder (minimal)
+   writes into #resultPanel, renders top scores and radar
+=========================== */
+function buildOutput(res){
+  try{
+    const el = document.getElementById("resultPanel");
+    if(!el){ console.log("Result:", res); return; }
+
+    const h = res.h, a = res.a;
+    const lh = safeNum(res.final.lambdaH,0).toFixed(3);
+    const la = safeNum(res.final.lambdaA,0).toFixed(3);
+    const pH = (res.prob.home*100).toFixed(1);
+    const pD = (res.prob.draw*100).toFixed(1);
+    const pA = (res.prob.away*100).toFixed(1);
+    const conf = (res.conf*100||0).toFixed(1);
+
+    // top scores
+    const arr = Object.keys(res.dist).map(k=>({k,p:res.dist[k]}));
+    arr.sort((x,y)=>y.p-x.p);
+    const top = arr.slice(0,12);
+
+    let html = `<div><b>${h.name}</b> vs <b>${a.name}</b></div>`;
+    html += `<div>λH: <b>${lh}</b> | λA: <b>${la}</b></div>`;
+    html += `<div>Prob — H: ${pH}% • D: ${pD}% • A: ${pA}%</div>`;
+    html += `<div>Confidence: ${conf}%</div>`;
+    html += `<div style="margin-top:8px"><b>Top scores</b><table class="scoreTable"><tr><th>Score</th><th>%</th></tr>`;
+    top.forEach(t=> html += `<tr><td>${t.k}</td><td>${(t.p*100).toFixed(2)}</td></tr>`);
+    html += `</table></div>`;
+    el.innerHTML = html;
+
+    // draw small radar if exists
+    drawTeamRadarSimple(h,a,"teamRadar");
+  }catch(e){ console.warn("buildOutput err", e); }
+}
+
+/* minimal radar */
+function drawTeamRadarSimple(h,a,id){
+  try{
+    const c = document.getElementById(id);
+    if(!c) return;
+    const ctx = c.getContext("2d");
+    ctx.clearRect(0,0,c.width,c.height);
+    const metrics = ["prog","build","final3","trans","counter","poss"];
+    const vals = m=> metrics.map(k => clamp((safeNum(m[k],0) / (k==="poss"?100:30)),0,1));
+    const hv = vals(h), av = vals(a);
+    const cx = c.width/2, cy = c.height/2, r = Math.min(cx,cy)-10;
+    const step = Math.PI*2 / metrics.length;
+    function poly(v, color){
+      ctx.beginPath(); for(let i=0;i<v.length;i++){ const ang = -Math.PI/2 + i*step; const rr = v[i]*r; const x = cx + rr*Math.cos(ang); const y = cy + rr*Math.sin(ang); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);} ctx.closePath(); ctx.strokeStyle=color; ctx.stroke(); ctx.globalAlpha=0.12; ctx.fillStyle=color; ctx.fill(); ctx.globalAlpha=1;
+    }
+    poly(hv, "#2e7dd1"); poly(av, "#d12e2e");
+  }catch(e){ console.warn("radar err", e); }
+}
+
+/* ===========================
+   analyzeRunner (main)
+=========================== */
+async function analyzeRunner(){
+  try{
+    showToast("Running analysis...");
+    const h = readTeam("h");
+    const a = readTeam("a");
+    const ctx = {
+      league_gpg: safeNum(document.getElementById("league_gpg")?.value, 2.72),
+      market_ou: safeNum(document.getElementById("market_ou")?.value, 0),
+      weather: document.getElementById("weather")?.value || "Normal",
+      pitch: document.getElementById("pitch_size")?.value || "normal",
+      hours: safeNum(document.getElementById("hours_kick")?.value,24),
+      nationalMode: (document.getElementById("national_mode_toggle")?.value === "1")
+    };
+
+    const fusion = buildFusion(h,a); // from PART A
+    // base finalize will be overridden by v22.1 wrapper if PART B applied
+    const final = (typeof finalizeLambdaUltra === "function") ? finalizeLambdaUltra(h,a,fusion,ctx,HISTORY) : { lambdaH: fusion.H, lambdaA: fusion.A, meta:{} };
+
+    const lambdaH = safeNum(final.lambdaH, fusion.H);
+    const lambdaA = safeNum(final.lambdaA, fusion.A);
+
+    // MC mode
+    const mode = document.getElementById("mc_mode")?.value || "pool";
+    let dist = {};
+    if(mode === "pool"){
+      initWorkerPool(Math.max(1, Math.min(navigator.hardwareConcurrency||2,3)));
+      dist = await runPoolMC(lambdaH, lambdaA, 8);
+    } else {
+      dist = scoreDistribution(lambdaH, lambdaA, 8);
+    }
+
+    // compute probs
+    let pH=0,pD=0,pA=0;
+    for(const k in dist){
+      const p = safeNum(dist[k],0);
+      const parts = k.split("-");
+      const gh = Number(parts[0]), ga = Number(parts[1]);
+      if(gh>ga) pH += p; else if(gh===ga) pD += p; else pA += p;
+    }
+    let modelProb = { home:pH, draw:pD, away:pA };
+    modelProb = ORL_blend(modelProb);
+
+    // variance & conf
+    const varStats = mcVarianceAnalysis(dist);
+    const conf = clamp(0.6 + (1/(safeNum(final.meta && final.meta.medShots,1)) - 1) * 0.05 - (varStats.sdTotal||0)*0.02, 0.12, 0.96);
+
+    const out = { time:new Date().toISOString(), h,a, final, dist, prob:modelProb, conf, meta: final.meta, contributions: final.contributions || null };
+
+    window._lastRes = out;
+    buildOutput(out);
+
+    // push to history (store essential)
+    pushHistory({
+      time: new Date().toLocaleString(),
+      hname: h.name, aname: a.name,
+      h,a,
+      lambdaH: final.lambdaH, lambdaA: final.lambdaA,
+      prob: modelProb, conf: conf
+    });
+
+    showToast("Analysis complete",1200);
+    return out;
+  }catch(e){ console.error("analyzeRunner err", e); showToast("Engine error"); return null; }
+}
+
+/* ===========================
+   EXPORT / IMPORT HISTORY
+=========================== */
+function exportHistory(){
+  try{
+    const blob = new Blob([JSON.stringify(HISTORY,null,2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href=url; a.download="history_v22_1.json"; a.click();
+    URL.revokeObjectURL(url);
+  }catch(e){ console.warn(e); alert("Export failed"); }
+}
+function importHistoryFile(file){
+  const fr = new FileReader();
+  fr.onload = function(ev){
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(Array.isArray(data)){ HISTORY = data; saveHistory(); renderHistoryList(); showToast("History imported"); }
+      else alert("Invalid file");
+    }catch(e){ alert("Error parsing file"); }
+  };
+  fr.readAsText(file);
+}
+document.getElementById("exportHistoryBtn")?.addEventListener("click", exportHistory);
+
+/* quick melTrain hook */
+document.getElementById("melTrainBtn")?.addEventListener("click", ()=>{ try{ melTrainFromHistory(HISTORY, 300); showToast("MEL trained"); }catch(e){ showToast("train failed"); } });
+
+/* quick bind analyze button if exists */
+document.getElementById("analyzeBtn")?.addEventListener("click", ()=> analyzeRunner());
+
+/* render history if element present */
+try{ renderHistoryList(); }catch(e){}
+</script>
+<!-- ===============================
+     v22.1 — PART D (UI, CSS, Footer, Init, CLOSE)
+================================= -->
+<style>
+/* ====== SIMPLE CLEAN UI STYLES FOR v22.1 ====== */
+:root{
+  --bg:#f4f7fa; --card:#ffffff; --muted:#6b7785; --accent:#1976d2; --ok:#2e7d32;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:#123;}
+.container{max-width:1180px;margin:18px auto;padding:12px;}
+.card{background:var(--card);padding:12px;border-radius:8px;border:1px solid #e6e9ee;margin-bottom:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.kv{display:flex;flex-direction:column;font-size:13px}
+.kv input,.kv select{padding:8px;border-radius:6px;border:1px solid #d9dfe8}
+button{background:var(--accent);color:white;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
+.smallBtn{background:#5a5f66;padding:6px 8px;border-radius:6px;color:white;border:0;cursor:pointer}
+.scoreTable{width:100%;border-collapse:collapse;margin-top:8px}
+.scoreTable th, .scoreTable td{padding:6px;border:1px solid #eee;font-size:13px}
+.histItem{padding:8px;border-radius:6px;border:1px solid #eef;margin-bottom:8px;background:#fbfdff}
+#teamRadar{width:260px;height:260px;border:1px solid #e6eef6;border-radius:6px}
+.section-title{font-weight:700;color:#123;margin-bottom:6px}
+.note{font-size:12px;color:var(--muted)}
+@media(max-width:980px){ .grid-3{grid-template-columns:1fr} #teamRadar{width:100%;height:200px} }
+</style>
+
+<body>
+<div class="container">
+
+  <h2>⚽ Prediksi v22.1 TITAN — Ultra+</h2>
+
+  <!-- GLOBAL CONTROLS -->
+  <div class="card row" style="justify-content:space-between">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <label class="kv">League GPG <input id="league_gpg" type="number" step="0.01" placeholder="2.72"></label>
+      <label class="kv">Market OU <input id="market_ou" type="number" step="0.1" placeholder=""></label>
+      <label class="kv">MC Mode
+        <select id="mc_mode"><option value="pool">Pool</option><option value="single">Single</option></select>
+      </label>
+      <label class="kv">National Mode
+        <select id="national_mode_toggle"><option value="0">OFF</option><option value="1">ON</option></select>
+      </label>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center">
+      <button id="analyzeBtn">ANALYZE</button>
+      <button id="exportHistoryBtn" class="smallBtn">Export History</button>
+      <button id="melTrainBtn" class="smallBtn">Train MEL</button>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="grid-3">
+
+    <!-- LEFT: HOME INPUT -->
+    <div class="card">
+      <div class="section-title">HOME — Input</div>
+      <div class="kv"><label>Team <input id="h_name" type="text"></label></div>
+      <div class="row">
+        <label class="kv">ELO <input id="h_elo" type="number"></label>
+        <label class="kv">GPG <input id="h_gpg" type="number" step="0.01"></label>
+        <label class="kv">Shots <input id="h_shots" type="number"></label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label class="kv">SOT <input id="h_sot" type="number"></label>
+        <label class="kv">ShotsC <input id="h_shotsC" type="number"></label>
+        <label class="kv">Conv% <input id="h_conv" type="number" step="0.1"></label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label class="kv">Poss% <input id="h_poss" type="number"></label>
+        <label class="kv">Progressive <input id="h_prog" type="number"></label>
+        <label class="kv">Transition <input id="h_trans" type="number"></label>
+      </div>
+      <div style="margin-top:8px" class="row">
+        <label class="kv">Build <input id="h_build" type="number"></label>
+        <label class="kv">Final3 <input id="h_final3" type="number"></label>
+        <label class="kv">Counter <input id="h_counter" type="number"></label>
+      </div>
+      <div style="margin-top:8px" class="row">
+        <label class="kv">Style
+          <select id="h_style"><option>possession</option><option>direct</option><option>balanced</option></select>
+        </label>
+        <label class="kv">Press
+          <select id="h_press"><option>low</option><option selected>medium</option><option>high</option></select>
+        </label>
+        <label class="kv">CR <input id="h_cr" type="number"></label>
+      </div>
+
+      <div style="margin-top:8px" class="row">
+        <label class="kv">DF absent <input id="h_df_abs" type="number"></label>
+        <label class="kv">GK absent <input id="h_gk_abs" type="number"></label>
+        <label class="kv">KeyMiss <input id="h_keymiss" type="number" step="0.01" min="0" max="1"></label>
+      </div>
+
+      <div style="margin-top:8px" class="row">
+        <button class="smallBtn" onclick="autoConv('h')">Auto Conv%</button>
+        <button class="smallBtn" onclick="autoShotsC('h')">Auto ShotsC</button>
+        <button class="smallBtn" onclick="quickFillBasic('h')">Quick Fill</button>
+      </div>
+    </div>
+
+    <!-- CENTER: RESULTS -->
+    <div class="card">
+      <div class="section-title">Result & Analysis</div>
+      <div id="resultPanel" style="min-height:220px"><i>Click ANALYZE to compute</i></div>
+
+      <div style="margin-top:10px" class="section-title">Distribusi Skor</div>
+      <div id="scoreDist" style="min-height:120px"></div>
+
+      <div style="margin-top:10px" class="section-title">Radar</div>
+      <canvas id="teamRadar" width="260" height="260"></canvas>
+    </div>
+
+    <!-- RIGHT: AWAY INPUT & ODDS -->
+    <div class="card">
+      <div class="section-title">AWAY — Input</div>
+      <div class="kv"><label>Team <input id="a_name" type="text"></label></div>
+
+      <div class="row">
+        <label class="kv">ELO <input id="a_elo" type="number"></label>
+        <label class="kv">GPG <input id="a_gpg" type="number" step="0.01"></label>
+        <label class="kv">Shots <input id="a_shots" type="number"></label>
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <label class="kv">SOT <input id="a_sot" type="number"></label>
+        <label class="kv">ShotsC <input id="a_shotsC" type="number"></label>
+        <label class="kv">Conv% <input id="a_conv" type="number" step="0.1"></label>
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <label class="kv">Poss% <input id="a_poss" type="number"></label>
+        <label class="kv">Progressive <input id="a_prog" type="number"></label>
+        <label class="kv">Transition <input id="a_trans" type="number"></label>
+      </div>
+
+      <div style="margin-top:8px" class="row">
+        <label class="kv">Style
+          <select id="a_style"><option>possession</option><option>direct</option><option>balanced</option></select>
+        </label>
+        <label class="kv">Press
+          <select id="a_press"><option>low</option><option selected>medium</option><option>high</option></select>
+        </label>
+      </div>
+
+      <div style="margin-top:8px" class="row">
+        <label class="kv">Odds Home <input id="odds_home" type="number" step="0.01"></label>
+        <label class="kv">Odds Away <input id="odds_away" type="number" step="0.01"></label>
+      </div>
+
+      <div style="margin-top:8px" class="row">
+        <button class="smallBtn" onclick="autoConv('a')">Auto Conv%</button>
+        <button class="smallBtn" onclick="autoShotsC('a')">Auto ShotsC</button>
+        <button class="smallBtn" onclick="quickFillBasic('a')">Quick Fill</button>
+      </div>
+    </div>
+
+  </div> <!-- end grid -->
+
+  <!-- HISTORY PANEL -->
+  <div class="card">
+    <div class="section-title">History</div>
+    <div id="historyList" style="max-height:220px;overflow:auto"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="card" style="text-align:center;color:var(--muted)">
+    v22.1 TITAN — Ultra+ · PCS · SPHv2 · MEL · TacticalTree v3 · NationalMode · VSM · ICM
+  </div>
+
+</div> <!-- container -->
+
+<!-- FINAL INITIALIZERS (lightweight) -->
+<script>
+/* Ensure some elements exist, bind defaults */
+(function initFinal(){
+  try{
+    // create analyze button if missing
+    if(!document.getElementById("analyzeBtn")){
+      const b = document.createElement("button");
+      b.id="analyzeBtn"; b.textContent="ANALYZE"; b.style.position="fixed"; b.style.bottom="16px"; b.style.left="16px";
+      document.body.appendChild(b);
+    }
+    // safe binds for optional buttons that PART C referenced
+    document.getElementById("analyzeBtn").addEventListener("click", ()=>{ try{ analyzeRunner(); }catch(e){ console.error(e); alert("Engine error: see console"); } });
+
+    // history export button binding (if element exists)
+    const exp = document.getElementById("exportHistoryBtn");
+    if(exp) exp.addEventListener("click", ()=>{ try{ exportHistory(); }catch(e){ alert("Export failed"); } });
+
+    // meltrain
+    const mbtn = document.getElementById("melTrainBtn");
+    if(mbtn) mbtn.addEventListener("click", ()=>{ try{ melTrainFromHistory(HISTORY,300); showToast("MEL trained"); }catch(e){ showToast("train failed"); } });
+
+    // initialize worker pool (non-fatal)
+    try{ initWorkerPool(Math.max(1, Math.min(navigator.hardwareConcurrency||2,3))); }catch(e){ console.warn("worker pool init failed", e); }
+
+    // initial render of history
+    try{ renderHistoryList(); }catch(e){}
+
+  }catch(e){ console.warn("initFinal err", e); }
+})();
+
+/* tiny showToast fallback if not present */
+function showToast(msg, dur=1400){
+  let t = document.getElementById("toast");
+  if(!t){
+    t = document.createElement("div"); t.id="toast"; t.style.position="fixed"; t.style.bottom="18px"; t.style.right="18px"; t.style.background="#333"; t.style.color="#fff"; t.style.padding="10px 12px"; t.style.borderRadius="8px"; t.style.zIndex=99999;
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = "1";
+  setTimeout(()=>{ t.style.opacity = "0"; }, dur);
+}
+</script>
+<!-- ===============================
+     v22.1 — PART E
+     Advanced modules: PCS v2, Momentum/Streak, League Norm, OU Beta, Importance, PAC/PAF helpers
+================================= -->
+<script>
+/* ===========================
+   ADVANCED PCS v2 (chain simulation enhanced)
+   - lebih banyak iterasi, quality-of-shot sampling, event types
+=========================== */
+function pcsSimulateV2(team, opp, iterations=600){
+  const prog = safeNum(team.prog,8);
+  const final3 = safeNum(team.final3,4);
+  const poss = safeNum(team.poss,50)/100;
+  const pressFactor = pressToNum(opp.press);
+  const shotRate = clamp(safeNum(team.shots,10) * (0.9 + prog/60), 1, 30);
+
+  let totalThreat = 0, totalSq=0;
+  for(let it=0; it<iterations; it++){
+    // chain length influenced by possession + build
+    const chainLen = 1 + Math.floor(Math.random()*Math.max(2, Math.round(prog/6 + poss*4)));
+    let chainThreat = 0;
+    for(let s=0;s<chainLen;s++){
+      // turnover chance increases with opponent press
+      if(Math.random() < pressFactor*0.14) { chainThreat = chainThreat * 0.6; break; }
+      // small incremental chance to create chance
+      const inc = 0.006 + Math.random()*0.06;
+      chainThreat += inc * (1 + prog/40 + final3/60);
+    }
+    // final shot probability from chain
+    if(Math.random() < (0.18 + final3/60)){
+      const shotQuality = clamp( (Math.random()*0.9) * (safeNum(team.sot,3)/Math.max(1, safeNum(team.shots,10))) + (final3/40), 0.02, 1.6);
+      chainThreat += shotQuality * (0.06 + Math.random()*0.12) * (shotRate/12);
+    }
+    totalThreat += chainThreat;
+    totalSq += chainThreat*chainThreat;
+  }
+  const mean = totalThreat/iterations;
+  const sd = Math.sqrt(Math.max(0, totalSq/iterations - mean*mean));
+  const xTF = clamp(mean * (1 + safeNum(team.final3,0)/30), 0.01, 4.2);
+  return { xTF, sd, mean };
+}
+
+/* wrapper */
+function pcsEstimateV2(h,a){
+  const rH = pcsSimulateV2(h,a,520);
+  const rA = pcsSimulateV2(a,h,520);
+  return { xTF_H: rH.xTF, xTF_A: rA.xTF, sdH:rH.sd, sdA:rA.sd, raw:{h:rH,a:rA} };
+}
+
+/* ===========================
+   MOMENTUM & STREAK MODELS
+   - Streak (recent form), Momentum (trend)
+=========================== */
+function calcStreak(team, history, windowSize=6){
+  // history: array of past entries (most recent first) containing team name alignment
+  if(!history || history.length===0) return 1.0;
+  let wins=0, draws=0, losses=0, counted=0;
+  for(let i=0;i<history.length && counted<windowSize;i++){
+    const it = history[i];
+    if(!it || !it.final) continue;
+    // find if this team was home or away in entry
+    const isHome = (it.h && it.h.name && team.name && it.h.name === team.name);
+    const scored = isHome ? safeNum(it.real_home, -1) : safeNum(it.real_away, -1);
+    const conceded = isHome ? safeNum(it.real_away, -1) : safeNum(it.real_home, -1);
+    if(scored<0 || conceded<0) continue;
+    if(scored>conceded) wins++; else if(scored===conceded) draws++; else losses++;
+    counted++;
+  }
+  if(counted===0) return 1.0;
+  const score = (wins*1.0 + draws*0.4 - losses*0.6) / Math.max(1, counted);
+  return clamp(1 + score*0.12, 0.8, 1.3);
+}
+
+function calcMomentum(team, history){
+  // momentum looks at trend of goals for/against over last 8
+  if(!history || history.length===0) return 1.0;
+  const arr = [];
+  for(let i=0;i<history.length && arr.length<8;i++){
+    const it = history[i];
+    if(!it) continue;
+    const isHome = (it.h && it.h.name && team.name && it.h.name === team.name);
+    const gf = isHome ? safeNum(it.real_home, -1) : safeNum(it.real_away, -1);
+    const ga = isHome ? safeNum(it.real_away, -1) : safeNum(it.real_home, -1);
+    if(gf<0 || ga<0) continue;
+    arr.push(gf - ga);
+  }
+  if(arr.length<3) return 1.0;
+  // linear trend
+  let s=0; for(let i=0;i<arr.length;i++) s += arr[i]*(i+1);
+  const trend = s / (arr.length*(arr.length+1)/2);
+  return clamp(1 + trend*0.06, 0.85, 1.28);
+}
+
+/* ===========================
+   LEAGUE NORMALIZATION (LNS v3)
+   - adjust lambdas to league scoring level and strength multipliers
+=========================== */
+function leagueNormalizeV3(lambda, league_gpg, teamGPG){
+  const lg = safeNum(league_gpg, 2.7);
+  const teamFactor = clamp(1 + (safeNum(teamGPG,1.1) - 1.1)*0.18, 0.8, 1.28);
+  const ratio = clamp(lg/2.7, 0.7, 1.35);
+  return clamp(lambda * ratio * teamFactor, 0.02, 9.5);
+}
+
+/* ===========================
+   OU MODEL: simple Beta-based approximation
+   - estimates P(total goals <= k) by approximating Poisson sum with Beta-shift
+   - returns expected total mean & variance and a few thresholds
+=========================== */
+function ouEstimate(lambdaH, lambdaA){
+  const mu = lambdaH + lambdaA;
+  const var = lambdaH + lambdaA; // Poisson approx
+  // approximate p(total <= t) using normal approx for speed
+  const sd = Math.sqrt(Math.max(0.0001,var));
+  function cdfNorm(x){ return 0.5*(1+erf((x-mu)/(sd*Math.SQRT2))); }
+  // compute P( <= 1.5 ), <=2.5, <=3.5
+  return {
+    mu, sd,
+    p_le_1_5: cdfNorm(1.5),
+    p_le_2_5: cdfNorm(2.5),
+    p_le_3_5: cdfNorm(3.5)
+  };
+}
+
+/* approximate erf for normal cdf */
+function erf(x){
+  // Abramowitz & Stegun approximation
+  const sign = x<0 ? -1:1;
+  x = Math.abs(x);
+  const a1= 0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429;
+  const p = 0.3275911;
+  const t = 1/(1 + p*x);
+  const y = 1 - (((((a5*t + a4)*t)+a3)*t + a2)*t + a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+
+/* ===========================
+   IMPORTANCE / Tier Ω
+   - calculates match importance / tier, returns score & tag
+=========================== */
+function calcImportance(h,a,ctx){
+  const eloH = safeNum(h.elo,1500), eloA = safeNum(a.elo,1500);
+  const diff = Math.abs(eloH - eloA);
+  const base = 1 + (diff/600);
+  const keyMiss = safeNum(h.keymiss,0) + safeNum(a.keymiss,0);
+  const rest = Math.max(0, 5 - (safeNum(h.rest,3)+safeNum(a.rest,3))/2) * 0.03;
+  const score = clamp(base - keyMiss*0.12 + rest, 0.6, 2.6);
+  let tag = "Normal";
+  if(score>1.6) tag="High";
+  if(score<0.85) tag="Low";
+  return { score, tag };
+}
+
+/* ===========================
+   PAC / PAF / Auto-calculators (helpers)
+   - calcPAF = progressive attack factor; calcPAC = possession attack control
+   - autoConv/shotsC heuristics
+=========================== */
+function calcPAF(team){
+  const prog = safeNum(team.prog,0);
+  const f3 = safeNum(team.final3,0);
+  const counter = safeNum(team.counter,0);
+  return clamp((prog/25)*0.6 + (f3/20)*0.8 + (counter/15)*0.45, 0.1, 3.0);
+}
+function calcPAC(team){
+  const poss = safeNum(team.poss,50)/100;
+  const build = safeNum(team.build,5)/12;
+  return clamp(poss*1.2 + build*0.8, 0.1, 2.6);
+}
+function autoConvFromShots(shots, sot){
+  if(safeNum(shots,0) <= 0) return 0.12;
+  return clamp((sot/shots), 0.02, 0.7) * 1.0 * 100; // as percent
+}
+function autoShotsCEstimate(poss, oppShots){
+  // opponent shots as reference
+  return clamp((100 - safeNum(poss,50))/100 * (safeNum(oppShots,10) * 1.05 + 3), 1, 28);
+}
+
+/* ===========================
+   END PART E
+=========================== */
+</script>
+<!-- ===============================
+     v22.1 — PART F
+     SPHv2 corrections, CMWO, Momentum integration into finalize,
+     advanced contributions, multi-output pick helpers
+================================= -->
+<script>
+/* ===========================
+   SPHv2 Extra Corrections
+   - defensive hull correction & zone weighting
+=========================== */
+function sphv2ExtraAdjust(team, opp){
+  try{
+    const base = calcSPH(team); // from earlier
+    // defensive fragility measure
+    const shotsC = safeNum(team.shotsC,8);
+    const df_abs = safeNum(team.df_abs,0);
+    const gk_abs = safeNum(team.gk_abs,0);
+    const frag = clamp(1 + (shotsC/12) * 0.06 + (df_abs+gk_abs)*0.06, 0.9, 2.4);
+    // zone bias: if team concedes a lot and opp has high final3 -> more conceded
+    const oppFinal3 = safeNum(opp.final3,0);
+    const zoneBias = clamp(1 + (oppFinal3/20)*0.12, 0.92, 1.28);
+    const corrected = clamp(base * frag * zoneBias, 0.6, 3.0);
+    return { base, corrected, frag, zoneBias };
+  }catch(e){ console.warn("sphv2ExtraAdjust err", e); return { base: calcSPH(team), corrected: calcSPH(team), frag:1, zoneBias:1 }; }
+}
+
+/* ===========================
+   CMWO (Chance Model Weighted OU)
+   - blend Poisson total with Gaussian approx & market OU (if available)
+   - returns p(total <= thresholds) and suggested OU pick (over/under 2.5)
+=========================== */
+function cmwoEstimate(lambdaH, lambdaA, market_ou){
+  try{
+    const mu = lambdaH + lambdaA;
+    const var = lambdaH + lambdaA + 0.2; // small overdispersion
+    const sd = Math.sqrt(Math.max(1e-6, var));
+    function cdfNorm(x){ return 0.5*(1+erf((x-mu)/(sd*Math.SQRT2))); }
+
+    const p_le_1_5 = cdfNorm(1.5);
+    const p_le_2_5 = cdfNorm(2.5);
+    const p_le_3_5 = cdfNorm(3.5);
+
+    // suggested pick based on mesh between model and market
+    let suggested = "NoPick";
+    if(!market_ou || market_ou === 0){
+      suggested = (1 - p_le_2_5) > 0.58 ? "Over 2.5" : (p_le_2_5 > 0.58 ? "Under 2.5" : "NoPick");
+    } else {
+      // small market-aware bias: if market_ou >> mu then market expects more goals
+      const diff = mu - market_ou;
+      if((1 - p_le_2_5) - (1/(1+Math.exp(-diff))) > 0.18) suggested = "Over 2.5";
+      else if(p_le_2_5 - (1/(1+Math.exp(-diff))) > 0.18) suggested = "Under 2.5";
+      else suggested = "NoPick";
+    }
+
+    return { mu, sd, p_le_1_5, p_le_2_5, p_le_3_5, suggested };
+  }catch(e){ console.warn("cmwoEstimate err", e); return null; }
+}
+
+/* ===========================
+   Advanced contributions collector (merge + normalize)
+   - take base contributions object and append extras
+=========================== */
+function augmentContributions(baseContrib, extras){
+  try{
+    const out = Object.assign({}, baseContrib || {});
+    for(const k in extras) out[k] = extras[k];
+    return out;
+  }catch(e){ return baseContrib || {}; }
+}
+
+/* ===========================
+   Multi-output pick helpers
+   - pick1x2 based on modelProb
+   - pickHDP simple heuristic using lambda ratio & market hdp if provided
+=========================== */
+function pick1X2(modelProb){
+  if(!modelProb) return "NoPick";
+  const sorted = [{k:"1",v:modelProb.home},{k:"X",v:modelProb.draw},{k:"2",v:modelProb.away}].sort((a,b)=>b.v-a.v);
+  return sorted[0].k;
+}
+
+function pickHDP(lambdaH, lambdaA, market_hdp_open, market_hdp_now){
+  // simple: suggest home/away or none if difference small
+  const diff = lambdaH - lambdaA;
+  const thr = 0.28; // threshold for advantage
+  let adv = diff > thr ? "Home" : (diff < -thr ? "Away" : "NoEdge");
+  // if market swing big towards one side, consider trap and avoid
+  const swing = Math.abs(safeNum(market_hdp_now,0) - safeNum(market_hdp_open,0));
+  if(swing > 0.4) adv = "NoEdge";
+  return adv;
+}
+
+/* ===========================
+   FINALIZE EXTENSION: integrate SPHv2 extra, momentum, cmwo, advanced contributions
+   - safe-guard to avoid recursion: we capture the existing finalize into baseRef
+=========================== */
+(function extendFinalize(){
+  try{
+    const baseRef = (typeof window !== "undefined" && (window.finalizeLambdaUltra_v22_1 || window.finalizeLambdaUltra)) ? (window.finalizeLambdaUltra_v22_1 || window.finalizeLambdaUltra) : null;
+    if(!baseRef) {
+      // nothing to extend
+      return;
+    }
+
+    // keep a backup if not already
+    if(!window._finalize_v22_1_ext_base) window._finalize_v22_1_ext_base = baseRef;
+
+    // define extended finalize
+    function finalizeLambdaUltra_v22_1_ext(h,a,fusion,ctx,history){
+      // call base wrapper (v22.1)
+      const baseOut = (typeof window._finalize_v22_1_ext_base === "function") ? window._finalize_v22_1_ext_base(h,a,fusion,ctx,history) : (baseRef(h,a,fusion,ctx,history));
+      let lambdaH = safeNum(baseOut.lambdaH, safeNum(fusion && fusion.H,1));
+      let lambdaA = safeNum(baseOut.lambdaA, safeNum(fusion && fusion.A,1));
+      const meta = Object.assign({}, baseOut.meta || {});
+
+      // SPHv2 extras
+      const sphH = sphv2ExtraAdjust(h,a);
+      const sphA = sphv2ExtraAdjust(a,h);
+      // apply mild correction favoring teams with strong hull
+      lambdaH *= clamp(1 + (sphH.corrected - sphA.corrected) * 0.06, 0.88, 1.18);
+      lambdaA *= clamp(1 + (sphA.corrected - sphH.corrected) * 0.06, 0.88, 1.18);
+
+      // momentum & streak
+      const streakH = calcStreak(h, history || HISTORY, 6);
+      const streakA = calcStreak(a, history || HISTORY, 6);
+      const momH = calcMomentum(h, history || HISTORY);
+      const momA = calcMomentum(a, history || HISTORY);
+
+      lambdaH *= clamp(1 + (streakH - 1) * 0.12 + (momH -1)*0.08, 0.88, 1.28);
+      lambdaA *= clamp(1 + (streakA - 1) * 0.12 + (momA -1)*0.08, 0.88, 1.28);
+
+      // league normalize v3 (if ctx present)
+      if(ctx && ctx.league_gpg) {
+        lambdaH = leagueNormalizeV3(lambdaH, ctx.league_gpg, safeNum(h.gpg,1.1));
+        lambdaA = leagueNormalizeV3(lambdaA, ctx.league_gpg, safeNum(a.gpg,1.1));
+      }
+
+      // CMWO estimate for OU suggestions
+      const cmwo = cmwoEstimate(lambdaH, lambdaA, safeNum(ctx && ctx.market_ou, 0));
+
+      // advanced contributions
+      const extras = {
+        sphH, sphA, streakH, streakA, momH, momA, cmwo
+      };
+      const contributions = augmentContributions(baseOut.contributions || {}, extras);
+
+      // suggested picks
+      const modelProb = (function(){ 
+        // quick approximate 1X2 via poisson distribution marginals
+        const dist = scoreDistribution(lambdaH, lambdaA, 8);
+        let pH=0,pD=0,pA=0;
+        for(const k in dist){
+          const p = safeNum(dist[k],0);
+          const parts = k.split("-");
+          const gh = Number(parts[0]), ga = Number(parts[1]);
+          if(gh>ga) pH += p; else if(gh===ga) pD += p; else pA += p;
+        }
+        return normalize3({ home:pH, draw:pD, away:pA });
+      })();
+
+      const pick_1x2 = pick1X2(modelProb);
+      const pick_hdp = pickHDP(lambdaH, lambdaA, safeNum(document.getElementById("odds_hdp_open")?.value,0), safeNum(document.getElementById("odds_hdp_now")?.value,0));
+      const pick_ou = cmwo ? cmwo.suggested : "NoPick";
+
+      meta.ext = meta.ext || {};
+      meta.ext.sph = { H: sphH, A: sphA };
+      meta.ext.streak = { H: streakH, A: streakA };
+      meta.ext.momentum = { H: momH, A: momA };
+      meta.ext.cmwo = cmwo;
+      meta.ext.picks = { pick_1x2, pick_hdp, pick_ou };
+
+      // final clamps
+      lambdaH = clamp(lambdaH, 0.02, 9.5);
+      lambdaA = clamp(lambdaA, 0.02, 9.5);
+
+      return { lambdaH, lambdaA, meta, contributions, picks: meta.ext.picks, modelProb };
+    }
+
+    // override globally (safe)
+    window.finalizeLambdaUltra_v22_1_ext = finalizeLambdaUltra_v22_1_ext;
+    window.finalizeLambdaUltra = finalizeLambdaUltra_v22_1_ext;
+
+  }catch(e){ console.warn("extendFinalize err", e); }
+})();
+</script>
+<!-- ===============================
+     v22.1 — PART G
+     Advanced Explain UI, Training Hooks, Export/Import Model, Debug Log
+================================= -->
+<script>
+/* ===========================
+   DEBUG / LOGGING
+=========================== */
+const ENGINE_LOGS = [];
+let ENGINE_VERBOSE = false;
+
+function logDebug(...args){
+  const msg = `[${new Date().toISOString()}] ` + args.map(a => {
+    try{ return (typeof a === "object") ? JSON.stringify(a) : String(a);
+    }catch(e){ return String(a); }
+  }).join(" ");
+  ENGINE_LOGS.push(msg);
+  if(ENGINE_VERBOSE) console.log(msg);
+}
+
+function showDebugLogs(limit=200){
+  const logs = ENGINE_LOGS.slice(-limit).join("\n");
+  const w = window.open("", "EngineLogs", "width=900,height=700,scrollbars=yes");
+  if(w){
+    w.document.body.style.whiteSpace = "pre-wrap";
+    w.document.body.style.fontFamily = "monospace";
+    w.document.body.innerText = logs || "No logs";
+  } else {
+    alert("Could not open logs window — popups blocked?");
+  }
+}
+function clearEngineLogs(){ ENGINE_LOGS.length = 0; showToast("Logs cleared"); }
+
+/* ===========================
+   MEL model (simple) persistence
+   - We use MEL_WEIGHT as the main tunable parameter in this build
+   - Provide export/import & quick-save to localStorage
+=========================== */
+const MODEL_STORE_KEY = "PRED_ENGINE_V221_MODEL";
+
+function exportModel(){
+  try{
+    const model = { MEL_WEIGHT: safeNum(window.MEL_WEIGHT, 0.38), timestamp: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(model, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "v22.1_model.json"; a.click();
+    URL.revokeObjectURL(url);
+    showToast("Model exported");
+    logDebug("exportModel", model);
+  }catch(e){ console.warn(e); showToast("Export failed"); }
+}
+
+function importModelFile(file){
+  try{
+    const fr = new FileReader();
+    fr.onload = function(ev){
+      try{
+        const obj = JSON.parse(ev.target.result);
+        if(obj && obj.MEL_WEIGHT !== undefined){
+          window.MEL_WEIGHT = safeNum(obj.MEL_WEIGHT, window.MEL_WEIGHT||0.38);
+          localStorage.setItem(MODEL_STORE_KEY, JSON.stringify(obj));
+          showToast("Model imported");
+          logDebug("importModel", obj);
+        } else alert("Invalid model file");
+      }catch(e){ alert("Error reading file"); }
+    };
+    fr.readAsText(file);
+  }catch(e){ alert("Import failed"); }
+}
+
+function saveModelToLocal(){
+  try{
+    const model = { MEL_WEIGHT: safeNum(window.MEL_WEIGHT, 0.38), timestamp: new Date().toISOString() };
+    localStorage.setItem(MODEL_STORE_KEY, JSON.stringify(model));
+    showToast("Model saved locally");
+    logDebug("saveModelToLocal", model);
+  }catch(e){ console.warn("saveModelToLocal failed", e); }
+}
+
+function loadModelFromLocal(){
+  try{
+    const raw = localStorage.getItem(MODEL_STORE_KEY);
+    if(!raw) { showToast("No model saved locally"); return; }
+    const obj = JSON.parse(raw);
+    if(obj && obj.MEL_WEIGHT !== undefined){
+      window.MEL_WEIGHT = safeNum(obj.MEL_WEIGHT, window.MEL_WEIGHT||0.38);
+      showToast("Model loaded from local");
+      logDebug("loadModelFromLocal", obj);
+    } else showToast("Invalid local model");
+  }catch(e){ console.warn(e); showToast("Load failed"); }
+}
+
+/* ===========================
+   TRAINING HOOKS
+   - quickTune: single-run lightweight MEL weight calibration using HISTORY
+   - batchTrain: longer train loop with progress callback
+=========================== */
+function quickTuneFromHistory(samples=120){
+  try{
+    if(!HISTORY || HISTORY.length===0) { showToast("No history to train"); return; }
+    // simple hill-climb on MEL_WEIGHT between 0.15..0.6 to minimize abs error of total goals
+    let bestW = window.MEL_WEIGHT || 0.38;
+    let bestScore = Number.POSITIVE_INFINITY;
+    const slice = HISTORY.filter(h=> h.real_home !== undefined && h.real_away !== undefined).slice(0, Math.min(samples, HISTORY.length));
+    if(slice.length===0){ showToast("No labeled history entries (real scores)"); return; }
+    for(let w = 0.15; w <= 0.6; w += 0.01){
+      let s = 0;
+      for(const ent of slice){
+        const lh = safeNum(ent.lambdaH, 1);
+        const la = safeNum(ent.lambdaA, 1);
+        // apply temporary melPredict blend
+        const predTotal = (lh*(1-w) + melPredict(lh, safeNum(ent.h?.conv,12))*w) + (la*(1-w) + melPredict(la, safeNum(ent.a?.conv,12))*w);
+        const realTotal = safeNum(ent.real_home,0) + safeNum(ent.real_away,0);
+        s += Math.abs(predTotal - realTotal);
+      }
+      const avgErr = s / slice.length;
+      if(avgErr < bestScore){ bestScore = avgErr; bestW = w; }
+    }
+    window.MEL_WEIGHT = clamp(bestW, 0.15, 0.6);
+    saveModelToLocal();
+    showToast("Quick tune done — MEL_WEIGHT="+window.MEL_WEIGHT.toFixed(3));
+    logDebug("quickTuneFromHistory", {bestW, bestScore});
+  }catch(e){ console.error(e); showToast("Quick tune failed"); }
+}
+
+/* batchTrain with progress callback (synchronous but yields) */
+async function batchTrainFromHistory(epochs=120, cbProgress){
+  if(!HISTORY || HISTORY.length===0) { showToast("No history"); return; }
+  const labeled = HISTORY.filter(h=> h.real_home !== undefined && h.real_away !== undefined);
+  if(labeled.length===0){ showToast("No labeled entries"); return; }
+  showToast("Batch training...");
+  for(let e=0;e<epochs;e++){
+    for(const ent of labeled){
+      melUpdateFromHistory(ent); // uses melUpdateFromHistory defined earlier
+    }
+    if(cbProgress) cbProgress({epoch:e+1,epochs});
+    // yield
+    await new Promise(r => setTimeout(r, 6));
+  }
+  saveModelToLocal();
+  showToast("Batch train complete");
+  logDebug("batchTrainFromHistory", {epochs, entries:labeled.length});
+}
+
+/* ===========================
+   EXPLAIN UI HELPERS
+   - showExplainPanel: opens window with structured meta & contributions for last result
+=========================== */
+function showExplainPanel(){
+  if(!window._lastRes){ alert("No analysis yet"); return; }
+  const out = window._lastRes;
+  const meta = out.meta || {};
+  const contrib = out.contributions || {};
+  const picks = (meta && meta.ext && meta.ext.picks) ? meta.ext.picks : (out.picks || {});
+  let s = "=== Model Explain ===\n\n";
+  s += `Time: ${out.time}\nHome: ${out.h.name}\nAway: ${out.a.name}\n\n`;
+  s += "Lambda (H,A): " + (out.final.lambdaH||0).toFixed(3) + " , " + (out.final.lambdaA||0).toFixed(3) + "\n\n";
+  s += "Contributions:\n";
+  try{ s += JSON.stringify(contrib, null, 2) + "\n\n"; }catch(e){ s += String(contrib) + "\n\n"; }
+  s += "Meta (selected):\n";
+  try{ s += JSON.stringify(meta && { ttv3: meta.ttv3_H || meta.ttv3_A, ext: meta.ext }, null, 2) + "\n\n"; }catch(e){ s += "meta unavailable\n\n"; }
+  s += "Picks:\n" + JSON.stringify(picks, null, 2) + "\n\n";
+  const w = window.open("", "Explain", "width=800,height=600,scrollbars=yes");
+  if(w){
+    w.document.body.style.fontFamily = "monospace";
+    w.document.body.style.whiteSpace = "pre-wrap";
+    w.document.body.innerText = s;
+  } else alert("Popup blocked — allow popups to view explain panel");
+}
+
+/* ===========================
+   QUICK UI INJECTION (adds small control panel if space)
+=========================== */
+(function addExplainTrainUI(){
+  try{
+    if(document.getElementById("v221_explain_train_ui")) return;
+    const panel = document.createElement("div");
+    panel.id = "v221_explain_train_ui";
+    panel.className = "card";
+    panel.style.marginTop = "8px";
+    panel.innerHTML = `
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button id="showExplainBtn" class="smallBtn">Show Explain</button>
+        <button id="exportModelBtn" class="smallBtn">Export Model</button>
+        <button id="importModelBtn" class="smallBtn">Import Model</button>
+        <button id="saveModelBtn" class="smallBtn">Save Model</button>
+        <button id="loadModelBtn" class="smallBtn">Load Model</button>
+        <button id="quickTuneBtn" class="smallBtn">Quick Tune</button>
+        <button id="batchTrainBtn" class="smallBtn">Batch Train</button>
+        <button id="showLogsBtn" class="smallBtn">Show Logs</button>
+        <button id="clearLogsBtn" class="smallBtn">Clear Logs</button>
+      </div>
+    `;
+    const ref = document.querySelector(".container");
+    if(ref) ref.insertBefore(panel, ref.children[ref.children.length-2] || null);
+
+    document.getElementById("showExplainBtn").addEventListener("click", showExplainPanel);
+    document.getElementById("exportModelBtn").addEventListener("click", exportModel);
+    document.getElementById("importModelBtn").addEventListener("click", ()=>{
+      const inp = document.createElement("input"); inp.type="file"; inp.accept=".json";
+      inp.onchange = ()=> importModelFile(inp.files[0]);
+      inp.click();
+    });
+    document.getElementById("saveModelBtn").addEventListener("click", saveModelToLocal);
+    document.getElementById("loadModelBtn").addEventListener("click", loadModelFromLocal);
+    document.getElementById("quickTuneBtn").addEventListener("click", ()=> quickTuneFromHistory(160));
+    document.getElementById("batchTrainBtn").addEventListener("click", ()=> batchTrainFromHistory(120, ({epoch,epochs})=> showToast(`Training ${epoch}/${epochs}`,400)));
+    document.getElementById("showLogsBtn").addEventListener("click", ()=> showDebugLogs(500));
+    document.getElementById("clearLogsBtn").addEventListener("click", clearEngineLogs);
+  }catch(e){ console.warn("addExplainTrainUI err", e); }
+})();
+
+logDebug("PART G loaded — explain & training hooks ready");
+</script>
+<!-- ===============================
+     v22.1 — PART H
+     Final QA, Anti-NaN Protection, Engine Validator, Self-Test Runner
+================================= -->
+<script>
+/* =====================================================
+   UNIVERSAL SANITY GUARD
+   - Ensures no lambda or probability becomes NaN or Inf
+===================================================== */
+function guardNumber(x, def=0){
+  if(x === null || x === undefined) return def;
+  if(typeof x !== "number") x = Number(x);
+  if(isNaN(x) || !isFinite(x)) return def;
+  return x;
+}
+
+function guardLambda(lambda){
+  lambda = guardNumber(lambda, 1.0);
+  return clamp(lambda, 0.02, 9.5);
+}
+
+/* =====================================================
+   DISTRIBUTION SANITY CHECKER
+   - Fixes any NaN distribution entry
+===================================================== */
+function sanitizeDistribution(dist){
+  try{
+    const out = {};
+    let sum = 0;
+    for(const k in dist){
+      const v = guardNumber(dist[k], 0);
+      out[k] = v;
+      sum += v;
+    }
+    if(sum <= 0){
+      // fallback to simple model
+      return scoreDistribution(1.2, 1.1, 8);
+    }
+    // normalize
+    for(const k in out) out[k] /= sum;
+    return out;
+  }catch(e){
+    console.warn("sanitizeDistribution err", e);
+    return scoreDistribution(1.1, 1.1, 8);
+  }
+}
+
+/* =====================================================
+   PROBABILITY SANITY CHECK
+===================================================== */
+function sanitizeProb(p){
+  let H = guardNumber(p.home, 0.33);
+  let D = guardNumber(p.draw, 0.34);
+  let A = guardNumber(p.away, 0.33);
+  const s = H + D + A;
+  if(s <= 0) return { home:0.33, draw:0.34, away:0.33 };
+  return { home:H/s, draw:D/s, away:A/s };
+}
+
+/* =====================================================
+   FINAL OUTPUT SANITY WRAPPER
+===================================================== */
+function finalizeOutputSafe(res){
+  if(!res) return null;
+  res.final.lambdaH = guardLambda(res.final.lambdaH);
+  res.final.lambdaA = guardLambda(res.final.lambdaA);
+
+  res.dist = sanitizeDistribution(res.dist || {});
+  res.prob = sanitizeProb(res.prob || {home:0.33,draw:0.34,away:0.33});
+  res.conf = clamp(guardNumber(res.conf,0.55), 0.05, 0.99);
+
+  return res;
+}
+
+/* =====================================================
+   ENGINE VALIDATOR (internal)
+   - Runs a series of quick validation tests
+===================================================== */
+function runEngineValidator(){
+  const results = [];
+  function t(name, fn){
+    try{
+      fn();
+      results.push({name, status:"OK"});
+    }catch(e){
+      results.push({name, status:"FAIL", err: e.toString()});
+    }
+  }
+
+  // Test 1: finalize must never return NaN
+  t("Finalize-Lambda numeric", ()=>{
+    const h={name:"H",conv:12,prog:7,final3:4,poss:50,press:"medium",shots:10};
+    const a={name:"A",conv:11,prog:6,final3:4,poss:48,press:"medium",shots:9};
+    const fus=buildFusion(h,a);
+    const out=finalizeLambdaUltra(h,a,fus,{league_gpg:2.7},[]);
+    if(isNaN(out.lambdaH) || isNaN(out.lambdaA)) throw "NaN lambda";
+  });
+
+  // Test 2: distribution normalization
+  t("Distribution normalized", ()=>{
+    const d = scoreDistribution(1.4,1.2,8);
+    const s = Object.values(d).reduce((x,y)=>x+y,0);
+    if(Math.abs(s-1) > 0.0005) throw "Dist not normalized";
+  });
+
+  // Test 3: OU estimate stability
+  t("OU estimate stable", ()=>{
+    const o = cmwoEstimate(1.3,1.2,2.5);
+    if(!o || isNaN(o.mu) || isNaN(o.sd)) throw "OU invalid";
+  });
+
+  // Test 4: explain panel base
+  t("Explain meta check", ()=>{
+    const r = window._lastRes;
+    // no requirement, skip if none
+  });
+
+  console.log("=== ENGINE VALIDATION ===");
+  console.table(results);
+  return results;
+}
+
+/* =====================================================
+   SELF-TEST RUNNER (run after load)
+===================================================== */
+function engineSelfTest(){
+  try{
+    const fus = buildFusion(
+      {name:"TestH",conv:12,prog:7,final3:5,poss:52,press:"medium",shots:11,shotsC:7},
+      {name:"TestA",conv:10,prog:6,final3:4,poss:48,press:"medium",shots:9,shotsC:6}
+    );
+    const base = finalizeLambdaUltra(
+      {name:"TestH",conv:12,prog:7,final3:5,poss:52,press:"medium",shots:11},
+      {name:"TestA",conv:10,prog:6,final3:4,poss:48,press:"medium",shots:9},
+      fus,
+      {league_gpg:2.75},
+      []
+    );
+
+    const dist = scoreDistribution(base.lambdaH, base.lambdaA, 8);
+    const prob = normalize3({home:0.4,draw:0.3,away:0.3});
+
+    const testRes = finalizeOutputSafe({
+      h:{name:"TestH"}, a:{name:"TestA"},
+      final: base,
+      dist: dist,
+      prob: prob,
+      conf: 0.77,
+      meta: base.meta,
+      contributions: base.contributions
+    });
+
+    console.log("=== ENGINE SELF-TEST RESULT ===");
+    console.log(testRes);
+
+    showToast("Engine OK ✓");
+    return true;
+
+  }catch(e){
+    console.error("ENGINE SELF TEST FAILED", e);
+    showToast("Engine Error — check console");
+    return false;
+  }
+}
+
+/* auto-run self-test after load */
+setTimeout(()=>{ try{ engineSelfTest(); }catch(e){} }, 600);
+
+/* Optionally expose validator for user */
+window.runEngineValidator = runEngineValidator;
+
+</script>
+<!-- ===============================
+     v22.1 — PART I
+     Advanced UI Enhancements: Prob Bars, Confidence Gauge, Picks Visual, History Filter/Search
+================================= -->
+<script>
+/* ===========================
+   UI INSERTION (if container available)
+   - Adds small panels: ProbBars, ConfidenceGauge, PicksBox, HistoryFilter
+=========================== */
+(function addAdvancedUI(){
+  try{
+    const container = document.querySelector(".container");
+    if(!container) return;
+
+    // Avoid duplicate
+    if(document.getElementById("v221_advanced_ui")) return;
+
+    const panel = document.createElement("div");
+    panel.id = "v221_advanced_ui";
+    panel.className = "card";
+    panel.style.marginTop = "10px";
+    panel.innerHTML = `
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        <div style="flex:1;min-width:240px;">
+          <div class="section-title">Probability Bars</div>
+          <div id="probBars" style="height:68px;display:flex;gap:6px;align-items:center">
+            <div style="flex:1"><div style="font-size:12px;color:#666">Home</div><div id="barHome" class="probBar"><div class="barFill" style="width:33%"></div></div><div id="labelHome" class="note">33%</div></div>
+            <div style="flex:1"><div style="font-size:12px;color:#666">Draw</div><div id="barDraw" class="probBar"><div class="barFill" style="width:34%"></div></div><div id="labelDraw" class="note">34%</div></div>
+            <div style="flex:1"><div style="font-size:12px;color:#666">Away</div><div id="barAway" class="probBar"><div class="barFill" style="width:33%"></div></div><div id="labelAway" class="note">33%</div></div>
+          </div>
+        </div>
+
+        <div style="width:220px;min-width:180px;">
+          <div class="section-title">Confidence</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <canvas id="confGauge" width="140" height="80"></canvas>
+            <div style="flex:1;">
+              <div id="confLabel" style="font-weight:700">--%</div>
+              <div id="confText" class="note">Confidence level</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="width:260px;min-width:220px;">
+          <div class="section-title">Suggested Picks</div>
+          <div id="picksBox" style="display:flex;flex-direction:column;gap:6px">
+            <div class="note">1X2: <b id="pick1x2">—</b></div>
+            <div class="note">HDP: <b id="pickHdp">—</b></div>
+            <div class="note">OU: <b id="pickOu">—</b></div>
+          </div>
+        </div>
+
+        <div style="min-width:280px;">
+          <div class="section-title">History Filter / Search</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="historySearch" placeholder="search team or date" style="flex:1;padding:8px;border-radius:6px;border:1px solid #ddd"/>
+            <button id="historySearchBtn" class="smallBtn">Search</button>
+            <button id="historyClearSearch" class="smallBtn">Clear</button>
+          </div>
+        </div>
+      </div>
+    `;
+    // Insert after header card but before main grid if possible
+    const ref = container.querySelector(".card");
+    if(ref && ref.parentNode) ref.parentNode.insertBefore(panel, ref.nextSibling);
+    else container.appendChild(panel);
+
+    // CSS for bars (inject if not present)
+    if(!document.getElementById("v221_probbar_style")){
+      const style = document.createElement("style");
+      style.id = "v221_probbar_style";
+      style.innerText = `
+        .probBar{height:14px;background:#eef2f7;border-radius:8px;overflow:hidden;border:1px solid #e0e6ef}
+        .probBar .barFill{height:100%;background:linear-gradient(90deg,#2e7dd1,#2ed1a6);width:0%;transition:width .6s}
+        .probBar.draw .barFill{background:linear-gradient(90deg,#a3a3a3,#cfcfcf)}
+        .probBar.away .barFill{background:linear-gradient(90deg,#d12e2e,#f0a6a6)}
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Bind search
+    document.getElementById("historySearchBtn").addEventListener("click", ()=>{
+      const q = (document.getElementById("historySearch").value || "").trim().toLowerCase();
+      filterHistory(q);
+    });
+    document.getElementById("historyClearSearch").addEventListener("click", ()=>{
+      document.getElementById("historySearch").value = "";
+      filterHistory("");
+    });
+
+    // initial render from any existing last result
+    setTimeout(()=>{ try{ if(window._lastRes) updateAdvancedUI(window._lastRes); }catch(e){} }, 200);
+
+  }catch(e){ console.warn("addAdvancedUI err", e); }
+})();
+
+/* ===========================
+   Update advanced UI from analysis result
+   - updates bars, gauge, picks
+=========================== */
+function updateAdvancedUI(res){
+  try{
+    if(!res) return;
+    // probs
+    const p = res.prob || {home:0.33,draw:0.34,away:0.33};
+    const hStr = ((p.home||0)*100).toFixed(1)+"%";
+    const dStr = ((p.draw||0)*100).toFixed(1)+"%";
+    const aStr = ((p.away||0)*100).toFixed(1)+"%";
+    const barHome = document.getElementById("barHome");
+    const barDraw = document.getElementById("barDraw");
+    const barAway = document.getElementById("barAway");
+    if(barHome) { barHome.querySelector(".barFill").style.width = (p.home*100||33) + "%"; document.getElementById("labelHome").innerText = hStr; }
+    if(barDraw) { barDraw.querySelector(".barFill").style.width = (p.draw*100||34) + "%"; barDraw.classList.add("draw"); document.getElementById("labelDraw").innerText = dStr; }
+    if(barAway) { barAway.querySelector(".barFill").style.width = (p.away*100||33) + "%"; barAway.classList.add("away"); document.getElementById("labelAway").innerText = aStr; }
+
+    // confidence gauge
+    const conf = clamp(guardNumber(res.conf,0.55), 0, 1);
+    drawConfidenceGauge("confGauge", conf);
+    const confLabel = document.getElementById("confLabel");
+    const confText = document.getElementById("confText");
+    if(confLabel) confLabel.innerText = Math.round(conf*100) + "%";
+    if(confText) confText.innerText = conf>0.75 ? "High confidence" : (conf>0.5 ? "Moderate" : "Low confidence");
+
+    // picks
+    const picks = (res.final && res.final.meta && res.final.meta.ext && res.final.meta.ext.picks) ? res.final.meta.ext.picks : (res.picks || {});
+    const p1 = document.getElementById("pick1x2"); if(p1) p1.innerText = picks.pick_1x2 || (res.picks && res.picks.pick_1x2) || "—";
+    const ph = document.getElementById("pickHdp"); if(ph) ph.innerText = picks.pick_hdp || (res.picks && res.picks.pick_hdp) || "—";
+    const po = document.getElementById("pickOu"); if(po) po.innerText = picks.pick_ou || (res.picks && res.picks.pick_ou) || "—";
+
+    // optional: render score dist top into scoreDist element
+    try{
+      const sd = document.getElementById("scoreDist");
+      if(sd && res.dist){
+        const arr = Object.keys(res.dist).map(k=>({k,p:res.dist[k]})).sort((a,b)=>b.p-a.p).slice(0,10);
+        let html = "<div style='display:flex;flex-direction:column;gap:4px'>";
+        arr.forEach(it => html += `<div style="display:flex;justify-content:space-between"><div>${it.k}</div><div>${(it.p*100).toFixed(2)}%</div></div>`);
+        html += "</div>";
+        sd.innerHTML = html;
+      }
+    }catch(e){}
+  }catch(e){ console.warn("updateAdvancedUI err", e); }
+}
+
+/* ===========================
+   Confidence gauge drawing
+   - semi-circular gauge
+=========================== */
+function drawConfidenceGauge(canvasId, value){
+  try{
+    const c = document.getElementById(canvasId);
+    if(!c) return;
+    const ctx = c.getContext("2d");
+    const w = c.width, h = c.height;
+    ctx.clearRect(0,0,w,h);
+    const cx = w/2, cy = h*0.9, r = Math.min(w/2-6, h-20);
+    // background arc
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = "#eee";
+    ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 2*Math.PI, false); ctx.stroke();
+    // gradient
+    const grd = ctx.createLinearGradient(0,0,w,0);
+    grd.addColorStop(0, "#d12e2e");
+    grd.addColorStop(0.5, "#f3b941");
+    grd.addColorStop(1, "#2e7dd1");
+    // value arc
+    const end = Math.PI + value * Math.PI;
+    ctx.strokeStyle = grd;
+    ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, end, false); ctx.stroke();
+    // text
+    ctx.fillStyle = "#222";
+    ctx.font = "12px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(Math.round(value*100) + "%", cx, cy - r - 6);
+  }catch(e){ console.warn("gauge err", e); }
+}
+
+/* ===========================
+   History filter function
+   - filters HISTORY list (uses renderHistoryList but limits to matches)
+=========================== */
+function filterHistory(q){
+  try{
+    const el = document.getElementById("historyList");
+    if(!el) return;
+    q = (q||"").trim().toLowerCase();
+    if(!q || q.length===0){ renderHistoryList(); return; }
+    const filtered = HISTORY.filter(h=>{
+      try{
+        const s = ((h.hname||"") + " " + (h.aname||"") + " " + (h.time||"")).toLowerCase();
+        return s.indexOf(q) >= 0;
+      }catch(e){ return false; }
+    });
+    // render filtered
+    let html = "";
+    if(filtered.length===0) html = "<i>No matches</i>";
+    else {
+      filtered.slice(0,120).forEach((h,i)=>{
+        html += `<div class="histItem"><div><b>${h.hname}</b> vs <b>${h.aname}</b></div>
+          <div><small>${h.time}</small></div>
+          <div>λH=${(h.lambdaH||0).toFixed(2)} | λA=${(h.lambdaA||0).toFixed(2)}</div></div>`;
+      });
+    }
+    el.innerHTML = html;
+  }catch(e){ console.warn("filterHistory err", e); }
+}
+
+/* ===========================
+   Auto-update hook: whenever analyzeRunner finishes, update advanced UI
+   - we patch analyzeRunner to call updateAdvancedUI after its normal work (if not already)
+=========================== */
+(function patchAnalyzeHook(){
+  try{
+    if(typeof window._analyze_hook_patched !== "undefined") return;
+    const orig = window.analyzeRunner;
+    if(typeof orig !== "function") { window._analyze_hook_patched = true; return; }
+    window.analyzeRunner = async function(...args){
+      const res = await orig.apply(this, args);
+      try{ if(res) updateAdvancedUI(res); }catch(e){}
+      return res;
+    };
+    window._analyze_hook_patched = true;
+  }catch(e){ console.warn("patchAnalyzeHook err", e); }
+})();
+
+</script>
+<!-- ===============================
+     v22.1 — PART J
+     Export System: CSV, XLSX-lite, ZIP generator
+================================= -->
+<script>
+/* =====================================================
+   CSV GENERATOR
+===================================================== */
+function toCSV(rows){
+  return rows.map(r =>
+    r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")
+  ).join("\n");
+}
+
+function downloadCSV(filename, rows){
+  const csv = toCSV(rows);
+  const blob = new Blob([csv], {type:"text/csv"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* =====================================================
+   XLSX-LITE GENERATOR
+   - Real XLSX requires complex ZIP XML.
+   - We create spreadsheetml worksheet manually.
+===================================================== */
+function downloadXLSX(filename, rows){
+  // Create minimal XLSX file (Excel compatible)
+  const xmlHeader = `<?xml version="1.0" encoding="UTF-8"?>`;
+  const sheetData = rows.map((r,i)=>{
+    const cells = r.map((c,j)=>`<c r="${String.fromCharCode(65+j)}${i+1}" t="inlineStr"><is><t>${String(c)}</t></is></c>`).join("");
+    return `<row r="${i+1}">${cells}</row>`;
+  }).join("");
+
+  const sheetXML =
+`${xmlHeader}
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>${sheetData}</sheetData>
+</worksheet>`;
+
+  // Barebones ZIP creation
+  const zipParts = {
+    "[Content_Types].xml":
+`${xmlHeader}
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+</Types>`,
+
+    "xl/workbook.xml":
+`${xmlHeader}
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`,
+
+    "xl/worksheets/sheet1.xml": sheetXML,
+
+    "_rels/.rels":
+`${xmlHeader}
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`
+  };
+
+  // Build ZIP (simple, no compression)
+  const zipBlob = createZip(zipParts);
+  const url = URL.createObjectURL(zipBlob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* =====================================================
+   SIMPLE ZIP GENERATOR
+   (Uncompressed ZIP – works for small files)
+===================================================== */
+function createZip(files){
+  // Minimal ZIP: local file headers + central directory + EOCD
+  let fileEntries = [];
+  let central = [];
+  let offset = 0;
+
+  function encode(str){ return new TextEncoder().encode(str); }
+
+  for(const path in files){
+    const data = encode(files[path]);
+    const name = encode(path);
+    const local = [
+      0x50,0x4b,0x03,0x04, // signature
+      0x0a,0x00, // version
+      0x00,0x00, // flags
+      0x00,0x00, // compression (0 = no)
+      0x00,0x00,0x00,0x00, // time/date
+      0x00,0x00,0x00,0x00, // crc32 (ignored)
+      data.length & 0xff, (data.length>>8)&0xff, (data.length>>16)&0xff, (data.length>>24)&0xff,
+      data.length & 0xff, (data.length>>8)&0xff, (data.length>>16)&0xff, (data.length>>24)&0xff,
+      name.length & 0xff, (name.length>>8)&0xff,
+      0x00,0x00 // extra len
+    ];
+
+    const localHeader = new Uint8Array(local);
+    fileEntries.push(localHeader, name, data);
+
+    // Central directory entry
+    const centralHeader = new Uint8Array([
+      0x50,0x4b,0x01,0x02,
+      0x14,0x00,0x0a,0x00, // version
+      0x00,0x00,0x00,0x00, // flags + compression
+      0x00,0x00,0x00,0x00, // time/date
+      0x00,0x00,0x00,0x00, // CRC32
+      data.length & 0xff,(data.length>>8)&0xff,(data.length>>16)&0xff,(data.length>>24)&0xff,
+      data.length & 0xff,(data.length>>8)&0xff,(data.length>>16)&0xff,(data.length>>24)&0xff,
+      name.length & 0xff,(name.length>>8)&0xff,
+      0x00,0x00,0x00,0x00,0x00,0x00, // extras
+      offset & 0xff,(offset>>8)&0xff,(offset>>16)&0xff,(offset>>24)&0xff
+    ]);
+    central.push(centralHeader, name);
+
+    offset += localHeader.length + name.length + data.length;
+  }
+
+  // End of central directory
+  const centralSize = central.reduce((n,a)=>n+a.length,0);
+  const eocd = new Uint8Array([
+    0x50,0x4b,0x05,0x06,
+    0x00,0x00,0x00,0x00,
+    Object.keys(files).length & 0xff,0x00,
+    Object.keys(files).length & 0xff,0x00,
+    centralSize & 0xff,(centralSize>>8)&0xff,(centralSize>>16)&0xff,(centralSize>>24)&0xff,
+    offset & 0xff,(offset>>8)&0xff,(offset>>16)&0xff,(offset>>24)&0xff,
+    0x00,0x00
+  ]);
+
+  const all = [...fileEntries, ...central, eocd];
+  let totalLen = all.reduce((n,a)=>n+a.length,0);
+
+  const out = new Uint8Array(totalLen);
+  let pos = 0;
+  for(const fragment of all){
+    out.set(fragment, pos);
+    pos += fragment.length;
+  }
+
+  return new Blob([out], {type:"application/zip"});
+}
+
+/* =====================================================
+   EXPORT: LAST RESULT
+===================================================== */
+function exportLastResultCSV(){
+  if(!window._lastRes){ showToast("Run analysis first"); return; }
+  const r = window._lastRes;
+  const rows = [
+    ["Field","Value"],
+    ["Home", r.h.name],
+    ["Away", r.a.name],
+    ["Lambda_H", r.final.lambdaH],
+    ["Lambda_A", r.final.lambdaA],
+    ["Conf", r.conf],
+    ["Pick_1X2", r.picks?.pick_1x2 || "-"],
+    ["Pick_HDP", r.picks?.pick_hdp || "-"],
+    ["Pick_OU", r.picks?.pick_ou || "-"]
+  ];
+  downloadCSV("last_result.csv", rows);
+}
+
+/* =====================================================
+   EXPORT: FULL HISTORY
+===================================================== */
+function exportHistoryCSV(){
+  if(!HISTORY || HISTORY.length===0){ showToast("History empty"); return; }
+  const rows = [["Time","Home","Away","λH","λA","Conf","Pick1X2","PickHDP","PickOU"]];
+  HISTORY.forEach(h=>{
+    rows.push([
+      h.time || "",
+      h.hname || "",
+      h.aname || "",
+      h.lambdaH || "",
+      h.lambdaA || "",
+      h.conf || "",
+      h.pick1 || "",
+      h.pickHDP || "",
+      h.pickOU || ""
+    ]);
+  });
+  downloadCSV("history.csv", rows);
+}
+
+/* =====================================================
+   EXPORT: FULL MODEL PACKAGE — ZIP
+===================================================== */
+function exportFullPackageZIP(){
+  try{
+    const files = {};
+    // 1) last result JSON
+    if(window._lastRes){
+      files["last_result.json"] = JSON.stringify(window._lastRes, null, 2);
+    }
+    // 2) history
+    if(HISTORY && HISTORY.length>0){
+      files["history.json"] = JSON.stringify(HISTORY, null, 2);
+    }
+    // 3) model
+    const model = { MEL_WEIGHT: window.MEL_WEIGHT || 0.38 };
+    files["model.json"] = JSON.stringify(model, null, 2);
+
+    const blob = createZip(files);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "v22.1_package.zip";
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("ZIP exported");
+  }catch(e){ console.warn(e); showToast("ZIP export failed"); }
+}
+
+/* =====================================================
+   UI BUTTONS (inject into UI if room is available)
+===================================================== */
+(function addExportButtons(){
+  try{
+    const container = document.querySelector(".container");
+    if(!container) return;
+
+    if(document.getElementById("v221_export_ui")) return;
+
+    const panel = document.createElement("div");
+    panel.id = "v221_export_ui";
+    panel.className = "card";
+    panel.style.marginTop = "10px";
+    panel.innerHTML = `
+      <div class="section-title">Export Tools</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button id="expLastCSV" class="smallBtn">Export Last CSV</button>
+        <button id="expHistCSV" class="smallBtn">Export History CSV</button>
+        <button id="expXlsx" class="smallBtn">Export XLSX</button>
+        <button id="expZip" class="smallBtn">Export ZIP</button>
+      </div>
+    `;
+    container.appendChild(panel);
+
+    document.getElementById("expLastCSV").addEventListener("click", exportLastResultCSV);
+    document.getElementById("expHistCSV").addEventListener("click", exportHistoryCSV);
+    document.getElementById("expXlsx").addEventListener("click", ()=>{
+      if(!window._lastRes){ showToast("No result"); return; }
+      const r = window._lastRes;
+      const rows = [
+        ["Home", r.h.name],
+        ["Away", r.a.name],
+        ["λH", r.final.lambdaH],
+        ["λA", r.final.lambdaA],
+        ["Conf", r.conf]
+      ];
+      downloadXLSX("result.xlsx", rows);
+    });
+    document.getElementById("expZip").addEventListener("click", exportFullPackageZIP);
+
+  }catch(e){ console.warn("addExportButtons err", e); }
+})();
+
+</script>
+<!-- ===============================
+     v22.1 — PART K
+     FULL DOCUMENTATION + INTERNAL MANUAL
+     (Does NOT affect engine; comment block only)
+================================= -->
+<script>
+/* ========================================================================
+   v22.1 TITAN ULTRA+ — INTERNAL DOCUMENTATION
+   ========================================================================
+
+   ===========================================================
+   INDEX OF MODULES (urut dari awal sampai akhir engine)
+   ===========================================================
+   ✔ PART A — Core Engine Foundation
+       - safeNum, clamp, rnd
+       - factorial & Poisson generators
+       - scoreDistribution (0–8 goals matrix)
+       - normalize3 (1X2 normalization)
+       - styleToNum, pressToNum
+
+   ✔ PART B — Core Metrics
+       - ETv4 (Efficient Team v4 rating)
+       - ETv4+ (weighted extensions)
+       - XGplus (expected finishing quality)
+       - DSBI (Defensive Shot Block Index)
+       - PRI (Progressive Risk Index)
+       - ALBB (Attack-Load Ball Balance)
+       - BCM (Build Control Metric)
+       - TVM (Tactical-Variance Model)
+
+   ✔ PART C — Fusion & Tactical Layer
+       - buildFusion (merge ETv4+XG+PRI+...)
+       - TacticalTree v3 (playing style mapping)
+       - NationalMode (country vs club adjustments)
+       - Importance (Tier Ω)
+       - ORL (Odds-Resistance Level)
+       - Base finalizeLambdaUltra_v22_1
+
+   ✔ PART D — Worker Pool + Analyzer Runner
+       - workerSafe (dummy fallback)
+       - analyzeRunner (core execution loop)
+       - historyAdd / history system
+
+   ✔ PART E — Advanced Models
+       - PCS v2 (Progressive Chain Simulation)
+       - Momentum, Streak
+       - League Normalize v3
+       - OU Beta approximation
+       - Tier Ω importance expansion
+       - PAC / PAF smart calculators
+
+   ✔ PART F — Finalize EXTENSIONS
+       - SPHv2 extra hull corrections
+       - CMWO (Chance Model Weighted OU)
+       - Contribution augmentation
+       - Multi-picks: 1X2 / HDP / OU
+       - Final wrapper replace finalizeLambdaUltra
+
+   ✔ PART G — Explain UI + Training Hooks
+       - Model save/load (localStorage)
+       - JSON export/import
+       - MEL quickTune / batchTrain functions
+       - Explain Panel
+       - Logs & Debug system
+       - Hook patch for analyzeRunner
+
+   ✔ PART H — QA & Safety
+       - Anti-NaN wrapper
+       - sanitizeDistribution
+       - sanitizeProb
+       - finalizeOutputSafe
+       - engineSelfTest (auto-run)
+       - runEngineValidator
+
+   ✔ PART I — Advanced UI
+       - Probability Bars
+       - Confidence Gauge
+       - Suggested Picks panel
+       - History search/filter
+       - Hook to update UI after analysis
+
+   ✔ PART J — Export Tools
+       - CSV (last result)
+       - CSV (history)
+       - XLSX-lite generator
+       - ZIP export (no compression)
+       - UI panel insertion
+
+   ✔ PART K — DOCUMENTATION (this file)
+
+   ------------------------------------------------------------------------
+
+   ===========================================================
+   ENGINE EXECUTION ORDER
+   ===========================================================
+   When user clicks ANALYZE:
+
+   1)  Input collected → build objects H, A  
+   2)  ETv4 metrics calculated  
+   3)  XGplus, DSBI, PRI, ALBB, BCM, TVM evaluated  
+   4)  Fusion created via buildFusion(H,A)  
+   5)  finalizeLambdaUltra() called
+       - merges Fusion + tactical + national + importance + PCS
+       - momentum/streak + league normalization
+       - SPHv2 extra hull correction
+       - OU CMWO integrated
+       - outputs λH, λA
+
+   6)  Distribution computed: scoreDistribution(λH, λA)  
+   7)  Normalized probabilities (1X2)  
+   8)  Picks recommended  
+   9)  finalizeOutputSafe to ensure no NaN  
+   10) _lastRes stored + history updated  
+   11) updateAdvancedUI called  
+
+   ------------------------------------------------------------------------
+
+   ===========================================================
+   DEPENDENCY MAP (simplified)
+   ===========================================================
+   • ETv4 → needs: conv, prog, final3, build  
+   • XGplus → needs: shots, SOT, final3  
+   • DSBI → needs: shotsC, blocks  
+   • PRI → needs: poss, prog  
+   • BCM → needs: build, poss  
+   • TVM → uses: style, press
+
+   • PCS v2 → depends on: prog, final3, shots, SOT  
+   • SPHv2 → depends on: shotsC, df_abs, gk_abs  
+
+   • Fusion → depends on ETv4 + XGplus + PRI + more  
+   • Finalize → depends on Fusion + SPHv2 + PCS + momentum + importance + CMWO  
+   • UI → depends on final outputs  
+   • Exports → depend on _lastRes and HISTORY
+
+   ------------------------------------------------------------------------
+
+   ===========================================================
+   SAFE OVERRIDE ZONES
+   ===========================================================
+   If you want to change formulas in the future, modify ONLY in:
+   - ETv4 area (PART B)
+   - PCS v2 area (PART E)
+   - SPHv2 extra (PART F)
+   - finalizeLambdaUltra_v22_1_ext (PART F)
+   - MEL weight (PART G)
+   - TacticalTree v3 (PART C)
+
+   DO NOT modify:
+   - sanitize functions (PART H)
+   - worker wrappers (PART D)
+   - UI update function unless needed
+
+   ------------------------------------------------------------------------
+
+   ===========================================================
+   HOW TO ADD NEW METRIC
+   ===========================================================
+   Example: if you want "Vertical Threat Value":
+
+   1) Create function in PART B or PART E:
+       function calcVTV(team){ return something; }
+
+   2) Add to Fusion (PART C):
+       F.vtv = calcVTV(team);
+
+   3) Add contribution tag in finalize (PART F):
+       contributions.vtv = F.vtv;
+
+   4) UI auto updates via explain panel.
+
+   ------------------------------------------------------------------------
+
+   ===========================================================
+   FILE BOUNDARY MARKERS
+   ===========================================================
+   These markers help identify parts:
+
+     >>> PART A START
+     >>> PART A END
+
+     >>> PART B START
+     >>> PART B END
+
+     (… continues until …)
+
+     >>> PART K START (this documentation)
+     >>> PART K END
+
+   This makes merging easy if upgrading to v22.2 or v23 later.
+
+   ========================================================================
+   END OF DOCUMENTATION
+   ======================================================================== */
+</script>
+<!-- ===============================
+     v22.1 — PART L
+     SAFE UNINSTALL / CLEAN MODE / RESET / CLEANUP
+================================= -->
+<script>
+/* ===========================
+   SAFE UNINSTALL & CLEANUP
+   - Restores previous finalize if backup present
+   - Removes injected UI panels (export, explain, advanced)
+   - Terminates worker pool & revokes blob URLs
+   - Clears HISTORY and model from localStorage
+=========================== */
+
+function safeTerminateWorkers(){
+  try{
+    if(Array.isArray(poolWorkers)){
+      poolWorkers.forEach(w => { try{ w.terminate(); }catch(e){} });
+      poolWorkers.length = 0;
+    }
+    if(Array.isArray(poolWorkerURLs)){
+      poolWorkerURLs.forEach(u => { try{ URL.revokeObjectURL(u); }catch(e){} });
+      poolWorkerURLs.length = 0;
+    }
+    showToast("Workers terminated", 900);
+  }catch(e){ console.warn("safeTerminateWorkers err", e); }
+}
+
+function restoreFinalizeBackup(){
+  try{
+    // prefer explicit backup keys used earlier
+    if(window._finalize_v22_1_ext_base){
+      window.finalizeLambdaUltra = window._finalize_v22_1_ext_base;
+      showToast("Finalize restored from _finalize_v22_1_ext_base",900);
+      return true;
+    }
+    if(window._finalizeLambdaUltra_complete_backup){
+      window.finalizeLambdaUltra = window._finalizeLambdaUltra_complete_backup;
+      showToast("Finalize restored from backup",900);
+      return true;
+    }
+    // if no backup found, do nothing
+    showToast("No finalize backup found",900);
+    return false;
+  }catch(e){ console.warn("restoreFinalizeBackup err", e); return false; }
+}
+
+function removeInjectedUI(){
+  try{
+    const ids = [
+      "v221_explain_train_ui","v221_export_ui","v221_advanced_ui",
+      "v221_probbar_style","v221_ui_panel","v221_export_ui"
+    ];
+    ids.forEach(id=>{ const el=document.getElementById(id); if(el && el.parentNode) el.parentNode.removeChild(el); });
+
+    // remove extra footer cards that were injected (best-effort)
+    document.querySelectorAll(".card").forEach(c=>{
+      if(c.innerText && c.innerText.indexOf("TITAN")>=0 && c.innerText.indexOf("v22")>=0 && c.innerText.indexOf("Ultra")>=0){
+        // keep first footer; remove duplicates (if more than 1)
+      }
+    });
+
+    showToast("Injected UI removed",900);
+    return true;
+  }catch(e){ console.warn("removeInjectedUI err", e); return false; }
+}
+
+function clearHistoryAndModel(confirmPrompt=true){
+  try{
+    if(confirmPrompt){
+      const ok = confirm("Hapus semua history & model lokal? (tidak dapat dibatalkan)");
+      if(!ok) return false;
+    }
+    HISTORY = [];
+    saveHistory();
+    localStorage.removeItem("PRED_ENGINE_V221_MODEL");
+    localStorage.removeItem("PRED_HISTORY_V22_1");
+    window.MEL_WEIGHT = 0.38;
+    showToast("History & model cleared",1000);
+    renderHistoryList();
+    return true;
+  }catch(e){ console.warn("clearHistoryAndModel err", e); return false; }
+}
+
+/* Clean Mode: hides advanced panels leaving only core input/result panels
+   - helps when you want a minimal UI for embedding
+*/
+function enableCleanMode(){
+  try{
+    // hide panels if exist
+    const toHide = ["v221_advanced_ui","v221_export_ui","v221_explain_train_ui"];
+    toHide.forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = "none";
+    });
+    // optionally hide history panel
+    const hist = document.getElementById("historyList");
+    if(hist) hist.style.display = "none";
+    showToast("Clean mode enabled", 900);
+  }catch(e){ console.warn("enableCleanMode err", e); }
+}
+
+function disableCleanMode(){
+  try{
+    const toHide = ["v221_advanced_ui","v221_export_ui","v221_explain_train_ui"];
+    toHide.forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = "";
+    });
+    const hist = document.getElementById("historyList");
+    if(hist) hist.style.display = "";
+    showToast("Clean mode disabled", 900);
+  }catch(e){ console.warn("disableCleanMode err", e); }
+}
+
+/* Full Reset (safe):
+   - terminate workers
+   - restore finalize if backup exists (non-destructive)
+   - clear history/model (ask user)
+   - remove injected UI
+*/
+function fullSafeReset(){
+  try{
+    safeTerminateWorkers();
+    restoreFinalizeBackup();
+    const cleared = clearHistoryAndModel(true);
+    removeInjectedUI();
+    showToast("Full reset applied", 1200);
+    return true;
+  }catch(e){ console.warn("fullSafeReset err", e); showToast("Reset failed"); return false; }
+}
+
+/* Quick Uninstall:
+   - runs restoreFinalizeBackup, removeInjectedUI, terminate workers, leaves history/model intact
+*/
+function quickUninstall(){
+  try{
+    safeTerminateWorkers();
+    restoreFinalizeBackup();
+    removeInjectedUI();
+    showToast("Quick uninstall complete",900);
+  }catch(e){ console.warn("quickUninstall err", e); showToast("Uninstall failed"); }
+}
+
+/* Safe removal of global overrides introduced by v22.1:
+   - remove window.finalizeLambdaUltra_v22_1_ext
+   - if _finalizeLambdaUltra_complete_backup exists, restore it
+*/
+function removeGlobalOverrides(){
+  try{
+    if(window._finalizeLambdaUltra_complete_backup){
+      window.finalizeLambdaUltra = window._finalizeLambdaUltra_complete_backup;
+      showToast("Global finalize override restored",900);
+    }
+    // delete v22.1 ext references (non-fatal)
+    try{ delete window.finalizeLambdaUltra_v22_1_ext; }catch(e){}
+    try{ delete window.finalizeLambdaUltra_v22_1; }catch(e){}
+    try{ delete window._finalize_v22_1_ext_base; }catch(e){}
+    showToast("Overrides removed",900);
+  }catch(e){ console.warn("removeGlobalOverrides err", e); }
+}
+
+/* UI Quick Buttons for Uninstall/Reset (insert if container available) */
+(function addCleanupUI(){
+  try{
+    if(document.getElementById("v221_cleanup_ui")) return;
+    const container = document.querySelector(".container");
+    if(!container) return;
+    const panel = document.createElement("div");
+    panel.id = "v221_cleanup_ui";
+    panel.className = "card";
+    panel.style.marginTop = "10px";
+    panel.innerHTML = `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button id="v221_quick_uninstall" class="smallBtn">Quick Uninstall</button>
+        <button id="v221_full_reset" class="smallBtn">Full Safe Reset</button>
+        <button id="v221_enable_clean" class="smallBtn">Enable Clean Mode</button>
+        <button id="v221_disable_clean" class="smallBtn">Disable Clean Mode</button>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:#555">Use Quick Uninstall to remove UI & workers. Use Full Safe Reset to also clear history/model.</div>
+    `;
+    container.appendChild(panel);
+
+    document.getElementById("v221_quick_uninstall").addEventListener("click", ()=>{ if(confirm("Run quick uninstall?")) quickUninstall(); });
+    document.getElementById("v221_full_reset").addEventListener("click", ()=>{ if(confirm("Full reset (clears history & model)?")) fullSafeReset(); });
+    document.getElementById("v221_enable_clean").addEventListener("click", ()=> enableCleanMode());
+    document.getElementById("v221_disable_clean").addEventListener("click", ()=> disableCleanMode());
+
+  }catch(e){ console.warn("addCleanupUI err", e); }
+})();
+
+/* ===========================
+   Usage notes (console helpers)
+=========================== */
+/*
+  // Terminate workers:
+  safeTerminateWorkers();
+
+  // Restore previous finalize:
+  restoreFinalizeBackup();
+
+  // Remove injected UI:
+  removeInjectedUI();
+
+  // Clear history & model (prompt):
+  clearHistoryAndModel(true);
+
+  // Full safe reset:
+  fullSafeReset();
+
+  // Quick uninstall (no history cleared):
+  quickUninstall();
+
+  // Remove any global overrides (lower-level)
+  removeGlobalOverrides();
+*/
+
+logDebug && logDebug("PART L loaded — cleanup tools ready");
+</script>
+</body>
+</html>
