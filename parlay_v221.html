@@ -854,7 +854,331 @@ window.drawShotMapFromResult = drawShotMapFromResult;
 console.log("Auto-Extract 2 installed: defensive estimates, PCS enhanced, shotMap visualization.");
 </script>
 <!-- ========== END PATCH AUTO-EXTRACT 2 ========== -->
-     
+     <!-- ===============================
+     PATCH: Defensive Pressure Field (DPF) — v22.1
+     - computeDefensivePressureField(team, opp, history)
+     - integrate into finalizeLambdaUltra override (non-destructive)
+     - drawDefensivePressureMap(canvas)
+     - UI toggle & auto-draw after analyze
+================================= -->
+<script>
+/* Defensive Pressure Field (DPF)
+   Produces:
+   - pressureScore: 0..1 (1 = very high defensive pressure)
+   - grid: 2D array of pressure values 0..1 (for viz)
+   - compactness, interceptionEffect, pressEffect used for explain/meta
+
+   Uses inputs:
+   - team.df_abs, team.gk_abs, team.inter, team.dzc, team.rest, team.rotation, team.press
+   - opp.final3, opp.prog, opp.shots, opp.sot
+   - HISTORY for league baselines (optional)
+*/
+
+/* 1) Compute scalar pressure + grid */
+function computeDefensivePressureField(team, opp, history, opts={}){
+  try{
+    // read inputs
+    const df_abs = safeNum(team.df_abs, 0);
+    const gk_abs = safeNum(team.gk_abs, 0);
+    const inter  = safeNum(team.inter, 5);
+    const dzc    = safeNum(team.dzc, 1);
+    const rest   = safeNum(team.rest, 3);
+    const rotation = safeNum(team.rotation, 0);
+    const pressVal = pressToNum(team.press || "medium"); // 0.3..1
+
+    const oppFinal3 = safeNum(opp.final3, 4);
+    const oppProg   = safeNum(opp.prog, 7);
+    const oppShots  = safeNum(opp.shots, 10);
+    const oppSOT    = safeNum(opp.sot, 3);
+
+    // defensive base: more defenders/gk missing -> weaker
+    // compute fragility:
+    const frag = clamp(1 - (df_abs*0.14 + gk_abs*0.22), 0.5, 1.15);
+
+    // compactness index: higher inter & dzc => more compact (better)
+    let compact = clamp((inter/8)*0.6 + (1 - (dzc-1)*0.08), 0.45, 1.2);
+    // rest and rotation: tired teams lower pressure
+    compact *= clamp(1 - (rest-3)*0.055 - (rotation*0.03), 0.72, 1.14);
+
+    // press-based multiplier
+    const pressEffect = clamp(0.6 + (pressVal-0.3), 0.7, 1.4); // 0.7..1.4
+
+    // opponent threat factor (if opponent highly dangerous -> pressure must be higher to be meaningful)
+    const oppThreat = clamp((oppFinal3/8) * 0.6 + (oppProg/16) * 0.25 + (oppShots/18)*0.15, 0.2, 1.9);
+
+    // base pressure raw: combine compactness, press, inverse frag, and opponent threat
+    let rawPressure = clamp((compact * pressEffect) * (1.05 / frag) * (1 / Math.max(0.6, oppThreat)), 0.18, 2.2);
+
+    // normalize to 0..1 (reasonable range)
+    let pressureScore = clamp((rawPressure - 0.5) / 1.4, 0.0, 1.0);
+
+    // small history-adjustment: if league avg defense strong, map relative
+    if(history && Array.isArray(history) && history.length>10){
+      const avgInter = (history.reduce((s,e)=> s + safeNum(e.h && e.h.inter, 0) + safeNum(e.a && e.a.inter, 0), 0) / (Math.max(1, history.length)*2));
+      const histAdj = clamp(1 + (avgInter - 5)/18, 0.88, 1.12);
+      pressureScore = clamp(pressureScore * histAdj, 0, 1);
+    }
+
+    // grid generation (simple 6x10 grid: width x height)
+    const cols = opts.cols || 10;
+    const rows = opts.rows || 6;
+    const grid = [];
+    for(let r=0;r<rows;r++){
+      const row = [];
+      for(let c=0;c<cols;c++){
+        // base noise from compactness & press: center defensive box stronger
+        const cx = Math.abs((c/(cols-1)) - 0.5); // 0..0.5 distance from center
+        const ry = (r/(rows-1)); // 0..1 from defensive line to midfield
+        // position bias: closer to goal (lower r) => higher pressure
+        const posBias = clamp(1 + (1-ry)*0.6 - cx*0.5, 0.6, 1.5);
+        // make grid cell value
+        let v = clamp(pressureScore * posBias * (0.8 + Math.random()*0.4), 0, 1);
+        // reduce near wings if team not compact (compactness effect)
+        v *= clamp(1 - (Math.abs(cx-0.0))*((1-compact)*0.9), 0.6, 1.08);
+        // penalize cells if fragility high
+        v *= clamp(1 / frag, 0.7, 1.3);
+        row.push(roundTo(v,3));
+      }
+      grid.push(row);
+    }
+
+    return {
+      pressureScore: roundTo(pressureScore,4),
+      grid,
+      meta:{
+        compactness: roundTo(compact,3),
+        fragility: roundTo(frag,3),
+        pressEffect: roundTo(pressEffect,3),
+        oppThreat: roundTo(oppThreat,3)
+      }
+    };
+
+  }catch(e){
+    console.warn("computeDefensivePressureField err", e);
+    return { pressureScore:0.45, grid:[[0.45]], meta:{} };
+  }
+}
+
+/* small utility round */
+function roundTo(x, p=3){ return Math.round(x*Math.pow(10,p))/Math.pow(10,p); }
+
+/* 2) Integration into finalize: non-destructive override */
+(function integrateDPFIntoFinalize(){
+  try{
+    // preserve original (only once)
+    if(!window._finalize_v22_1_defField_base){
+      window._finalize_v22_1_defField_base = (typeof window.finalizeLambdaUltra === "function") ? window.finalizeLambdaUltra : null;
+    }
+    const baseFn = window._finalize_v22_1_defField_base || window.finalizeLambdaUltra;
+
+    if(typeof baseFn !== "function"){
+      console.warn("Base finalize not found; DPF integration deferred.");
+      return;
+    }
+
+    // create extended finalize that calls base then applies defensive pressure adjustments
+    function finalizeLambdaUltra_withDPF(h,a,fusion,ctx,history){
+      // call base finalize (which may be v22.1 ext)
+      const baseOut = baseFn ? baseFn(h,a,fusion,ctx,history) : { lambdaH: safeNum(fusion && fusion.H,1), lambdaA: safeNum(fusion && fusion.A,1), meta:{}, contributions:{} };
+      let lambdaH = guardNumber(baseOut.lambdaH, safeNum(fusion && fusion.H,1));
+      let lambdaA = guardNumber(baseOut.lambdaA, safeNum(fusion && fusion.A,1));
+      const meta = Object.assign({}, baseOut.meta || {});
+      const contributions = Object.assign({}, baseOut.contributions || {});
+
+      // compute defensive pressure for both teams
+      const dpfHome = computeDefensivePressureField(h, a, history || HISTORY);
+      const dpfAway = computeDefensivePressureField(a, h, history || HISTORY);
+
+      // logic:
+      // - strong home pressure reduces away scoring (lambdaA)
+      // - but if home fragile (fragility>1.05) the pressure less effective (already in dpf meta)
+      // - use pressureScore (0..1), stronger effect when opponent threat is high
+      const effectScale = 0.16; // base maximum lambda reduction per full pressure
+      const homeEffect = clamp(dpfHome.pressureScore * (1 + (dpfHome.meta.oppThreat-0.6)*0.22), 0, 1);
+      const awayEffect = clamp(dpfAway.pressureScore * (1 + (dpfAway.meta.oppThreat-0.6)*0.22), 0, 1);
+
+      // reduce opponent lambda (higher pressure -> lower conceded by team)
+      // reduction factor: 1 - effectScale * homeEffect
+      lambdaA *= clamp(1 - effectScale * homeEffect, 0.6, 1.06);
+      lambdaH *= clamp(1 - effectScale * awayEffect, 0.6, 1.06);
+
+      // If team pressure is extremely high (>0.82), add small rebound: better defense may create counter opportunities raising own lambda slightly
+      if(dpfHome.pressureScore > 0.82) lambdaH *= 1.03;
+      if(dpfAway.pressureScore > 0.82) lambdaA *= 1.03;
+
+      // add defensive pressure info into meta & contributions
+      meta.ext = meta.ext || {};
+      meta.ext.defPressure = { home: dpfHome, away: dpfAway };
+      contributions.defPressure_H = dpfHome.pressureScore;
+      contributions.defPressure_A = dpfAway.pressureScore;
+
+      // final clamps
+      lambdaH = clamp(lambdaH, 0.02, 9.5);
+      lambdaA = clamp(lambdaA, 0.02, 9.5);
+
+      return { lambdaH, lambdaA, meta, contributions };
+    }
+
+    // set globally (safe)
+    window.finalizeLambdaUltra_withDPF = finalizeLambdaUltra_withDPF;
+    window.finalizeLambdaUltra = finalizeLambdaUltra_withDPF;
+    console.log("DPF integrated: finalizeLambdaUltra overridden with defensive pressure adjustments (backup available).");
+  }catch(e){
+    console.warn("integrateDPFIntoFinalize err", e);
+  }
+})();
+
+/* 3) Visualization: drawDefensivePressureMap(canvasId, grid)
+   - grid: array of rows [ [0..1,...], ... ]
+   - color ramp: green (high pressure) -> yellow -> red (low)
+*/
+function drawDefensivePressureMap(canvasId, grid){
+  try{
+    const c = document.getElementById(canvasId) || _ensureDefPressureCanvas();
+    if(!c) return;
+    const ctx = c.getContext("2d");
+    ctx.clearRect(0,0,c.width,c.height);
+    const w = c.width, h = c.height;
+    ctx.fillStyle = "#fbfdff";
+    ctx.fillRect(0,0,w,h);
+
+    if(!grid || grid.length===0){ ctx.fillStyle="#999"; ctx.fillText("No grid", 10,20); return; }
+
+    const rows = grid.length;
+    const cols = grid[0].length;
+    const cellW = (w - 20) / cols;
+    const cellH = (h - 20) / rows;
+    for(let r=0;r<rows;r++){
+      for(let cidx=0;cidx<cols;cidx++){
+        const v = clamp(safeNum(grid[r][cidx],0), 0, 1);
+        // color ramp: 0 -> red (weak), 0.5 -> yellow, 1 -> green (strong)
+        const color = lerpColor("#d93b3b", "#f3d66a", "#3db34e", v);
+        ctx.fillStyle = color;
+        const x = 10 + cidx*cellW;
+        const y = 10 + r*cellH;
+        ctx.fillRect(x+1, y+1, cellW-2, cellH-2);
+      }
+    }
+    // overlay legend
+    ctx.fillStyle = "#222";
+    ctx.font = "12px Arial";
+    ctx.fillText("Defensive Pressure (green = strong)", 10, h-6);
+  }catch(e){
+    console.warn("drawDefensivePressureMap err", e);
+  }
+}
+
+/* helper: simple three-color lerp */
+function lerpColor(c1, c2, c3, t){
+  // c1, c2, c3 as hex strings
+  function hexToRgb(hex){ hex = hex.replace("#",""); return {r:parseInt(hex.substr(0,2),16), g:parseInt(hex.substr(2,2),16), b:parseInt(hex.substr(4,2),16)}; }
+  function rgbToHex(r,g,b){ return "#" + [r,g,b].map(v=> Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,"0")).join(""); }
+  const a = hexToRgb(c1), b = hexToRgb(c2), c = hexToRgb(c3);
+  if(t < 0.5){
+    const u = t/0.5;
+    const rr = a.r + (b.r - a.r)*u;
+    const gg = a.g + (b.g - a.g)*u;
+    const bb = a.b + (b.b - a.b)*u;
+    return rgbToHex(rr,gg,bb);
+  } else {
+    const u = (t-0.5)/0.5;
+    const rr = b.r + (c.r - b.r)*u;
+    const gg = b.g + (c.g - b.g)*u;
+    const bb = b.b + (c.b - b.b)*u;
+    return rgbToHex(rr,gg,bb);
+  }
+}
+
+/* ensure canvas inserted into UI */
+function _ensureDefPressureCanvas(){
+  try{
+    if(document.getElementById("defPressureMap")) return document.getElementById("defPressureMap");
+    const container = document.querySelector(".container");
+    if(!container) return null;
+    const panel = document.createElement("div");
+    panel.className = "card";
+    panel.style.marginTop = "8px";
+    panel.innerHTML = `<div class="section-title">Defensive Pressure Field</div>
+      <canvas id="defPressureMap" width="520" height="160" style="width:100%;max-width:520px;height:160px;border:1px solid #e6eef6;border-radius:6px"></canvas>
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+        <button id="toggleDPF" class="smallBtn">Toggle DPF Draw</button>
+        <div class="note">Green = strong pressure</div>
+      </div>`;
+    // insert near shotmap if present
+    const shotMapCard = document.getElementById("shotMap")?.closest(".card");
+    if(shotMapCard && shotMapCard.parentNode) shotMapCard.parentNode.insertBefore(panel, shotMapCard.nextSibling);
+    else container.appendChild(panel);
+
+    // bind toggle
+    document.getElementById("toggleDPF").addEventListener("click", ()=>{
+      const el = document.getElementById("defPressureMap");
+      if(!el) return;
+      el.style.display = (el.style.display === "none") ? "" : "none";
+    });
+
+    return document.getElementById("defPressureMap");
+  }catch(e){ console.warn("ensureDefPressureCanvas err", e); return null; }
+}
+
+/* 4) Hook analyzeRunner to compute DPF and draw (if not already) */
+(function patchAnalyzeForDPF(){
+  try{
+    if(typeof window._analyze_dpf_patched !== "undefined") return;
+    const orig = window.analyzeRunner;
+    if(typeof orig !== "function"){ window._analyze_dpf_patched = true; return; }
+
+    window.analyzeRunner = async function(...args){
+      const res = await orig.apply(this, args);
+      try{
+        if(!res) return res;
+        // compute DPF using team profiles and history
+        const dpfH = computeDefensivePressureField(res.h, res.a, HISTORY);
+        const dpfA = computeDefensivePressureField(res.a, res.h, HISTORY);
+        // attach to meta
+        res.final = res.final || {};
+        res.final.meta = res.final.meta || {};
+        res.final.meta.ext = res.final.meta.ext || {};
+        res.final.meta.ext.defPressure = { home: dpfH, away: dpfA };
+        // draw combined map (we'll draw home and away side-by-side)
+        const combinedGrid = mergeTwoGridsForViz(dpfH.grid, dpfA.grid);
+        drawDefensivePressureMap("defPressureMap", combinedGrid);
+      }catch(e){ console.warn("analyzeRunner DPF hook err", e); }
+      return res;
+    };
+
+    window._analyze_dpf_patched = true;
+    console.log("analyzeRunner patched to compute & draw Defensive Pressure Field.");
+  }catch(e){ console.warn("patchAnalyzeForDPF err", e); }
+})();
+
+/* helper: merge two grids (home left, away right) into wider grid for viz */
+function mergeTwoGridsForViz(g1, g2){
+  try{
+    if(!g1 || !g2) return g1 || g2 || [[0.4]];
+    const rows = Math.max(g1.length, g2.length);
+    const cols1 = g1[0] ? g1[0].length : 5;
+    const cols2 = g2[0] ? g2[0].length : 5;
+    const out = [];
+    for(let r=0;r<rows;r++){
+      const row = [];
+      const row1 = g1[r] || g1[Math.floor(g1.length/2)];
+      const row2 = g2[r] || g2[Math.floor(g2.length/2)];
+      for(let c=0;c<cols1;c++) row.push(row1[c] || 0);
+      // separator low values
+      for(let s=0;s<2;s++) row.push(0.0);
+      for(let c=0;c<cols2;c++) row.push(row2[c] || 0);
+      out.push(row);
+    }
+    return out;
+  }catch(e){ console.warn("mergeTwoGridsForViz err", e); return g1; }
+}
+
+/* expose for console */
+window.computeDefensivePressureField = computeDefensivePressureField;
+window.drawDefensivePressureMap = drawDefensivePressureMap;
+
+console.log("DPF Patch loaded: Defensive Pressure Field integrated into finalize and analyzeRunner.");
+</script>
 <!-- ===============================
      v22.1 — PART B (PATCH)
      TacticalTree v3 + NationalMode + VSM + ICM
