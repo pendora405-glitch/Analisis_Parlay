@@ -259,6 +259,602 @@ function finalizeLambdaUltra(h,a,fusion,ctx){
    (Next: PART B = v22.1 PATCH: TacticalTree v3 + National Mode + VSM + ICM)
 =========================================================== */
 </script>
+     <!-- ========== PATCH: XG+ v2 (Upgrade Modul X) ========== -->
+<script>
+/* calcXGplus_v2
+   - Inputs accepted in team object:
+     shots (total), sot (shots on target), avg_shot_dist (meters) optional,
+     avg_shot_angle (degrees) optional, prog, final3, build, conv (as %),
+     shot_locations_quality (0..1) optional: aggregate measure if you have it.
+   - Uses simple per-shot quality model + calibration factor from history if available.
+*/
+
+// Keep old calcXGplus as fallback
+if(typeof calcXGplus_old === "undefined" && typeof calcXGplus === "function"){
+  window.calcXGplus_old = calcXGplus;
+}
+
+/* Per-shot base xG approximator.
+   Rough mapping:
+   - closer distance -> higher xG
+   - central angle -> higher xG
+   - SOT ratio improves effective xG
+*/
+function perShotxGEstimate(distMeters, angleDeg, shotQualityFactor){
+  // distMeters: typical shot distance (meters). angleDeg: 0 = central, larger = wider.
+  const d = safeNum(distMeters, 16); // typical average shot ~16m inside box
+  const ang = safeNum(angleDeg, 20);  // 0..90
+  const q = clamp(safeNum(shotQualityFactor, 1), 0.4, 1.6);
+  // distance effect: inverse-square-ish then scaled
+  const distFactor = clamp(1 / (1 + (d - 8) * 0.065), 0.12, 2.4); // 8m very close, 25m low
+  // angle effect: central better
+  const angleFactor = clamp(1 - (Math.abs(ang) / 90) * 0.48, 0.52, 1.18);
+  // final small random-smoothing
+  const base = distFactor * angleFactor * q * 0.12;
+  // clamp to reasonable per-shot xG
+  return clamp(base, 0.005, 0.48);
+}
+
+/* Calibration helper:
+   - If HISTORY exists and contains entries with h/a and real scores,
+     compute simple scaling factor to align mean predicted total -> real total.
+   - returns factor >=0.6 and <=1.6
+*/
+function calibrateXGplusFromHistory(hist, sampleDepth=200){
+  try{
+    if(!hist || !Array.isArray(hist) || hist.length===0) return 1.0;
+    // use a small sample of recent labeled entries
+    const labeled = hist.filter(e => e.real_home !== undefined && e.real_away !== undefined).slice(0, sampleDepth);
+    if(labeled.length < 8) return 1.0;
+    let predSum = 0, realSum = 0;
+    for(const ent of labeled){
+      // use available predicted lambdas if exist, else fallback to estimate
+      const pLH = safeNum(ent.lambdaH, 0);
+      const pLA = safeNum(ent.lambdaA, 0);
+      const predTotal = Math.max(0.1, pLH + pLA);
+      predSum += predTotal;
+      realSum += safeNum(ent.real_home,0) + safeNum(ent.real_away,0);
+    }
+    if(predSum <= 0) return 1.0;
+    const factor = clamp(realSum / predSum, 0.6, 1.6);
+    return factor;
+  }catch(e){ console.warn("calibrateXGplusFromHistory err", e); return 1.0; }
+}
+
+/* The new calcXGplus_v2 */
+function calcXGplus_v2(team){
+  try{
+    // read inputs with safe defaults
+    const shots = Math.max(0, safeNum(team.shots, 8));
+    const sot   = Math.max(0, safeNum(team.sot, 3));
+    const conv  = clamp(safeNum(team.conv, 12) / 100, 0.02, 0.9); // 0..1
+    const avgDist = safeNum(team.avg_shot_dist, null); // optional
+    const avgAngle = safeNum(team.avg_shot_angle, null); // optional
+    const shotLocQuality = clamp(safeNum(team.shot_locations_quality, null), 0.0, 2.0) || null;
+
+    const prog = safeNum(team.prog, 8);
+    const final3 = safeNum(team.final3, 4);
+    const build = safeNum(team.build, 5);
+
+    // baseline: per-shot expected xG computed from a per-shot model
+    // If no distance/angle info, use SOT ratio and progressive metrics to infer shot quality
+    const sotRatio = shots>0 ? (sot/shots) : 0.35;
+    const inferredQuality = 0.7 * clamp(0.4 + (sotRatio * 1.2), 0.45, 1.3)  // SOT based
+                           + 0.3 * clamp(1 + (final3/40) + (prog/80), 0.7, 1.35); // chain-based uplift
+    // override with explicit shot location quality if provided
+    const shotQualityFactor = shotLocQuality ? clamp(shotLocQuality, 0.5, 1.5) : clamp(inferredQuality, 0.5, 1.5);
+
+    // per-shot estimate:
+    let perShotEstimate = 0.12 * (0.9 + (conv - 0.12) * 0.8); // baseline tied to conv
+    if(avgDist !== null || avgAngle !== null){
+      const dist = avgDist !== null ? avgDist : 16;
+      const ang  = avgAngle !== null ? avgAngle : 20;
+      perShotEstimate = perShotxGEstimate(dist, ang, shotQualityFactor);
+    } else {
+      // no loc info — use sotRatio + chain adjustments:
+      perShotEstimate = clamp(0.06 + (sotRatio*0.14) + (final3/60) + (prog/120), 0.01, 0.42);
+      perShotEstimate *= clamp(1 + (shotQualityFactor - 1)*0.2, 0.88, 1.22);
+    }
+
+    // raw xG = shots * perShotEstimate
+    let rawXG = shots * perShotEstimate;
+
+    // add a small bonus for high-quality progressive play (ALBB/PCS influence)
+    const albbFactor = (typeof calcALBB === "function") ? calcALBB(team) : 1.0;
+    const pcsHint = (typeof calcPCS === "function") ? (calcPCS(team).xTF || 1.0) : 1.0;
+    rawXG *= clamp(1 + (albbFactor - 1)*0.14 + (pcsHint - 1)*0.08, 0.9, 1.5);
+
+    // final smoothing w/ conv: if conv known, nudge model so highly converting teams get slight uplift:
+    rawXG *= clamp(1 + (conv - 0.12) * 0.22, 0.86, 1.34);
+
+    // calibration from HISTORY if available (global factor)
+    const histFactor = (typeof HISTORY !== "undefined") ? calibrateXGplusFromHistory(HISTORY, 260) : 1.0;
+    rawXG *= histFactor;
+
+    // clamp final answer to reasonable bounds
+    rawXG = clamp(rawXG, 0.005, 6.5);
+
+    // return object with more debug info for explain panel
+    return {
+      xg_v2: rawXG,
+      perShot: perShotEstimate,
+      sotRatio,
+      shotQualityFactor,
+      albbFactor,
+      pcsHint,
+      histFactor
+    };
+  }catch(e){
+    console.warn("calcXGplus_v2 err", e);
+    // fallback to old version if any problem
+    if(typeof calcXGplus_old === "function") return { xg_v2: calcXGplus_old(team) };
+    return { xg_v2: 0.7 };
+  }
+}
+
+/* Backwards compat: if engine calls calcXGplus(), we prefer v2 */
+function _useXGplusUnified(team){
+  const out = calcXGplus_v2(team);
+  // If code elsewhere expects a number, return numeric; else full object is available
+  if(typeof out === "object" && out.xg_v2 !== undefined) return out.xg_v2;
+  return safeNum(out, 0.7);
+}
+
+// Replace references gracefully if calcXGplus used elsewhere
+try{
+  window.calcXGplus_v2 = calcXGplus_v2;
+  // keep old name as wrapper for compatibility
+  window.calcXGplus = function(team){
+    const v = _useXGplusUnified(team);
+    return v;
+  };
+} catch(e){ console.warn(e); }
+
+// =====================
+// Unit tests (console) — safe to run; prints examples
+// =====================
+(function xgplus_v2_tests(){
+  try{
+    const samples = [
+      {shots:12, sot:5, avg_shot_dist:12, avg_shot_angle:12, prog:9, final3:6, conv:14, name:"TopAtt"},
+      {shots:9, sot:3, avg_shot_dist:18, avg_shot_angle:28, prog:6, final3:3, conv:10, name:"Mid"},
+      {shots:6, sot:1, avg_shot_dist:22, avg_shot_angle:42, prog:4, final3:1, conv:8, name:"Low"}
+    ];
+    console.group("XG+ v2 Unit Tests");
+    samples.forEach(s=>{
+      const res = calcXGplus_v2(s);
+      console.log(s.name, "=> xG_v2:", (res.xg_v2||0).toFixed(3), "perShot:", (res.perShot||0).toFixed(3), "sotRatio:", (res.sotRatio||0).toFixed(2), "histFactor:", (res.histFactor||1).toFixed(2));
+    });
+    console.groupEnd();
+  }catch(e){ console.warn("xgplus_v2_tests err", e); }
+})();
+
+</script>
+<!-- ========== END PATCH XG+ v2 ========== -->
+     <!-- ========== PATCH: AUTO-EXTRACT SHOT DISTANCE & ANGLE ========== -->
+<script>
+/*
+   AUTO SHOT DISTANCE & ANGLE EXTRACTOR
+   ------------------------------------
+   Mengestimasi:
+     avg_shot_dist (m)
+     avg_shot_angle (deg)
+
+   Menggunakan faktor:
+     - final3 / shots → kedekatan area final
+     - prog → kecenderungan menembus area tengah
+     - build → pola build-up apakah tengah / sayap
+     - poss → kecenderungan menekan lawan
+     - SOT ratio → estimasi kualitas lokasi tembakan
+     - cross_acc → indikasi sudut tembakan yang lebih lebar
+*/
+
+function autoExtractShotLocation(team){
+  try{
+    const shots = safeNum(team.shots, 10);
+    const sot   = safeNum(team.sot, 3);
+    const final3 = safeNum(team.final3, 4);
+    const prog   = safeNum(team.prog, 7);
+    const poss   = safeNum(team.poss, 50);
+    const build  = safeNum(team.build, 5);
+    const cross  = safeNum(team.cross_acc, 25) / 100;
+
+    const sotRatio = shots > 0 ? (sot / shots) : 0.35;
+
+    /* ============================
+        1. ESTIMASI JARAK TEMBAKAN
+       ============================ */
+
+    // Rumus:
+    // 16m (rata-rata box) - bonus jika final3 tinggi
+    let dist = 16;
+
+    // semakin sering berada di final third → jarak tembakan makin dekat
+    dist -= clamp(final3 / 12, 0, 4);
+
+    // prog tinggi → sering menusuk dari tengah → jarak lebih pendek
+    dist -= clamp(prog / 18, 0, 3);
+
+    // pengaruh SOT ratio → tim yang sering akurat umumnya menembak dari jarak pendek-medium
+    dist -= clamp((sotRatio - 0.35) * 12, -3, 3);
+
+    // build-up tinggi → serangan lebih terstruktur → tembakan lebih berkualitas & dekat
+    dist -= clamp((build - 5) * 0.35, -2.5, 2.5);
+
+    // cross tinggi → tembakan lebih melebar → jarak naik sedikit
+    dist += clamp((cross - 0.22) * 12, -1, 2);
+
+    // clamp final dist
+    dist = clamp(dist, 7.5, 27);
+
+    /* ============================
+        2. ESTIMASI SUDUT TEMBAKAN
+       ============================ */
+
+    // 0° = sangat tengah, 90° = sudut sangat sempit.
+    let angle = 20;
+
+    // final3 tinggi → biasanya posisi lebih tengah → angle menurun
+    angle -= clamp(final3 / 15 * 12, 0, 14);
+
+    // prog tinggi → penetrasi tengah → angle lebih kecil
+    angle -= clamp(prog / 22 * 12, 0, 10);
+
+    // build rendah → lebih banyak crossing → sudut lebih lebar
+    angle += clamp((5 - build) * 2.5, -5, 10);
+
+    // cross tinggi → sudut tembakan makin melebar
+    angle += clamp((cross - 0.22) * 20, -3, 12);
+
+    // SOT rendah → tim menembak dari angle lebih buruk
+    angle += clamp((0.40 - sotRatio) * 30, -8, 8);
+
+    angle = clamp(angle, 6, 42);
+
+    return {
+      avg_shot_dist_auto: dist,
+      avg_shot_angle_auto: angle
+    };
+
+  }catch(e){
+    console.warn("autoExtractShotLocation error", e);
+    return {
+      avg_shot_dist_auto: 16,
+      avg_shot_angle_auto: 20
+    };
+  }
+}
+
+/* ======================================
+   INTEGRASI DENGAN XG+ v2
+   Auto patch jika input kosong.
+====================================== */
+
+(function patchXGplusWithAutoExtract(){
+  const oldCalc = window.calcXGplus;
+  if(typeof oldCalc !== "function"){
+    console.warn("Cannot patch calcXGplus; not found");
+    return;
+  }
+
+  window.calcXGplus = function(team){
+    // jika user tidak memberi avg_shot_dist / angle → auto fill
+    if(team.avg_shot_dist == null || team.avg_shot_angle == null){
+      const auto = autoExtractShotLocation(team);
+      if(team.avg_shot_dist == null) team.avg_shot_dist = auto.avg_shot_dist_auto;
+      if(team.avg_shot_angle == null) team.avg_shot_angle = auto.avg_shot_angle_auto;
+    }
+    return oldCalc(team);
+  };
+
+  console.log("Auto-extract shot distance & angle ACTIVATED");
+})();
+</script>
+<!-- ========== END PATCH AUTO-EXTRACT ========== -->
+     <!-- ========== PATCH: AUTO-EXTRACT 2 (Defensive + PCS integration + ShotMap) ========== -->
+<script>
+/* ===========================
+   AUTO-EXTRACT: Defensive Shot Location
+   - Estimate avg_shot_dist_conceded and avg_shot_angle_conceded
+   - Uses opponent shots, opponent final3, home/away rest, compactness (dzc)
+=========================== */
+function autoExtractDefensiveShotLocation(team, opp){
+  try{
+    // team = the team whose defense we estimate (we estimate how opponents shoot vs this team)
+    // opp  = typical opponent profile or the opponent in match (if available)
+    const oppShots  = safeNum(opp.shots, 10);
+    const oppSOT    = safeNum(opp.sot, 3);
+    const oppFinal3 = safeNum(opp.final3, 4);
+    const teamDZC   = safeNum(team.dzc, 1);
+    const teamInter = safeNum(team.inter, 5);
+    const teamCompact = clamp(1 - (teamDZC-1)*0.12 - (teamInter-5)*0.02, 0.7, 1.12);
+
+    // distance: if opponent shoots a lot from distance (low SOT ratio), distance is higher
+    let dist = 16;
+    // more opponent shots -> maybe more long shots in open play
+    dist += clamp((oppShots - 10) * 0.35, -3, 4);
+    // fewer SOT -> more long-range attempts -> increase
+    dist += clamp((0.45 - (oppSOT/Math.max(1,oppShots))) * 24, -4, 6);
+    // opponent final3 high -> closer -> reduce
+    dist -= clamp(oppFinal3 / 10 * 3.6, 0, 5.5);
+    // team compactness reduces opponent shot closeness
+    dist += clamp((1 - teamCompact) * 10, -1.2, 4.2);
+
+    // clamp reasonable
+    dist = clamp(dist, 8, 28);
+
+    // angle: if opponent shoots from wings often -> angle larger
+    let angle = 22;
+    // opp final3 high -> more central shots -> angle down
+    angle -= clamp(oppFinal3 / 10 * 6, 0, 10);
+    // low SOT ratio -> more poor-angle shots -> increase
+    angle += clamp((0.42 - (oppSOT/Math.max(1,oppShots))) * 40, -6, 18);
+    // defense intercepts reduce angle (forcing better opportunities only)
+    angle += clamp((1 - clamp(teamInter/8,0,1)) * 6, -4, 8);
+
+    angle = clamp(angle, 8, 48);
+
+    return {
+      avg_shot_dist_conceded_auto: dist,
+      avg_shot_angle_conceded_auto: angle,
+      teamCompact
+    };
+  }catch(e){
+    console.warn("autoExtractDefensiveShotLocation err", e);
+    return { avg_shot_dist_conceded_auto: 16, avg_shot_angle_conceded_auto: 20, teamCompact:1.0 };
+  }
+}
+
+/* ===========================
+   PCS v2 ENHANCED
+   - Uses shot-location info (auto-extracted or provided)
+   - Uses conceded-shot-profile to adjust chainShotQuality and finalShotQuality
+   - Overrides pcsSimulateV2 safely
+=========================== */
+
+if(typeof pcsSimulateV2_enhanced === "undefined"){
+  function pcsSimulateV2_enhanced(team, opp, iterations=600){
+    try{
+      // ensure shot location inputs
+      if(team.avg_shot_dist == null || team.avg_shot_angle == null){
+        const auto = autoExtractShotLocation(team);
+        team.avg_shot_dist = team.avg_shot_dist == null ? auto.avg_shot_dist_auto : team.avg_shot_dist;
+        team.avg_shot_angle = team.avg_shot_angle == null ? auto.avg_shot_angle_auto : team.avg_shot_angle;
+      }
+      // ensure conceded profile
+      const defAuto = autoExtractDefensiveShotLocation(team, opp);
+      if(typeof opp.avg_shot_dist_conceded == "undefined") opp.avg_shot_dist_conceded = defAuto.avg_shot_dist_conceded_auto;
+      if(typeof opp.avg_shot_angle_conceded == "undefined") opp.avg_shot_angle_conceded = defAuto.avg_shot_angle_conceded_auto;
+
+      // base randomness limits
+      const prog = safeNum(team.prog,8);
+      const final3 = safeNum(team.final3,4);
+      const shots = Math.max(1, safeNum(team.shots,10));
+      const sot = Math.max(0, safeNum(team.sot,3));
+
+      // shot quality base from XG+ v2 perShot estimate if available
+      const xgObj = (typeof calcXGplus_v2 === "function") ? calcXGplus_v2(team) : { perShot: Math.max(0.06, (safeNum(team.sot,3)/Math.max(1,shots))*0.12) };
+      const perShotBase = safeNum(xgObj.perShot, 0.08);
+
+      // defensive conceded effect (opponent conceded avg distance): if opponent concedes close shots -> higher chance of goal
+      const oppConcededDist = safeNum(opp.avg_shot_dist_conceded, defAuto.avg_shot_dist_conceded_auto);
+      const concededFactor = clamp(1 + ((16 - oppConcededDist) / 16) * 0.24, 0.82, 1.36);
+
+      // chain influence: longer chain improves shot quality
+      let totalThreat=0, totalSq=0;
+      for(let it=0; it<iterations; it++){
+        // random chain length biased by prog and build
+        const chainLen = 1 + Math.floor(Math.random()*Math.max(2, Math.round(prog/6 + (team.build||5)/3)));
+        let chainThreat = 0;
+        let chainShotQuality = perShotBase * (1 + (final3/60));
+        for(let s=0; s<chainLen; s++){
+          // opponent press effect
+          const pressBreak = Math.random() < (pressToNum(opp.press || "medium")*0.12);
+          if(pressBreak){ chainThreat *= 0.6; break; }
+          // incremental build
+          chainThreat += 0.004 + Math.random()*0.055;
+          // small chance to spawn high-quality opportunity inside final3
+          chainShotQuality += (Math.random()*0.02 + (final3/80));
+        }
+        // final shot probability from chain (chance to result in shot)
+        if(Math.random() < (0.12 + final3/60 + prog/220)){
+          // shotQuality shaped by chainShotQuality and concededFactor
+          let shotQuality = chainShotQuality * concededFactor;
+          // angle/dist influence: closer & more central improves shotQuality
+          const dist = safeNum(team.avg_shot_dist, 16);
+          const ang = safeNum(team.avg_shot_angle, 20);
+          const locBonus = clamp(1 + ((16 - dist)/24)*0.26 + ((25 - ang)/50)*0.16, 0.82, 1.42);
+          shotQuality *= locBonus;
+          // incorporate SOT ratio as multiplier
+          shotQuality *= clamp(1 + ((sot/shots) - 0.33)*0.9, 0.75, 1.4);
+
+          // add to threat (scale by shotQuality & shotRate)
+          const shotRate = clamp(shots/12, 0.4, 2.6);
+          chainThreat += shotQuality * (0.045 + Math.random()*0.12) * shotRate;
+        }
+        totalThreat += chainThreat;
+        totalSq += chainThreat*chainThreat;
+      }
+      const mean = totalThreat/iterations;
+      const sd = Math.sqrt(Math.max(0, totalSq/iterations - mean*mean));
+      const xTF = clamp(mean * (1 + safeNum(team.final3,0)/34), 0.01, 5.0);
+
+      return { xTF, sd, mean, enhanced:true, perShotBase, concededFactor, defAuto };
+    }catch(e){
+      console.warn("pcsSimulateV2_enhanced err", e);
+      // fallback to original pcsSimulateV2 if present
+      if(typeof pcsSimulateV2 === "function" && pcsSimulateV2 !== pcsSimulateV2_enhanced) return pcsSimulateV2(team, opp, iterations);
+      return { xTF: 0.7, sd:0.12, mean:0.7, enhanced:false };
+    }
+  }
+
+  // Override existing pcsSimulateV2 wrapper (preserve backup)
+  try{
+    if(typeof window.pcsSimulateV2_backup === "undefined" && typeof pcsSimulateV2 === "function"){
+      window.pcsSimulateV2_backup = pcsSimulateV2;
+    }
+    window.pcsSimulateV2 = pcsSimulateV2_enhanced;
+    // also replace pcsEstimateV2
+    window.pcsEstimateV2 = function(h,a){ const rH = pcsSimulateV2_enhanced(h,a,520); const rA = pcsSimulateV2_enhanced(a,h,520); return { xTF_H: rH.xTF, xTF_A: rA.xTF, sdH:rH.sd, sdA:rA.sd, raw:{h:rH,a:rA} }; };
+    console.log("PCS v2 enhanced patched (using auto shot-location & conceded profile).");
+  }catch(e){ console.warn("patch pcsSimulateV2 override err", e); }
+}
+
+/* ===========================
+   SHOTMAP VISUALIZATION (simple heat / points)
+   - drawShotMap(canvasId, points)
+   - drawShotMapFromResult(res) -> builds points from res.h / res.a using avg distances & angles
+=========================== */
+
+function _ensureShotMapCanvas(){
+  try{
+    if(document.getElementById("shotMap")) return document.getElementById("shotMap");
+    // create small panel under radar
+    const container = document.querySelector(".container");
+    if(!container) return null;
+    const panel = document.createElement("div");
+    panel.className = "card";
+    panel.style.marginTop = "8px";
+    panel.innerHTML = `<div class="section-title">Shot Map (approx.)</div><canvas id="shotMap" width="520" height="320" style="width:100%;max-width:520px;height:320px;border:1px solid #e6eef6;border-radius:6px"></canvas><div class="note">Approximate shot origins (home=blue, away=red)</div>`;
+    // insert near radar card if exists
+    const radarCard = document.getElementById("teamRadar")?.closest(".card");
+    if(radarCard && radarCard.parentNode) radarCard.parentNode.insertBefore(panel, radarCard.nextSibling);
+    else container.appendChild(panel);
+    return document.getElementById("shotMap");
+  }catch(e){ console.warn("ensureShotMapCanvas err", e); return null; }
+}
+
+function drawShotMap(canvasId, points){
+  try{
+    const c = document.getElementById(canvasId) || _ensureShotMapCanvas();
+    if(!c) return;
+    const ctx = c.getContext("2d");
+    ctx.clearRect(0,0,c.width,c.height);
+    // field rectangle mapping:
+    // map distances (0..28m) and angle (0..45deg) to x,y on canvas
+    const w = c.width, h = c.height;
+    // draw simple pitch background
+    ctx.fillStyle = "#f8fbff";
+    ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle = "#dfeaf6";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(8,8,w-16,h-16);
+
+    // helper map: convert dist (m) & angle (deg) to x,y (assume shot originates from attacking half, center at x midpoint)
+    function locFromDistAngle(dist, angle, side){
+      // normalize dist 7..28 -> radial from center-front
+      const maxD = 28, minD = 7;
+      const r = clamp((dist - minD)/(maxD - minD), 0, 1);
+      const radius = (0.15 + r*0.8) * (Math.min(w,h)/2 - 20);
+      // angle to x offset, 0 = center, positive = right
+      const ang = (angle/45) * (Math.PI/2); // map 0..45 to 0..pi/2
+      const xOff = Math.sin(ang) * radius;
+      const yOff = Math.cos(ang) * radius;
+      // side: "home" shoot right-to-left? We'll place home on left half attacking right
+      const centerX = side === "home" ? w*0.35 : w*0.65;
+      const centerY = h*0.45;
+      // random small jitter
+      const jitterX = (Math.random()-0.5) * 12;
+      const jitterY = (Math.random()-0.5) * 10;
+      const x = centerX + (side==="home" ? xOff : -xOff) + jitterX;
+      const y = centerY - yOff + jitterY;
+      return {x: clamp(x,10,w-10), y: clamp(y,10,h-10)};
+    }
+
+    // points: [{side:"home"/"away",dist,angle,weight}]
+    // draw faint heat by drawing semi-transparent circles, heavier weight = larger radius
+    for(const p of points){
+      const pos = locFromDistAngle(safeNum(p.dist,16), safeNum(p.angle,20), p.side || "home");
+      const wght = clamp(safeNum(p.weight,1), 0.2, 3.2);
+      const grad = ctx.createRadialGradient(pos.x,pos.y,1,pos.x,pos.y,24*wght);
+      if(p.side === "home"){
+        grad.addColorStop(0, "rgba(46,125,209,0.85)");
+        grad.addColorStop(1, "rgba(46,125,209,0.03)");
+      } else {
+        grad.addColorStop(0, "rgba(209,46,46,0.85)");
+        grad.addColorStop(1, "rgba(209,46,46,0.03)");
+      }
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(pos.x,pos.y,20*wght,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    // draw legend
+    ctx.fillStyle="#222";
+    ctx.font="12px Arial";
+    ctx.fillText("Home shots (blue)  — Away shots (red)", 12, h - 10);
+  }catch(e){ console.warn("drawShotMap err", e); }
+}
+
+/* Build points for shotmap from analysis result */
+function drawShotMapFromResult(res){
+  try{
+    if(!res) return;
+    const points = [];
+    // Build cluster of points for home based on avg_shot_dist & angle and shots count
+    const h = res.h || {};
+    const a = res.a || {};
+    const final = res.final || {};
+    const shotsH = Math.max(1, safeNum(h.shots,10));
+    const shotsA = Math.max(1, safeNum(a.shots,10));
+
+    const distH = safeNum(h.avg_shot_dist, h.avg_shot_dist_auto || 16);
+    const angleH = safeNum(h.avg_shot_angle, h.avg_shot_angle_auto || 20);
+    const distA_conceded = safeNum(h.avg_shot_dist_conceded, h.avg_shot_dist_conceded_auto || 16);
+
+    const distA = safeNum(a.avg_shot_dist, a.avg_shot_dist_auto || 16);
+    const angleA = safeNum(a.avg_shot_angle, a.avg_shot_angle_auto || 20);
+    const distH_conceded = safeNum(a.avg_shot_dist_conceded, a.avg_shot_dist_conceded_auto || 16);
+
+    // create N points roughly proportional to shots but limited
+    const nH = Math.min(18, Math.max(4, Math.round(shotsH/1.2)));
+    const nA = Math.min(18, Math.max(4, Math.round(shotsA/1.2)));
+
+    for(let i=0;i<nH;i++){
+      points.push({ side:"home", dist: clamp(distH + (Math.random()-0.5)*3.0, 8, 28), angle: clamp(angleH + (Math.random()-0.5)*8, 6, 48), weight: 0.8 + Math.random()*1.6 });
+    }
+    for(let i=0;i<nA;i++){
+      points.push({ side:"away", dist: clamp(distA + (Math.random()-0.5)*3.0, 8, 28), angle: clamp(angleA + (Math.random()-0.5)*8, 6, 48), weight: 0.8 + Math.random()*1.6 });
+    }
+
+    // include a few conceded-focus points (where opponent tends to shoot vs team)
+    points.push({ side:"home", dist: clamp(distA_conceded + (Math.random()-0.5)*4, 8, 28), angle: clamp((angleA||20) + (Math.random()-0.5)*12, 6, 48), weight: 0.6 });
+    points.push({ side:"away", dist: clamp(distH_conceded + (Math.random()-0.5)*4, 8, 28), angle: clamp((angleH||20) + (Math.random()-0.5)*12, 6, 48), weight: 0.6 });
+
+    drawShotMap("shotMap", points);
+  }catch(e){ console.warn("drawShotMapFromResult err", e); }
+}
+
+/* ===========================
+   Hook analyzeRunner to draw shotmap after result
+   (if not already patched)
+=========================== */
+(function patchAnalyzeToShotMap(){
+  try{
+    if(typeof window._analyze_shotmap_patched !== "undefined") return;
+    const orig = window.analyzeRunner;
+    if(typeof orig !== "function"){ window._analyze_shotmap_patched = true; return; }
+    window.analyzeRunner = async function(...args){
+      const res = await orig.apply(this, args);
+      try{ if(res) drawShotMapFromResult(res); }catch(e){}
+      return res;
+    };
+    window._analyze_shotmap_patched = true;
+  }catch(e){ console.warn("patchAnalyzeToShotMap err", e); }
+})();
+
+/* ===========================
+   Expose helpers to console
+=========================== */
+window.autoExtractDefensiveShotLocation = autoExtractDefensiveShotLocation;
+window.pcsSimulateV2_enhanced = pcsSimulateV2_enhanced;
+window.drawShotMapFromResult = drawShotMapFromResult;
+
+console.log("Auto-Extract 2 installed: defensive estimates, PCS enhanced, shotMap visualization.");
+</script>
+<!-- ========== END PATCH AUTO-EXTRACT 2 ========== -->
+     
 <!-- ===============================
      v22.1 — PART B (PATCH)
      TacticalTree v3 + NationalMode + VSM + ICM
