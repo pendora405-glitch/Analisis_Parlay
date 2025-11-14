@@ -1,0 +1,1616 @@
+<!doctype html>
+
+<html lang="id">
+
+<head>
+
+<meta charset="utf-8" />
+
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+
+<title>Prediksi Global v22.1 — Titan Ultra</title>
+
+<style>
+
+:root{--bg:#041619;--card:#081821;--muted:#9fc0c8;--accent:#1bc7d8;--radius:10px}
+
+*{box-sizing:border-box} body{margin:12px;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#021217,#071b20);color:#eafafd}
+
+.card{background:var(--card);padding:12px;border-radius:var(--radius);margin-bottom:12px;box-shadow:0 12px 30px rgba(0,0,0,0.55)}
+
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+label{font-size:13px;color:var(--muted);display:flex;flex-direction:column}
+
+input,select,button,textarea{font-size:13px}
+
+input,select,textarea{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+
+button{background:var(--accent);border:0;padding:8px 12px;border-radius:8px;color:#042022;cursor:pointer}
+
+.smallBtn{padding:6px 8px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);color:var(--muted);cursor:pointer}
+
+.grid{display:grid;grid-template-columns:1fr 720px 380px;gap:12px}
+
+.pre{background:#021216;padding:10px;border-radius:8px;color:#dff8fb;white-space:pre-wrap;max-height:520px;overflow:auto}
+
+.toast{position:fixed;bottom:14px;right:14px;background:#063238;color:#dff7fb;padding:10px 14px;border-radius:8px;opacity:0;transition:opacity .25s}
+
+.toast.show{opacity:1}
+
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+
+.kv{min-width:150px}
+
+.section-title{font-weight:700;color:#bfeef8;margin-bottom:6px}
+
+.help{font-size:12px;color:var(--muted)}
+
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>⚽ Prediksi Global v22.1 — Titan Ultra</h1>
+
+<div class="card small">v22.1 Titan Ultra — lengkapkan input, finalizeLambdaUltra, DIG/GFE, learner terintegrasi. Clean — tanpa contoh data.</div>
+
+<div id="toast" class="toast"></div>
+
+
+
+<!-- Global controls -->
+
+<div class="card row" style="justify-content:space-between;align-items:center">
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+
+    <label class="kv">League GPG<input id="league_gpg" type="number" step="0.01"></label>
+
+    <label class="kv">Market OU<input id="market_ou" type="number" step="0.1"></label>
+
+    <label class="kv">MC Mode<select id="mc_mode"><option value="pool">WorkerPool</option><option value="single">Single</option><option value="stream">Streaming</option></select></label>
+
+    <label class="kv">ZeroBias<select id="zero_bias_mode"><option value="1" selected>On</option><option value="0">Off</option></select></label>
+
+    <label class="kv">Enable Explain<select id="enable_explain"><option value="1" selected>Yes</option><option value="0">No</option></select></label>
+
+  </div>
+
+  <div style="display:flex;gap:8px;align-items:center">
+
+    <button id="analyzeBtn">Analisis (v22.1)</button>
+
+    <button id="exportBundle" class="smallBtn">Export Bundle</button>
+
+  </div>
+
+</div>
+
+
+
+<div class="grid">
+
+  <div>
+
+    <div class="card">
+
+      <div class="section-title">HOME — Input Lengkap</div>
+
+      <div class="row">
+
+        <label class="kv">Team<input id="h_name" type="text"></label>
+
+        <label class="kv">ELO<input id="h_elo" type="number" step="1"></label>
+
+      </div>
+
+
+
+      <!-- core metrics (row grouping) -->
+
+      <div class="row">
+
+        <label class="kv">GPG<input id="h_gpg" type="number" step="0.01"></label>
+
+        <label class="kv">Shots<input id="h_shots" type="number" step="0.1"></label>
+
+        <label class="kv">SOT<input id="h_sot" type="number" step="0.1"></label>
+
+        <label class="kv">ShotsC<input id="h_shotsC" type="number" step="0.1"></label>
+
+      </div>
+
+
+
+      <div class="row">
+
+        <label class="kv">Conv%<input id="h_conv" type="number" step="0.1"></label>
+
+        <label class="kv">Poss%<input id="h_poss" type="number" step="0.1"></label>
+
+        <label class="kv">Prog<input id="h_prog" type="number" step="0.1"></label>
+
+        <label class="kv">Trans<input id="h_trans" type="number" step="0.1"></label>
+
+      </div>
+
+
+
+      <div class="row">
+
+        <label class="kv">Build<input id="h_build" type="number" step="0.1"></label>
+
+        <label class="kv">Final3<input id="h_final3" type="number" step="0.1"></label>
+
+        <label class="kv">Counter<input id="h_counter" type="number" step="0.1"></label>
+
+        <label class="kv">Interceptions<input id="h_inter" type="number" step="0.1"></label>
+
+      </div>
+
+
+
+      <div class="row">
+
+        <label class="kv">Style<select id="h_style"><option>possession</option><option>direct</option><option>counter</option><option>press</option><option>lowblock</option></select></label>
+
+        <label class="kv">Press<select id="h_press"><option>low</option><option selected>medium</option><option>high</option></select></label>
+
+        <label class="kv">DZC<input id="h_dzc" type="number" step="0.01" value="1"></label>
+
+        <label class="kv">GC (gk conceded avg)<input id="h_gc" type="number" step="0.01"></label>
+
+      </div>
+
+
+
+      <div class="row" style="margin-top:6px">
+
+        <label class="kv">DF absent<input id="h_df_abs" type="number" step="1" min="0"></label>
+
+        <label class="kv">GK absent<input id="h_gk_abs" type="number" step="1" min="0"></label>
+
+        <label class="kv">KeyMiss (0/1)<input id="h_keymiss" type="number" step="0.1" min="0" max="1"></label>
+
+        <label class="kv">Rotation<input id="h_rotation" type="number" step="0.1"></label>
+
+      </div>
+
+
+
+      <div class="row" style="margin-top:6px">
+
+        <label class="kv">IIW (impact index)<input id="h_iiw" type="number" step="0.01" value="0.5"></label>
+
+        <label class="kv">RestDays<input id="h_rest" type="number" step="1" value="3"></label>
+
+        <label class="kv">CR (crosses/game)<input id="h_cr" type="number" step="0.1"></label>
+
+        <label class="kv">OtherNote<input id="h_note" type="text"></label>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="card">
+
+      <div class="section-title">AWAY — Input Lengkap</div>
+
+      <div class="row">
+
+        <label class="kv">Team<input id="a_name" type="text"></label>
+
+        <label class="kv">ELO<input id="a_elo" type="number" step="1"></label>
+
+      </div>
+
+
+
+      <div class="row">
+
+        <label class="kv">GPG<input id="a_gpg" type="number" step="0.01"></label>
+
+        <label class="kv">Shots<input id="a_shots" type="number" step="0.1"></label>
+
+        <label class="kv">SOT<input id="a_sot" type="number" step="0.1"></label>
+
+        <label class="kv">ShotsC<input id="a_shotsC" type="number" step="0.1"></label>
+
+      </div>
+
+
+
+      <div class="row">
+
+        <label class="kv">Conv%<input id="a_conv" type="number" step="0.1"></label>
+
+        <label class="kv">Poss%<input id="a_poss" type="number" step="0.1"></label>
+
+        <label class="kv">Prog<input id="a_prog" type="number" step="0.1"></label>
+
+        <label class="kv">Trans<input id="a_trans" type="number" step="0.1"></label>
+
+      </div>
+
+
+
+      <div class="row">
+
+        <label class="kv">Build<input id="a_build" type="number" step="0.1"></label>
+
+        <label class="kv">Final3<input id="a_final3" type="number" step="0.1"></label>
+
+        <label class="kv">Counter<input id="a_counter" type="number" step="0.1"></label>
+
+        <label class="kv">Interceptions<input id="a_inter" type="number" step="0.1"></label>
+
+      </div>
+
+
+
+      <div class="row">
+
+        <label class="kv">Style<select id="a_style"><option>possession</option><option>direct</option><option>counter</option><option>press</option><option>lowblock</option></select></label>
+
+        <label class="kv">Press<select id="a_press"><option>low</option><option selected>medium</option><option>high</option></select></label>
+
+        <label class="kv">DZC<input id="a_dzc" type="number" step="0.01" value="1"></label>
+
+        <label class="kv">GC<input id="a_gc" type="number" step="0.01"></label>
+
+      </div>
+
+
+
+      <div class="row" style="margin-top:6px">
+
+        <label class="kv">DF absent<input id="a_df_abs" type="number" step="1" min="0"></label>
+
+        <label class="kv">GK absent<input id="a_gk_abs" type="number" step="1" min="0"></label>
+
+        <label class="kv">KeyMiss (0/1)<input id="a_keymiss" type="number" step="0.1" min="0" max="1"></label>
+
+        <label class="kv">Rotation<input id="a_rotation" type="number" step="0.1"></label>
+
+      </div>
+
+
+
+      <div class="row" style="margin-top:6px">
+
+        <label class="kv">IIW (impact index)<input id="a_iiw" type="number" step="0.01" value="0.5"></label>
+
+        <label class="kv">RestDays<input id="a_rest" type="number" step="1" value="3"></label>
+
+        <label class="kv">CR (crosses/game)<input id="a_cr" type="number" step="0.1"></label>
+
+        <label class="kv">OtherNote<input id="a_note" type="text"></label>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="card row">
+
+      <button id="autoCalc" class="smallBtn">Auto Calc Stats</button>
+
+      <button id="resetBtn" class="smallBtn">Reset</button>
+
+      <button id="historyBtn" class="smallBtn">History</button>
+
+    </div>
+
+  </div>
+
+
+
+  <div>
+
+    <div class="card">
+
+      <div class="section-title">Hasil Analisis</div>
+
+      <div id="resultText" class="pre"></div>
+
+    </div>
+
+
+
+    <div class="card">
+
+      <div class="section-title">Distribusi Skor (Top)</div>
+
+      <div id="scoreDist" class="pre"></div>
+
+    </div>
+
+
+
+    <div class="card">
+
+      <div class="section-title">Radar</div>
+
+      <canvas id="radarCanvas" width="720" height="720"></canvas>
+
+      <div class="legend">Legend: Attack(orange), Defense(blue), Tactical(teal)</div>
+
+    </div>
+
+  </div>
+
+
+
+  <div>
+
+    <div class="card">
+
+      <div class="section-title">Odds & Context</div>
+
+      <div class="row">
+
+        <label class="kv">Home Odds<input id="odds_home" type="number" step="0.01"></label>
+
+        <label class="kv">Away Odds<input id="odds_away" type="number" step="0.01"></label>
+
+      </div>
+
+      <div class="row">
+
+        <label class="kv">Market Vol<input id="market_vol" type="number" step="0.1"></label>
+
+        <label class="kv">Hours to Kick<input id="hours_kick" type="number" step="0.1"></label>
+
+      </div>
+
+      <div class="row">
+
+        <label class="kv">Weather<select id="weather"><option>Normal</option><option>Rain</option><option>Hot</option><option>Snow</option></select></label>
+
+        <label class="kv">Pitch<select id="pitch_size"><option>normal</option><option>small</option><option>large</option></select></label>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="card">
+
+      <div class="section-title">History & Tools</div>
+
+      <div id="historyList" class="pre"></div>
+
+      <div style="margin-top:8px" class="row">
+
+        <button id="exportModel" class="smallBtn">Export Model</button>
+
+        <button id="inputRealBtn" class="smallBtn">Input Real Result</button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<hr style="border:0;border-top:1px solid rgba(255,255,255,0.04)"/>
+
+<script>
+
+/* CORE HELPERS */
+
+function showToast(msg, ms=1400){ const t=document.getElementById("toast"); if(!t) return; t.textContent=msg; t.classList.add("show"); clearTimeout(window._v221_toast); window._v221_toast=setTimeout(()=>t.classList.remove("show"), ms); }
+
+function clamp(v,a,b){ return Math.min(b,Math.max(a,v)); }
+
+function safeNum(x,def=0){ x=Number(x); if(!isFinite(x)||isNaN(x)) return def; return x; }
+
+function factorial(n){ n = Math.floor(n); if(n<=1) return 1; let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+
+function styleToNum(x){ switch(x){ case "possession": return 0.25; case "direct": return 0.55; case "counter": return 0.70; case "press": return 0.80; case "lowblock": return 0.10; default: return 0.40; } }
+
+function pressToNum(x){ if(x==="low") return 0.25; if(x==="medium") return 0.50; return 0.78; }
+
+
+
+/* SQF, XG, FEI, DSI, PNS, BMS, TTM, AGV (compact implementations) */
+
+function calcSQF(t){
+
+  let shotQ = (t.sot>0 && t.shots>0) ? clamp(t.sot/t.shots, 0.05, 0.7) : 0.12;
+
+  let progTerm = clamp((t.prog||0)/25,0,1)*0.6;
+
+  let finalTerm = clamp((t.build||0)/20,0,1)*0.7;
+
+  let crossTerm = clamp((t.cr||0)/40,0,1)*0.3;
+
+  let styleTerm = styleToNum(t.style)*0.25;
+
+  let pressTerm = pressToNum(t.press)*0.25;
+
+  let base = shotQ*1.8 + progTerm + finalTerm + crossTerm + styleTerm*0.5 + pressTerm*0.4;
+
+  return clamp(base,0.1,4.2);
+
+}
+
+function calcXGPlusV2(t){
+
+  let sqf = calcSQF(t);
+
+  let xg = (t.shots*0.035) + (t.sot*0.115) + (t.poss*0.004) + (sqf*0.32) + (t.trans*0.02) + (t.prog*0.007);
+
+  return clamp(xg,0.02,7.0);
+
+}
+
+function calcFEIv2(t){ let base=1; base += (t.conv/100)*0.35; base += (t.sot>0 && t.shots>0)?(t.sot/t.shots)*0.2:0.05; base += (calcSQF(t)/4)*0.3; return clamp(base,0.65,1.6); }
+
+function calcDSIv2(t){ let base=1; base -= (t.shotsC||0)/20*0.15; base -= (t.df_abs||0)*0.06; if(t.style==="lowblock") base+=0.10; return clamp(base,0.35,2.2); }
+
+function calcPNS(t){ let base=1; base += (t.build||0)/20*0.3; base += (t.prog||0)/35*0.25; return clamp(base,0.6,1.7); }
+
+function calcBMSv2(t){ let base=1; base += (t.build||0)/20*0.18; base += (t.prog||0)/30*0.12; return clamp(base,0.6,1.6); }
+
+function calcTTMv2(h,a){ let tempo = 1 + (styleToNum(h.style)-styleToNum(a.style))*0.2 + (pressToNum(h.press)-pressToNum(a.press))*0.12; return clamp(tempo,0.7,1.4); }
+
+function calcAGVv3(h,a){ let g = (safeNum(h.shotsC,8)/20)*0.15 + (safeNum(a.shotsC,8)/20)*0.15 + (safeNum(h.gc,0)+safeNum(a.gc,0))*0.04; return clamp(1+g,1.0,3.5); }
+
+
+
+/* ADVANCED MODULES (compact) */
+
+function xgSourceDecomp(t){
+
+  const direct = clamp((t.shots||0)/30,0,0.5);
+
+  const transition = clamp((t.trans||5)/20,0,0.35);
+
+  const crossing = clamp((t.cr||0)/60,0,0.28);
+
+  const build = clamp((t.build||5)/25,0,0.4);
+
+  const counter = clamp((t.counter||5)/20,0,0.35);
+
+  const total = direct + transition + crossing + build + counter || 1;
+
+  return { direct: direct/total, transition: transition/total, crossing: crossing/total, build: build/total, counter: counter/total };
+
+}
+
+function calcPPI(t){ const retain = clamp((t.poss||50)/100,0,1); const progress = clamp((t.prog||0)/25,0,1); const trans = clamp((t.trans||5)/10,0,1); return clamp(0.6*retain + 0.3*progress + 0.1*trans, 0.35, 1.3); }
+
+function calcDSBI(defTeam, attTeam){ const attPressure = clamp((attTeam.prog||0)/30 + (attTeam.shots||0)/20 + (attTeam.trans||5)/10, 0, 3); const defCompact = clamp( safeNum(defTeam.dzc,1) , 0.5, 1.5); const vulnerability = clamp(attPressure * (1.2 - (defCompact-1)*0.6), 0.5, 3.0); return vulnerability; }
+
+function calcMIP(h,a,ctx){ let base = 1; base += (styleToNum(h.style) + styleToNum(a.style))/6; base += (pressToNum(h.press) + pressToNum(a.press))/6; if(ctx && ctx.weather && ctx.weather.toLowerCase().includes("rain")) base *= 0.95; return clamp(base,0.7,1.6); }
+
+function calcTMA(h,a){ const wingAdv = clamp((h.prog - (a.inter||0))/30, -0.4, 0.8); const midParity = clamp((h.poss - a.poss)/100, -0.5,0.5); const pressEffect = clamp(pressToNum(h.press) - pressToNum(a.press), -0.5, 0.5); const formMatch = 1 + wingAdv*0.9 + midParity*0.6 + pressEffect*0.7; return clamp(formMatch, 0.6, 1.6); }
+
+function calcRTF(historySeq){ if(!historySeq || historySeq.length===0) return 1.0; let alpha = 0.12; let s=0; for(let i=historySeq.length-1;i>=0;i--){ const it=historySeq[i]; const pts = it.real_home!==undefined ? (it.real_home>it.real_away?3:(it.real_home===it.real_away?1:0)) : (it.prob? (it.prob.home*3+it.prob.draw*1):1); s = (1-alpha)*s + alpha*pts; } return clamp(1 + (s-1.2)*0.07, 0.82, 1.22); }
+
+function calcCTTI(h,a){ const wb = (h.prog||0) - (a.inter||0); const mid = (h.poss - a.poss)/100; return clamp(1 + wb*0.02 + mid*0.4, 0.7, 1.4); }
+
+function calcALBB(h,a){ const overload = clamp((h.final3||0)/20 + (h.prog||0)/25,0,1.6); const compact = clamp( safeNum(a.dzc,1), 0.6, 1.6); return clamp(overload * (1.2 - (compact-1)*0.6), 0.6, 2.0); }
+
+function calcBPE(h){ const speed = clamp((h.trans||5)/10,0,1); const prog = clamp((h.prog||0)/30,0,1); return clamp(0.6*speed + 0.4*prog, 0.5, 1.4); }
+
+function calcXDv4(t){ const et = (typeof calcETv4_full==="function")? calcETv4_full(t) : calcETv4_light(t); const deepTouches = clamp((t.final3||0)/20,0,1); const carries = clamp((t.prog||0)/30,0,1); const danger = clamp(et * (0.7 + deepTouches*0.15 + carries*0.15), 0.02, 9.0); return danger; }
+
+function calcPRI(t){ return clamp(1 + ((t.press||0)/10 - (t.rotation||0)*0.02), 0.6, 1.6); }
+
+function calcBCM(team){ const compact = clamp(safeNum(team.dzc,1),0.6,1.6); const structure = clamp(1 - (team.df_abs||0)*0.05, 0.6, 1.1); return clamp(1 + (compact-1)*0.6 + (structure-1)*0.2, 0.6, 1.6); }
+
+function calcTVM(h,a){ const vuln = clamp((a.counter||5)/10 * (1 + (h.trans||5)/10), 0.6, 2.0); const spacing = clamp(1 - (a.dzc||1 - 1)*0.2, 0.7, 1.2); return clamp(vuln * spacing, 0.7, 2.2); }
+
+function calcMSP(h,a,history){ const formDiff = ( (history && history[0]) ? ((history[0].hname===h.name ? (history[0].real_home - history[0].real_away) : (history[0].real_away - history[0].real_home)) ) : 0); let base = 1 + clamp(Math.abs(formDiff)/3,0,0.6); base += Math.abs((h.poss - a.poss)/100)*0.4; return clamp(base,0.7,1.8); }
+
+function calcKIR(team){ const shotsConceded = safeNum(team.shotsC,8); const gk = safeNum(team.gk_abs,0); const base = clamp(1 - (shotsConceded/30)*0.18 - gk*0.12, 0.6, 1.3); return base; }
+
+function calcSCI(inputs){ const varScore = clamp(safeNum(inputs.varTotal,1),0.5,3); const missing = clamp(safeNum(inputs.missingFields,0),0,5); return clamp(1 - (varScore-1)*0.12 - missing*0.02, 0.5, 1.12); }
+
+function calcMPSE(h,a){ const pressPower = (pressToNum(h.press)+pressToNum(a.press))/2; const density = clamp((h.prog + (a.inter||0))/40, 0,1); return clamp(1 + pressPower*0.6 - density*0.2, 0.7,1.6); }
+
+function calcDMZ(team){ return { left: clamp(1 - (team.df_abs/6)*0.18,0.6,1.2), right: clamp(1 - (team.df_abs/6)*0.18,0.6,1.2), central: clamp(1 - (team.df_abs/6)*0.12,0.7,1.3) }; }
+
+
+
+/* ETv4 core */
+
+function estimateZoneMix(t){
+
+  const sot = safeNum(t.sot, 1);
+
+  const shots = Math.max(1, safeNum(t.shots, 6));
+
+  const accuracy = sot / shots;
+
+  const insideShare = clamp(0.35 + (accuracy - 0.3)*1.2, 0.05, 0.65);
+
+  const boxEdge = clamp(0.20 + (t.final3||0)/40, 0.02, 0.35);
+
+  const outside = clamp(1 - insideShare - boxEdge, 0.05, 0.7);
+
+  return { inside6: clamp(insideShare * 0.40, 0.01, 0.45), sixToBox: clamp(insideShare * 0.60, 0.01, 0.45), boxEdge: boxEdge, outsideBox: outside * 0.8, counterHigh: clamp((t.counter||5)/10 * 0.15, 0.0, 0.25) };
+
+}
+
+function calcETv4_full(t){
+
+  const baseXG = calcXGPlusV2(t);
+
+  const zone = estimateZoneMix(t);
+
+  let zoneAdj = 0;
+
+  zoneAdj += zone.inside6 * 0.95;
+
+  zoneAdj += zone.sixToBox * 0.78;
+
+  zoneAdj += zone.boxEdge * 0.55;
+
+  zoneAdj += zone.outsideBox * 0.18;
+
+  zoneAdj += zone.counterHigh * 0.65;
+
+  const prog = clamp((t.prog||0)/30, 0, 1);
+
+  const trans = clamp((t.trans || 5)/10, 0, 1);
+
+  const et = baseXG * (0.78 + (zoneAdj*0.14) + (prog*0.06) + (trans*0.04));
+
+  return clamp(et, 0.02, 9.0);
+
+}
+
+function calcETv4_light(t){ const base = calcXGPlusV2(t); const q = calcSQF(t); return clamp(base * (1 + (q-0.7)*0.11), 0.02, 7.5); }
+
+
+
+/* DIG & GFE added (previously missing) */
+
+function calcDIG(h,a){
+
+  // Dynamic Influence Graph (light): synergy + interference
+
+  // positive if home synergy high; negative if opponent counters well
+
+  const synergy = clamp(((h.prog||0)/30 + (h.final3||0)/20) - ((a.inter||0)/6), -0.8, 1.2);
+
+  return clamp(1 + synergy*0.08, 0.7, 1.3);
+
+}
+
+function calcGFE(history){
+
+  // GameFlow Engine (light): measures volatility of recent total goals
+
+  if(!history || history.length < 3) return 1.0;
+
+  let vol=0, cnt=0;
+
+  for(let i=1;i<Math.min(history.length,12); i++){
+
+    const cur = safeNum(history[i-1].real_home, null) !== null && safeNum(history[i-1].real_away, null) !== null ? (safeNum(history[i-1].real_home,0)+safeNum(history[i-1].real_away,0)) : null;
+
+    const prev = safeNum(history[i].real_home, null) !== null && safeNum(history[i].real_away, null) !== null ? (safeNum(history[i].real_home,0)+safeNum(history[i].real_away,0)) : null;
+
+    if(cur === null || prev === null) continue;
+
+    vol += Math.abs(cur - prev); cnt++;
+
+  }
+
+  if(cnt===0) return 1.0;
+
+  const avg = vol / cnt;
+
+  return clamp(1 + (avg - 1.8)*0.06, 0.86, 1.22);
+
+}
+
+
+
+/* End BLOK B */
+
+</script>
+
+<script>
+
+/* readTeam (now matches full UI fields) */
+
+function readTeam(side){
+
+  return {
+
+    name: document.getElementById(side+"_name")?.value || (side==="h" ? "Home" : "Away"),
+
+    gpg: safeNum(document.getElementById(side+"_gpg")?.value,1.0),
+
+    shots: safeNum(document.getElementById(side+"_shots")?.value,8),
+
+    sot: safeNum(document.getElementById(side+"_sot")?.value,3),
+
+    shotsC: safeNum(document.getElementById(side+"_shotsC")?.value,8),
+
+    conv: safeNum(document.getElementById(side+"_conv")?.value,12),
+
+    poss: safeNum(document.getElementById(side+"_poss")?.value,50),
+
+    prog: safeNum(document.getElementById(side+"_prog")?.value,0),
+
+    trans: safeNum(document.getElementById(side+"_trans")?.value,5),
+
+    build: safeNum(document.getElementById(side+"_build")?.value,5),
+
+    final3: safeNum(document.getElementById(side+"_final3")?.value,0),
+
+    counter: safeNum(document.getElementById(side+"_counter")?.value,5),
+
+    inter: safeNum(document.getElementById(side+"_inter")?.value,3),
+
+    cr: safeNum(document.getElementById(side+"_cr")?.value,0),
+
+    style: document.getElementById(side+"_style")?.value || "possession",
+
+    press: document.getElementById(side+"_press")?.value || "medium",
+
+    elo: safeNum(document.getElementById(side+"_elo")?.value,1500),
+
+    df_abs: safeNum(document.getElementById(side+"_df_abs")?.value,0),
+
+    gk_abs: safeNum(document.getElementById(side+"_gk_abs")?.value,0),
+
+    keymiss: safeNum(document.getElementById(side+"_keymiss")?.value,0),
+
+    rotation: safeNum(document.getElementById(side+"_rotation")?.value,0),
+
+    iiw: safeNum(document.getElementById(side+"_iiw")?.value,0.5),
+
+    rest: safeNum(document.getElementById(side+"_rest")?.value,3),
+
+    dzc: safeNum(document.getElementById(side+"_dzc")?.value,1),
+
+    gc: safeNum(document.getElementById(side+"_gc")?.value,0),
+
+    note: document.getElementById(side+"_note")?.value || ""
+
+  };
+
+}
+
+
+
+/* leagueNormalize etc. helpers reused */
+
+function leagueNormalize(lambda, leagueGPG, modelGPG=2.72){ if(!leagueGPG || leagueGPG<=0) return lambda; return lambda * (leagueGPG / modelGPG); }
+
+function contextModifier(ctx){ if(!ctx) return 1; let m=1; const w=(ctx.weather||"").toString().toLowerCase(); if(w.includes("rain")) m*=0.94; if(w.includes("storm")) m*=0.88; if(w.includes("snow")) m*=0.90; if(w.includes("hot")) m*=0.97; if((ctx.altitude||0)>=1500) m*=0.92; if((ctx.pitch||"").toString().toLowerCase()==="small") m*=0.96; if((ctx.pitch||"").toString().toLowerCase()==="large") m*=1.03; return clamp(m,0.7,1.15); }
+
+function antiSpikeStabilize(lambda,sens){ sens=safeNum(sens,1); if(lambda>4.2) return clamp(lambda*(1-0.12*sens),0.2,8.5); if(lambda<0.08) return clamp(lambda*(1+0.22*sens),0.02,0.3); return lambda; }
+
+function adaptiveXGAdjust(lambda, convPct, alpha){ convPct = safeNum(convPct,0)/100; alpha=safeNum(alpha,0.06); const delta = convPct - 0.12; return clamp(lambda * (1 + delta*alpha), 0.02, 9.0); }
+
+function zeroBiasAdjust(lh,la,marketOU){ if(!marketOU || marketOU<=0) return {lh,la}; const total = lh+la; const diff = marketOU - total; const adj = clamp(diff*0.25,-1.2,1.2); return {lh: clamp(lh + adj/2,0.02,9.0), la: clamp(la + adj/2,0.02,9.0)}; }
+
+
+
+/* explain stub */
+
+function explainContribsUltra(h,a,meta){
+
+  const out = { etH:meta.etH||0, etA:meta.etA||0, xD_H:meta.xD_H||0, xD_A:meta.xD_A||0, tma:meta.tma||1, dsbiH:meta.dsbiH||1, dsbiA:meta.dsbiA||1, albb:meta.albb||1, bcmH:meta.bcmH||1, bcmA:meta.bcmA||1, kirH:meta.kirH||1, kirA:meta.kirA||1, tvm:meta.tvm||1, msp:meta.msp||1, gfe:meta.gfe||1 };
+
+  return out;
+
+}
+
+
+
+/* finalizeLambdaUltra: integrates all modules and MODULE_WEIGHTS (if available) */
+
+function finalizeLambdaUltra(h,a,ctx,leagueGPG,marketOU,history){
+
+  // compute core modules
+
+  const etH = calcETv4_full(h), etA = calcETv4_full(a);
+
+  const xgH = calcXGPlusV2(h), xgA = calcXGPlusV2(a);
+
+  const xD_H = calcXDv4(h), xD_A = calcXDv4(a);
+
+  const ppiH = calcPPI(h), ppiA = calcPPI(a);
+
+  const dsbiH = calcDSBI(a,h), dsbiA = calcDSBI(h,a);
+
+  const tma = calcTMA(h,a);
+
+  const albbH = calcALBB(h,a), albbA = calcALBB(a,h);
+
+  const bcmH = calcBCM(h), bcmA = calcBCM(a);
+
+  const kirH = calcKIR(h), kirA = calcKIR(a);
+
+  const tvm = calcTVM(h,a);
+
+  const msp = calcMSP(h,a,history);
+
+  const dig = calcDIG(h,a);
+
+  const gfe = calcGFE(history);
+
+  const bpeH = calcBPE(h), bpeA = calcBPE(a);
+
+
+
+  // base combination tries to obey MODULE_WEIGHTS if exists, else default blend
+
+  const w = (typeof MODULE_WEIGHTS !== "undefined") ? MODULE_WEIGHTS : {et:1.0,xg:0.35,xd:0.18,tma:0.9,dsbi:0.6,albb:0.9,bcm:1.0,kir:0.9,tvm:0.6,msp:0.45,dig:0.12,gfe:0.1,ppi:0.6,bpe:0.75};
+
+
+
+  // initial lambda using weighted linear combo
+
+  let lambdaH = clamp((w.et * etH) + (w.xg * xgH) + (w.xd * xD_H), 0.02, 9.0);
+
+  let lambdaA = clamp((w.et * etA) + (w.xg * xgA) + (w.xd * xD_A), 0.02, 9.0);
+
+
+
+  // multiplicative tactical adjustments
+
+  lambdaH *= clamp(1 + (w.tma-1)*(tma-1)*0.9 + (w.dsbi-1)*(dsbiH-1)*0.6, 0.6, 2.6);
+
+  lambdaA *= clamp(1 + (w.tma-1)*(tma-1)*0.9 + (w.dsbi-1)*(dsbiA-1)*0.6, 0.6, 2.6);
+
+
+
+  lambdaH *= clamp(1 + (w.albb-1)*(albbH-1)*0.9, 0.7, 2.2) * clamp(1 / bcmA, 0.6, 1.3);
+
+  lambdaA *= clamp(1 + (w.albb-1)*(albbA-1)*0.9, 0.7, 2.2) * clamp(1 / bcmH, 0.6, 1.3);
+
+
+
+  lambdaH *= clamp(1 - (w.kir-1)*(kirH-1)*0.12, 0.6, 1.1);
+
+  lambdaA *= clamp(1 - (w.kir-1)*(kirA-1)*0.12, 0.6, 1.1);
+
+
+
+  lambdaH *= clamp(1 + (w.tvm-1)*(tvm-1)*0.12, 0.75, 1.45);
+
+  lambdaA *= clamp(1 + (w.tvm-1)*(tvm-1)*0.12, 0.75, 1.45);
+
+
+
+  lambdaH *= clamp(1 + (w.msp-1)*(msp-1)*0.10 + (w.gfe-1)*(gfe-1)*0.06, 0.7, 1.5);
+
+  lambdaA *= clamp(1 + (w.msp-1)*(msp-1)*0.10 + (w.gfe-1)*(gfe-1)*0.06, 0.7, 1.5);
+
+
+
+  lambdaH *= clamp(1 + (w.ppi-1)*(ppiH-1)*0.08 + (w.bpe-1)*(bpeH-1)*0.06, 0.7, 1.4);
+
+  lambdaA *= clamp(1 + (w.ppi-1)*(ppiA-1)*0.08 + (w.bpe-1)*(bpeA-1)*0.06, 0.7, 1.4);
+
+
+
+  // fatigue, rotation, key misses
+
+  lambdaH *= clamp(1 - safeNum(h.rotation,0)*0.06 - safeNum(h.df_abs,0)*0.03 - safeNum(h.gk_abs,0)*0.04, 0.45, 1.15);
+
+  lambdaA *= clamp(1 - safeNum(a.rotation,0)*0.06 - safeNum(a.df_abs,0)*0.03 - safeNum(a.gk_abs,0)*0.04, 0.45, 1.15);
+
+  if(h.keymiss) lambdaH *= clamp(1 - h.iiw*0.12, 0.5, 0.98);
+
+  if(a.keymiss) lambdaA *= clamp(1 - a.iiw*0.12, 0.5, 0.98);
+
+
+
+  // league / context
+
+  lambdaH = leagueNormalize(lambdaH, leagueGPG);
+
+  lambdaA = leagueNormalize(lambdaA, leagueGPG);
+
+  const cm = contextModifier(ctx); lambdaH *= cm; lambdaA *= cm;
+
+
+
+  // anti-spike & adaptive xg conv adjust
+
+  lambdaH = antiSpikeStabilize(lambdaH, safeNum(document.getElementById("antispike_sens")?.value,1));
+
+  lambdaA = antiSpikeStabilize(lambdaA, safeNum(document.getElementById("antispike_sens")?.value,1));
+
+  lambdaH = adaptiveXGAdjust(lambdaH, safeNum(h.conv,0), safeNum(document.getElementById("xg_alpha")?.value,0.06));
+
+  lambdaA = adaptiveXGAdjust(lambdaA, safeNum(a.conv,0), safeNum(document.getElementById("xg_alpha")?.value,0.06));
+
+
+
+  // Bayesian corrector (if defined)
+
+  if(typeof BAYES_CORR !== "undefined" && BAYES_CORR && typeof BAYES_CORR.bias === "function"){
+
+    const bias = BAYES_CORR.bias();
+
+    if(Math.abs(bias) > 0.02){
+
+      const adj = clamp(bias*0.12, -0.8, 0.8);
+
+      lambdaH = clamp(lambdaH + adj*0.5, 0.02, 9.0);
+
+      lambdaA = clamp(lambdaA + adj*0.5, 0.02, 9.0);
+
+    }
+
+  }
+
+
+
+  // zero-bias towards market OU
+
+  if(document.getElementById("zero_bias_mode")?.value !== "0"){
+
+    const zb = zeroBiasAdjust(lambdaH, lambdaA, safeNum(document.getElementById("market_ou")?.value,0));
+
+    lambdaH = zb.lh; lambdaA = zb.la;
+
+  }
+
+
+
+  // final clamp and explain
+
+  lambdaH = clamp(lambdaH, 0.02, 9.5);
+
+  lambdaA = clamp(lambdaA, 0.02, 9.5);
+
+
+
+  const contributions = (document.getElementById("enable_explain")?.value !== "0") ? explainContribsUltra(h,a,{etH,etA,xD_H,xD_A,tma,dsbiH,dsbiA,albbH,albbA,bcmH,bcmA,kirH,kirA,tvm,msp,gfe,ppiH,ppiA}) : null;
+
+
+
+  return { lambdaH, lambdaA, contributions, meta:{etH,etA,xD_H,xD_A,tma,dsbiH,dsbiA,albbH,albbA,bcmH,bcmA,kirH,kirA,tvm,msp,gfe,ppiH,ppiA} };
+
+}
+
+
+
+/* quick analyze wrapper used by UI */
+
+async function analyzeV221(){
+
+  try{
+
+    showToast("Running v22.1 analysis...",900);
+
+    const h = readTeam("h"); const a = readTeam("a");
+
+    const ctx = { weather: document.getElementById("weather")?.value || "Normal", pitch: document.getElementById("pitch_size")?.value || "normal", altitude: safeNum(document.getElementById("altitude")?.value,0) };
+
+    const leagueGPG = safeNum(document.getElementById("league_gpg")?.value,2.72);
+
+    const marketOU = safeNum(document.getElementById("market_ou")?.value,0);
+
+    const final = finalizeLambdaUltra(h,a,ctx,leagueGPG,marketOU,HISTORY);
+
+    window._lastRes = { time:new Date().toISOString(), h,a, final };
+
+    // continue to MC runner in next block
+
+    return final;
+
+  }catch(e){ console.error(e); showToast("Analyze error"); return null; }
+
+}
+
+
+
+/* bind analyze button to full pipeline (MC runner in BLOK D) */
+
+document.getElementById("analyzeBtn")?.addEventListener("click", async ()=>{ await analyzeV213(); });
+
+</script>
+
+<script>
+
+/* OddsTrap & ORL */
+
+function calcOddsTrapV5(){
+
+  const oddsH = safeNum(document.getElementById("odds_home")?.value,0);
+
+  const oddsA = safeNum(document.getElementById("odds_away")?.value,0);
+
+  const vol = safeNum(document.getElementById("market_vol")?.value, 10);
+
+  const hours = safeNum(document.getElementById("hours_kick")?.value, 24);
+
+  let div=0; if(oddsH>0 && oddsA>0){ const pH=1/oddsH,pA=1/oddsA; div = Math.abs(pH-pA) + Math.max(0, pH+pA - 1);}
+
+  const mov = Math.abs(safeNum(document.getElementById("odds_hdp_now")?.value,0) - safeNum(document.getElementById("odds_hdp_open")?.value,0));
+
+  const liq = clamp(1 + Math.log(1+vol)/Math.log(1+100)*0.6,0.8,2.2);
+
+  const timeF = clamp(1 + (24 - Math.min(24,hours))/30,0.85,1.45);
+
+  let trap = 1 + (div*0.9 + mov*0.6)*0.6; trap *= liq * timeF;
+
+  trap = 1 + Math.tanh((trap-1)/1.3)*1.3;
+
+  return clamp(trap,0.5,3.6);
+
+}
+
+function ORL_blend(modelProb){
+
+  const oddsH = safeNum(document.getElementById("odds_home")?.value,0);
+
+  const oddsA = safeNum(document.getElementById("odds_away")?.value,0);
+
+  if(oddsH<=0 || oddsA<=0) return modelProb;
+
+  const pH = 1/oddsH, pA = 1/oddsA; const pD = Math.max(0,1 - (pH+pA)); const sum = pH+pD+pA;
+
+  const market = { home: pH/sum, draw: pD/sum, away: pA/sum };
+
+  const trap = calcOddsTrapV5();
+
+  const w = clamp(0.06 + (trap-1)*0.15, 0.02, 0.5);
+
+  const out = { home: modelProb.home*(1-w) + market.home*w, draw: modelProb.draw*(1-w)+market.draw*w, away: modelProb.away*(1-w)+market.away*w };
+
+  const s = out.home+out.draw+out.away; out.home/=s; out.draw/=s; out.away/=s; return out;
+
+}
+
+
+
+/* MC workers (pool & streaming) */
+
+let poolWorkers=[]; let poolWorkerURLs=[];
+
+function createPoolWorkerScript(){ return `
+
+  onmessage=function(e){ const {lambdaH,lambdaA,maxG}=e.data; const out={}; for(let i=0;i<=maxG;i++){ for(let j=0;j<=maxG;j++){ const ph=Math.pow(lambdaH,i)*Math.exp(-lambdaH)/(${factorial.toString()}(i)); const pa=Math.pow(lambdaA,j)*Math.exp(-lambdaA)/(${factorial.toString()}(j)); out[i+"-"+j]=ph*pa; } } postMessage({dist:out}); };
+
+`; }
+
+function initWorkerPool(n){ poolWorkers.forEach(w=>try{w.terminate()}catch(e){}); poolWorkers=[]; poolWorkerURLs.forEach(u=>try{URL.revokeObjectURL(u)}catch(e){}); poolWorkerURLs=[]; const count=Math.max(1,Math.min(n||navigator.hardwareConcurrency||2,8)); const script=createPoolWorkerScript(); const blob=new Blob([script],{type:"application/javascript"}); const url=URL.createObjectURL(blob); for(let i=0;i<count;i++){ poolWorkerURLs.push(url); poolWorkers.push(new Worker(url)); } return poolWorkers.length; }
+
+function runPoolMC(lambdaH,lambdaA,maxG=8){
+
+  return new Promise((resolve)=>{
+
+    if(poolWorkers.length===0) initWorkerPool();
+
+    const results=[]; let done=0;
+
+    poolWorkers.forEach((w, idx)=>{
+
+      w.onmessage=(ev)=>{ results[idx]=ev.data.dist||{}; done++; if(done===poolWorkers.length){ const agg={}; for(const r of results){ for(const k in r){ agg[k]=(agg[k]||0)+r[k]; } } for(const k in agg) agg[k]=agg[k]/results.length; resolve(agg); } };
+
+      w.postMessage({lambdaH,lambdaA,maxG});
+
+    });
+
+    setTimeout(()=>{ if(done===poolWorkers.length) return; const fallback={}; for(let i=0;i<=maxG;i++){ for(let j=0;j<=maxG;j++){ const ph=Math.pow(lambdaH,i)*Math.exp(-lambdaH)/factorial(i); const pa=Math.pow(lambdaA,j)*Math.exp(-lambdaA)/factorial(j); fallback[i+"-"+j]=ph*pa; } } resolve(fallback); },8000);
+
+  });
+
+}
+
+async function runStreamingMC(lambdaH,lambdaA,maxG=8,nWorkers=2,onProgress){
+
+  const code = `
+
+    onmessage=function(e){ const {lambdaH,lambdaA,maxG}=e.data; const max=maxG||8; const dist={}; for(let i=0;i<=max;i++){ const row={}; for(let j=0;j<=max;j++){ const ph=Math.pow(lambdaH,i)*Math.exp(-lambdaH)/(${factorial.toString()}(i)); const pa=Math.pow(lambdaA,j)*Math.exp(-lambdaA)/(${factorial.toString()}(j)); row[i+"-"+j]=ph*pa; dist[i+"-"+j]=ph*pa; } postMessage({partialRow:i, row}); } postMessage({done:true, dist}); };
+
+  `;
+
+  const blob=new Blob([code],{type:"application/javascript"}); const url=URL.createObjectURL(blob); const workers=[]; for(let i=0;i<nWorkers;i++){ workers.push(new Worker(url)); }
+
+  const aggregate={}; let completed=0;
+
+  return new Promise((resolve)=>{
+
+    workers.forEach((w,idx)=>{ w.onmessage=(ev)=>{ const d=ev.data; if(d.partialRow!==undefined){ for(const k in d.row) aggregate[k]=(aggregate[k]||0)+d.row[k]; if(onProgress) onProgress({worker:idx,progress:(d.partialRow+1)/(maxG+1)}); } if(d.done){ completed++; for(const k in d.dist) aggregate[k]=(aggregate[k]||0)+d.dist[k]; if(completed===workers.length){ for(const k in aggregate) aggregate[k]=aggregate[k]/workers.length; workers.forEach(x=>x.terminate()); URL.revokeObjectURL(url); resolve(aggregate); } } }; w.postMessage({lambdaH,lambdaA,maxG}); });
+
+    setTimeout(()=>{ if(completed===workers.length) return; workers.forEach(x=>x.terminate()); for(const k in aggregate) aggregate[k]=aggregate[k]/Math.max(1,workers.length); URL.revokeObjectURL(url); resolve(aggregate); },9000);
+
+  });
+
+}
+
+
+
+/* Unified analyze runner using finalizeLambdaUltra & MC */
+
+async function analyzeV213(){
+
+  try{
+
+    showToast("Running engine analysis...",900);
+
+    const h = readTeam("h"); const a = readTeam("a");
+
+    const ctx = { weather: document.getElementById("weather")?.value || "Normal", pitch: document.getElementById("pitch_size")?.value || "normal", altitude: safeNum(document.getElementById("altitude")?.value,0) };
+
+    const leagueGPG = safeNum(document.getElementById("league_gpg")?.value,2.72);
+
+    const marketOU = safeNum(document.getElementById("market_ou")?.value,0);
+
+
+
+    const final = finalizeLambdaUltra(h,a,ctx,leagueGPG,marketOU,HISTORY);
+
+
+
+    let distMap = {};
+
+    const mcMode = document.getElementById("mc_mode")?.value || "pool";
+
+    if(mcMode==="pool"){ await initWorkerPool(Math.max(1,Math.min(navigator.hardwareConcurrency||2,6))); distMap = await runPoolMC(final.lambdaH, final.lambdaA, 8); }
+
+    else if(mcMode==="stream"){ distMap = await runStreamingMC(final.lambdaH, final.lambdaA, 8, Math.max(1,Math.min(navigator.hardwareConcurrency||2,4)), p=>console.debug("stream",p)); }
+
+    else {
+
+      for(let i=0;i<=8;i++){ for(let j=0;j<=8;j++){ const ph = Math.pow(final.lambdaH,i)*Math.exp(-final.lambdaH)/factorial(i); const pa = Math.pow(final.lambdaA,j)*Math.exp(-final.lambdaA)/factorial(j); distMap[i+"-"+j] = ph*pa; } }
+
+    }
+
+
+
+    let pH=0,pD=0,pA=0;
+
+    for(const k in distMap){ const parts=k.split("-"); const i=Number(parts[0]), j=Number(parts[1]); const p=safeNum(distMap[k],0); if(i>j) pH+=p; else if(i===j) pD+=p; else pA+=p; }
+
+
+
+    const trap = calcOddsTrapV5();
+
+    let modelProb = { home:pH, draw:pD, away:pA };
+
+    modelProb = ORL_blend(modelProb);
+
+
+
+    const varStats = mcVarianceAnalysis(distMap);
+
+    const sci = calcSCI({varTotal:varStats?varStats.sdTotal:1, missingFields:0});
+
+    const conf = clamp(0.58 + (1/safeNum(final.meta?final.meta.agv:1,1)-1)*0.08 + (sci-1)*0.06, 0.18, 0.96);
+
+
+
+    window._lastRes = { time:new Date().toISOString(), h,a,final,dist:distMap,prob:modelProb,conf,trap,meta:final.meta, contributions:final.contributions };
+
+
+
+    buildOutputUltra(window._lastRes);
+
+
+
+    pushHistory({ time:new Date().toLocaleString(), hname:h.name||"Home", aname:a.name||"Away", h:h, a:a, lambdaH:final.lambdaH, lambdaA:final.lambdaA, prob:modelProb, conf });
+
+
+
+    showToast("Analysis done", 1200);
+
+    return window._lastRes;
+
+  }catch(e){ console.error(e); showToast("Engine error — lihat console",1600); return null; }
+
+}
+
+
+
+/* mcVarianceAnalysis */
+
+function mcVarianceAnalysis(distMap){
+
+  if(!distMap) return null;
+
+  let meanTotal=0, meanDiff=0; for(const k in distMap){ const p=safeNum(distMap[k],0); const parts=k.split("-"); const gh=Number(parts[0]), ga=Number(parts[1]); meanTotal += (gh+ga)*p; meanDiff += (gh-ga)*p; }
+
+  let varTotal=0,varDiff=0; for(const k in distMap){ const p=safeNum(distMap[k],0); const parts=k.split("-"); const gh=Number(parts[0]), ga=Number(parts[1]); varTotal += ((gh+ga)-meanTotal)*((gh+ga)-meanTotal)*p; varDiff += ((gh-ga)-meanDiff)*((gh-ga)-meanDiff)*p; }
+
+  return { meanTotal, sdTotal:Math.sqrt(varTotal), meanDiff, sdDiff:Math.sqrt(varDiff) };
+
+}
+
+</script>
+
+<script>
+
+/* Render output (Ultra) */
+
+function buildOutputUltra(res){
+
+  const el=document.getElementById("resultText"); if(!el) return;
+
+  const p=res.prob||{home:0,draw:0,away:0};
+
+  let s = `📊 Prediksi v22.1 Titan Ultra\n${res.h.name} vs ${res.a.name}\n\nλH=${res.final.lambdaH.toFixed(3)} λA=${res.final.lambdaA.toFixed(3)}\n\nProbabilities:\n  Home: ${(p.home*100).toFixed(1)}%\n  Draw: ${(p.draw*100).toFixed(1)}%\n  Away: ${(p.away*100).toFixed(1)}%\n\nConfidence: ${(res.conf*100).toFixed(1)}%  Trap:${res.trap.toFixed(2)}\n`;
+
+  el.textContent = s + "\nTop score probabilities:\n" + renderTopDist(res.dist, 30) + "\n";
+
+  if(res.contributions) el.textContent += "\nContributions:\n" + JSON.stringify(res.contributions, null, 2) + "\n";
+
+  const sd=document.getElementById("scoreDist"); if(sd) sd.textContent = renderTopDist(res.dist, 40);
+
+  redrawRadarUltra(res.h, res.a);
+
+}
+
+
+
+/* renderTopDist */
+
+function renderTopDist(dist, topN=20){
+
+  if(!dist) return "no dist";
+
+  const arr=[]; for(const k in dist) arr.push({k,p:dist[k]}); arr.sort((a,b)=>b.p - a.p); return arr.slice(0,topN).map(it => `${it.k} -> ${(it.p*100).toFixed(2)}%`).join("\n");
+
+}
+
+
+
+/* Radar */
+
+function redrawRadarUltra(h,a){
+
+  const c=document.getElementById("radarCanvas"); if(!c) return; const ctx=c.getContext("2d"); ctx.clearRect(0,0,c.width,c.height);
+
+  const cx=c.width/2, cy=c.height/2, r=Math.min(cx,cy)-36;
+
+  const Hvals=[ clamp(h.shots*0.08 + (h.gpg||0)*0.6,0,10), clamp(1/(safeNum(h.shotsC,8)+0.01)*8,0,10), clamp(styleToNum(h.style)*10,0,10), clamp(pressToNum(h.press)*10,0,10), clamp(h.trans||5,0,10), clamp(h.prog||0,0,10), clamp(calcPNS(h)*5,0,10), clamp(safeNum(h.dzc,1)*4,0,10) ];
+
+  const Avals=[ clamp(a.shots*0.08 + (a.gpg||0)*0.6,0,10), clamp(1/(safeNum(a.shotsC,8)+0.01)*8,0,10), clamp(styleToNum(a.style)*10,0,10), clamp(pressToNum(a.press)*10,0,10), clamp(a.trans||5,0,10), clamp(a.prog||0,0,10), clamp(calcPNS(a)*5,0,10), clamp(safeNum(a.dzc,1)*4,0,10) ];
+
+  const N=Hvals.length;
+
+  ctx.strokeStyle="rgba(255,255,255,0.05)"; for(let ring=1;ring<=4;ring++){ ctx.beginPath(); for(let i=0;i<N;i++){ const ang=(Math.PI*2/N)*i - Math.PI/2; const rr=r*(ring/4); const x=cx+rr*Math.cos(ang), y=cy+rr*Math.sin(ang); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); ctx.stroke();}
+
+  function draw(vals,color){ ctx.beginPath(); for(let i=0;i<N;i++){ const ang=(Math.PI*2/N)*i - Math.PI/2; const rr=r*(vals[i]/10); const x=cx+rr*Math.cos(ang), y=cy+rr*Math.sin(ang); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.closePath(); ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke(); ctx.globalAlpha=0.12; ctx.fillStyle=color; ctx.fill(); ctx.globalAlpha=1; }
+
+  draw(Hvals,"#ff8a4c"); draw(Avals,"#4ea1ff");
+
+}
+
+
+
+/* HISTORY & EXPORT */
+
+let HISTORY = [];
+
+function pushHistory(obj){ HISTORY.unshift(obj); if(HISTORY.length>2000) HISTORY.pop(); renderHistory(); }
+
+function renderHistory(){ const el=document.getElementById("historyList"); if(!el) return; el.textContent = HISTORY.slice(0,200).map(it=>`[${it.time}] ${it.hname} vs ${it.aname} — λH:${it.lambdaH.toFixed(2)} λA:${it.lambdaA.toFixed(2)} conf:${(it.conf*100||0).toFixed(1)}%`).join("\n"); }
+
+document.getElementById("exportBundle")?.addEventListener("click", ()=>{ const files={ model:JSON.stringify({HISTORY,lastRes:window._lastRes||null},null,2) }; const blob=new Blob([JSON.stringify(files)],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="v22_1_titan_bundle.json"; a.click(); showToast("Bundle exported"); });
+
+document.getElementById("exportModel")?.addEventListener("click", ()=>{ const blob=new Blob([JSON.stringify({HISTORY},null,2)],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="model_history_v22_1.json"; a.click(); showToast("Model exported"); });
+
+
+
+/* small UI helpers */
+
+document.getElementById("autoCalc")?.addEventListener("click", ()=>{ autoConv("h"); autoConv("a"); showToast("AutoCalc done"); });
+
+document.getElementById("resetBtn")?.addEventListener("click", ()=>{ document.querySelectorAll("input").forEach(i=>i.value=""); showToast("Reset"); });
+
+
+
+/* Input Real Result button: prompts user for real scores and updates history */
+
+document.getElementById("inputRealBtn")?.addEventListener("click", ()=>{
+
+  try{
+
+    const rh = prompt("Masukkan skor HOME (angka):"); if(rh===null) return;
+
+    const ra = prompt("Masukkan skor AWAY (angka):"); if(ra===null) return;
+
+    const rhN = parseInt(rh), raN = parseInt(ra);
+
+    if(isNaN(rhN) || isNaN(raN)){ showToast("Input tidak valid"); return; }
+
+    // attach to lastRes or create entry
+
+    const last = window._lastRes || {};
+
+    last.real_home = rhN; last.real_away = raN;
+
+    // add to HISTORY with snapshot
+
+    pushHistory({ time: new Date().toLocaleString(), hname: last.h?.name||"Home", aname: last.a?.name||"Away", h:last.h, a:last.a, lambdaH: last.final?.lambdaH || 0, lambdaA: last.final?.lambdaA || 0, real_home: rhN, real_away: raN, prob: last.prob || null, conf: last.conf || 0 });
+
+    // call learner hook
+
+    if(typeof onNewRealResult === "function") onNewRealResult(last);
+
+    showToast("Hasil nyata disimpan & learner diperbarui");
+
+  }catch(e){ console.warn(e); showToast("Gagal menyimpan hasil nyata"); }
+
+});
+
+</script>
+
+<script>
+
+/* SUPRA-OMEGA LEARNER (RTAE, SCL, CMWO) — same design as earlier but integrated cleanly */
+
+
+
+/* MODULE KEYS & default weights */
+
+const MODULE_KEYS = [ "et", "xg", "xd", "tma", "dsbi", "albb", "bcm", "kir", "tvm", "msp", "dig", "gfe", "ppi", "bpe" ];
+
+let MODULE_WEIGHTS = {};
+
+(function initDefaultWeights(){ const base = { et:1.0, xg:0.35, xd:0.18, tma:0.9, dsbi:0.6, albb:0.9, bcm:1.0, kir:0.9, tvm:0.6, msp:0.45, dig:0.12, gfe:0.1, ppi:0.6, bpe:0.75 }; MODULE_KEYS.forEach(k => MODULE_WEIGHTS[k] = base[k] || 0.5); })();
+
+
+
+let RTAE_ENABLED = true, SCL_ENABLED = true, CMWO_ENABLED = true;
+
+const TEAM_PROFILES = {};
+
+function initTeamProfile(name){ if(!name) return null; if(!TEAM_PROFILES[name]) { TEAM_PROFILES[name] = { lastUpdate: Date.now(), shots:null, sot:null, conv:null, prog:null, trans:null, poss:null, dzc:null, build:null, gpg:null, matches:0 }; } return TEAM_PROFILES[name]; }
+
+function updateTeamProfileFromMatch(name, matchData, alpha=0.18){ if(!name||!matchData) return; const p=initTeamProfile(name); const fields=["shots","sot","conv","prog","trans","poss","dzc","build","gpg"]; fields.forEach(f=>{ const v=(matchData[f]!==undefined && matchData[f]!==null)?safeNum(matchData[f],null):null; if(v===null) return; if(p[f]===null) p[f]=v; else p[f]=(1-alpha)*p[f]+alpha*v; }); p.matches=(p.matches||0)+1; p.lastUpdate=Date.now(); }
+
+function getTeamProfile(name){ return TEAM_PROFILES[name]||initTeamProfile(name); }
+
+
+
+/* SCL: Self-correction update */
+
+function estimateContribsFromMeta(meta){
+
+  const out={}; MODULE_KEYS.forEach(k=>out[k]=0);
+
+  if(!meta) return out;
+
+  if(meta.tma) out["tma"]=meta.tma-1; if(meta.dsbiH) out["dsbi"]=(meta.dsbiH||meta.dsbiA||0)-1; if(meta.albbH) out["albb"]=(meta.albbH||1)-1; if(meta.bcmH) out["bcm"]=(meta.bcmH||1)-1; if(meta.kirH) out["kir"]=(meta.kirH||1)-1; if(meta.tvm) out["tvm"]=(meta.tvm||1)-1; if(meta.msp) out["msp"]=(meta.msp||1)-1; if(meta.gfe) out["gfe"]=(meta.gfe||1)-1;
+
+  const s = Object.values(out).reduce((a,b)=>a+Math.abs(b),0); if(s===0) MODULE_KEYS.forEach(k=>out[k]=0.01);
+
+  return out;
+
+}
+
+function applySCLUpdate(learningRate=0.08){
+
+  if(!window._lastRes || window._lastRes.real_home === undefined){ showToast("SCL: No real result"); return null; }
+
+  if(!SCL_ENABLED){ showToast("SCL disabled"); return null; }
+
+  const res = window._lastRes;
+
+  const predTotal = safeNum(res.final?.lambdaH,0) + safeNum(res.final?.lambdaA,0);
+
+  const obsTotal = safeNum(res.real_home,0) + safeNum(res.real_away,0);
+
+  const error = obsTotal - predTotal;
+
+  const contrib = res.contributions || estimateContribsFromMeta(res.final?.meta || {});
+
+  const normSum = Object.values(contrib).reduce((a,b)=>a+Math.abs(b),0) || 1;
+
+  MODULE_KEYS.forEach(key=>{
+
+    const c = safeNum(contrib[key],0);
+
+    const grad = (c / normSum) * error;
+
+    const delta = clamp(learningRate * grad, -0.25, 0.25);
+
+    MODULE_WEIGHTS[key] = clamp(MODULE_WEIGHTS[key] + delta, 0.02, 3.5);
+
+  });
+
+  showToast(`SCL applied — err=${error.toFixed(3)}`);
+
+  return {error, MODULE_WEIGHTS};
+
+}
+
+
+
+/* CMWO optimizer (same as earlier) */
+
+async function runCMWO({generations=36,popSize=18,mutateScale=0.18,minHistory=12,evalLimit=120} = {}){
+
+  if(!CMWO_ENABLED){ showToast("CMWO disabled"); return null; }
+
+  if(HISTORY.length < minHistory){ showToast(`CMWO: butuh minimal ${minHistory} histori`); return null; }
+
+  showToast("CMWO running...",4000);
+
+  const evalSet = HISTORY.filter(it => it.real_home !== undefined).slice(0, Math.min(evalLimit, HISTORY.length));
+
+  if(evalSet.length < minHistory){ showToast("CMWO: histori nyata kurang"); return null; }
+
+  function evaluateWeights(weights){ let se=0,n=0; for(const it of evalSet){ const h = it.h || {}; const a = it.a || {}; const ctx = { weather: it.weather || "Normal", pitch: it.pitch || "normal", altitude: safeNum(it.altitude,0) }; const lamb = computeWeightedLambda(h,a,ctx,weights); const predTotal = lamb.lh + lamb.la; const obsTotal = safeNum(it.real_home,0) + safeNum(it.real_away,0); const diff = predTotal - obsTotal; se += diff*diff; n++; } return Math.sqrt(se/Math.max(1,n)); }
+
+  const baseWeights = Object.assign({}, MODULE_WEIGHTS);
+
+  const population = [];
+
+  for(let i=0;i<popSize;i++){ const candidate={}; MODULE_KEYS.forEach(k=>{ const noise = (Math.random()*2 -1) * mutateScale; candidate[k] = clamp(baseWeights[k] * (1 + noise), 0.01, 4.0); }); population.push({w:candidate, score:evaluateWeights(candidate)}); }
+
+  population.sort((a,b)=>a.score-b.score);
+
+  for(let gen=0; gen<generations; gen++){
+
+    const topK = Math.max(2, Math.floor(population.length / 2));
+
+    const newPop = population.slice(0, topK);
+
+    while(newPop.length < popSize){
+
+      const p1 = population[Math.floor(Math.random()*topK)].w;
+
+      const p2 = population[Math.floor(Math.random()*topK)].w;
+
+      const child = {};
+
+      MODULE_KEYS.forEach(k=>{
+
+        const gene = Math.random() < 0.5 ? p1[k] : p2[k];
+
+        const noise = (Math.random()*2 -1) * mutateScale * (1 - gen/generations);
+
+        child[k] = clamp(gene * (1 + noise), 0.005, 5.0);
+
+      });
+
+      newPop.push({w:child, score:evaluateWeights(child)});
+
+    }
+
+    newPop.sort((a,b)=>a.score-b.score);
+
+    population.length = 0; population.push(...newPop.slice(0,popSize));
+
+    if(gen % 6 === 0) console.debug(`CMWO gen ${gen} best RMSE ${population[0].score.toFixed(3)}`);
+
+  }
+
+  const best = population[0];
+
+  MODULE_KEYS.forEach(k => { MODULE_WEIGHTS[k] = clamp( (MODULE_WEIGHTS[k]*0.35) + (best.w[k]*0.65), 0.01, 5.0 ); });
+
+  showToast(`CMWO selesai — RMSE:${best.score.toFixed(3)}`);
+
+  return {bestScore: best.score, bestWeights: best.w};
+
+}
+
+
+
+/* computeWeightedLambda (same interface as used by CMWO) */
+
+function computeWeightedLambda(h,a,ctx,weights){
+
+  weights = weights || MODULE_WEIGHTS;
+
+  const etH = (typeof calcETv4_full === "function") ? calcETv4_full(h) : calcETv4_light(h);
+
+  const etA = (typeof calcETv4_full === "function") ? calcETv4_full(a) : calcETv4_light(a);
+
+  const xgH = calcXGPlusV2(h), xgA = calcXGPlusV2(a);
+
+  const xD_H = calcXDv4(h), xD_A = calcXDv4(a);
+
+  const tma = calcTMA(h,a);
+
+  const dsbiH = calcDSBI(a,h), dsbiA = calcDSBI(h,a);
+
+  const albbH = calcALBB(h,a), albbA = calcALBB(a,h);
+
+  const bcmA = calcBCM(a), bcmH = calcBCM(h);
+
+  const kirH = calcKIR(h), kirA = calcKIR(a);
+
+  const tvm = calcTVM(h,a);
+
+  const msp = calcMSP(h,a,HISTORY);
+
+  const dig = calcDIG(h,a);
+
+  const gfe = calcGFE(HISTORY);
+
+  const ppiH = calcPPI(h), ppiA = calcPPI(a);
+
+  const bpeH = calcBPE(h), bpeA = calcBPE(a);
+
+
+
+  let lh = clamp((weights.et * etH) + (weights.xg * xgH) + (weights.xd * xD_H), 0.02, 9.0);
+
+  let la = clamp((weights.et * etA) + (weights.xg * xgA) + (weights.xd * xD_A), 0.02, 9.0);
+
+
+
+  lh *= clamp(1 + (weights.tma-1) * (tma-1)*0.9 + (weights.dsbi-1) * (dsbiH-1)*0.6, 0.6, 2.6);
+
+  la *= clamp(1 + (weights.tma-1) * (tma-1)*0.9 + (weights.dsbi-1) * (dsbiA-1)*0.6, 0.6, 2.6);
+
+
+
+  lh *= clamp(1 + (weights.albb-1)*(albbH-1)*0.9, 0.7, 2.2) * clamp(1 / bcmA, 0.6, 1.3);
+
+  la *= clamp(1 + (weights.albb-1)*(albbA-1)*0.9, 0.7, 2.2) * clamp(1 / bcmH, 0.6, 1.3);
+
+
+
+  lh *= clamp(1 - (weights.kir-1)*(kirH-1)*0.12, 0.6, 1.1);
+
+  la *= clamp(1 - (weights.kir-1)*(kirA-1)*0.12, 0.6, 1.1);
+
+
+
+  lh *= clamp(1 + (weights.tvm-1)*(tvm-1)*0.12, 0.75, 1.45);
+
+  la *= clamp(1 + (weights.tvm-1)*(tvm-1)*0.12, 0.75, 1.45);
+
+
+
+  lh *= clamp(1 + (weights.msp-1)*(msp-1)*0.10 + (weights.gfe-1)*(gfe-1)*0.06, 0.7, 1.5);
+
+  la *= clamp(1 + (weights.msp-1)*(msp-1)*0.10 + (weights.gfe-1)*(gfe-1)*0.06, 0.7, 1.5);
+
+
+
+  lh *= clamp(1 + (weights.ppi-1)*(ppiH-1)*0.08 + (weights.bpe-1)*(bpeH-1)*0.06, 0.7, 1.4);
+
+  la *= clamp(1 + (weights.ppi-1)*(ppiA-1)*0.08 + (weights.bpe-1)*(bpeA-1)*0.06, 0.7, 1.4);
+
+
+
+  lh = leagueNormalize(lh, safeNum(document.getElementById("league_gpg")?.value,2.72));
+
+  la = leagueNormalize(la, safeNum(document.getElementById("league_gpg")?.value,2.72));
+
+  const cm = contextModifier({ weather: document.getElementById("weather")?.value || "Normal", pitch: document.getElementById("pitch_size")?.value || "normal", altitude: safeNum(document.getElementById("altitude")?.value,0) });
+
+  lh *= cm; la *= cm;
+
+  lh = antiSpikeStabilize(lh, safeNum(document.getElementById("antispike_sens")?.value,1));
+
+  la = antiSpikeStabilize(la, safeNum(document.getElementById("antispike_sens")?.value,1));
+
+
+
+  return {lh, la, details:{etH,etA,xgH,xgA,xD_H,xD_A,tma,dsbiH,dsbiA,albbH,albbA,bcmH,bcmA,kirH,kirA,tvm,msp,dig,gfe,ppiH,ppiA,bpeH,bpeA}};
+
+}
+
+
+
+/* add learner UI */
+
+(function addLearnerUI(){
+
+  try{
+
+    const container = document.createElement("div");
+
+    container.className = "card row";
+
+    container.style.marginTop = "10px";
+
+    container.innerHTML = `
+
+      <div style="display:flex;flex-direction:column;gap:6px">
+
+        <div style="font-weight:700">v22.1 Titan Ultra — Learner Controls</div>
+
+        <div class="row" style="gap:8px">
+
+          <button id="btn_enable_rt" class="smallBtn">Toggle RTAE</button>
+
+          <button id="btn_apply_scl" class="smallBtn">Apply SCL (from last real)</button>
+
+          <button id="btn_run_cmwo" class="smallBtn">Run CMWO (optimize)</button>
+
+          <button id="btn_show_weights" class="smallBtn">Show Weights</button>
+
+        </div>
+
+        <div id="learnerStatus" class="help" style="font-size:12px;color:#bfeef8"></div>
+
+      </div>`;
+
+    const top = document.querySelector("body > .card");
+
+    if(top && top.parentNode) top.parentNode.insertBefore(container, top.nextSibling);
+
+    document.getElementById("btn_enable_rt").addEventListener("click", ()=>{ RTAE_ENABLED = !RTAE_ENABLED; showToast("RTAE " + (RTAE_ENABLED ? "enabled":"disabled")); document.getElementById("learnerStatus").textContent = `RTAE:${RTAE_ENABLED} SCL:${SCL_ENABLED} CMWO:${CMWO_ENABLED}`; });
+
+    document.getElementById("btn_apply_scl").addEventListener("click", ()=>{ const out = applySCLUpdate(); console.log("SCL result", out); document.getElementById("learnerStatus").textContent = JSON.stringify(MODULE_WEIGHTS); });
+
+    document.getElementById("btn_run_cmwo").addEventListener("click", async ()=>{ document.getElementById("learnerStatus").textContent = "CMWO running..."; const r = await runCMWO(); console.log("CMWO", r); document.getElementById("learnerStatus").textContent = `CMWO done RMSE:${r? r.bestScore.toFixed(3) : "NA"}`; });
+
+    document.getElementById("btn_show_weights").addEventListener("click", ()=>{ alert("Weights:\\n" + JSON.stringify(MODULE_WEIGHTS, null, 2)); });
+
+    document.getElementById("learnerStatus").textContent = `RTAE:${RTAE_ENABLED} SCL:${SCL_ENABLED} CMWO:${CMWO_ENABLED}`;
+
+  }catch(e){ console.warn("addLearnerUI failed", e); }
+
+})();
+
+
+
+/* onNewRealResult hook */
+
+function onNewRealResult(savedResult){
+
+  if(!savedResult) savedResult = window._lastRes;
+
+  if(!savedResult) return;
+
+  try{
+
+    const hname = savedResult.h?.name || savedResult.hname;
+
+    const aname = savedResult.a?.name || savedResult.aname;
+
+    const hSnap = savedResult.h || {};
+
+    const aSnap = savedResult.a || {};
+
+    updateTeamProfileFromMatch(hname, Object.assign({}, hSnap, { gpg: hSnap.gpg || (savedResult.real_home || 0) }));
+
+    updateTeamProfileFromMatch(aname, Object.assign({}, aSnap, { gpg: aSnap.gpg || (savedResult.real_away || 0) }));
+
+    if(SCL_ENABLED) applySCLUpdate();
+
+    if(CMWO_ENABLED && HISTORY.filter(it=>it.real_home!==undefined).length % 24 === 0){
+
+      runCMWO({generations:20,popSize:12}).then(r=>console.debug("CMWO auto:", r)).catch(e=>console.warn(e));
+
+    }
+
+  }catch(e){ console.warn("onNewRealResult err", e); }
+
+}
+
+
+
+/* expose Titan utils */
+
+window.TITAN = { MODULE_WEIGHTS, TEAM_PROFILES, applySCLUpdate, runCMWO, computeWeightedLambda, onNewRealResult };
+
+
+
+console.info("v22.1 Titan Ultra — Learner loaded");
+
+window.addEventListener("load", ()=>{ console.info("%c v22.1 Titan Ultra ready","color:#1bc7d8;font-weight:bold"); });
+
+</script>
+
+</body>
+
+</html>
+
