@@ -191,7 +191,1128 @@ canvas{
   <div class="section-title">HISTORY</div>
   <div id="historyList"></div>
 </div>
+  <!-- ===========================
+
+      v24 BLOCK 1 — CORE ADDONS
+
+      (Tempel setelah Bagian A)
+
+=========================== -->
+
+<script>
+
+// ===============
+
+// v24 RNG (seeded)
+
+// ===============
+
+if(!window.V24) window.V24 = {};
+
+window.V24._seed = window.V24._seed || (Date.now() & 0xffffffff);
+
+
+
+function v24_seed(s){
+
+  window.V24._seed = (s >>> 0) || (Date.now() & 0xffffffff);
+
+}
+
+
+
+function v24_rand(){
+
+  // LCG generator — deterministic & safe
+
+  window.V24._seed = (1664525 * window.V24._seed + 1013904223) & 0xffffffff;
+
+  return (window.V24._seed >>> 0) / 4294967296;
+
+}
+
+
+
+function v24_randRange(min,max){
+
+  return min + v24_rand() * (max - min);
+
+}
+
+
+
+// ============================
+
+// MEL++ (Meta Engine Layer v24)
+
+// Persistent calibration storage
+
+// ============================
+
+window.MEL_STORE_KEY = "parlay_mel_store_v24";
+
+
+
+function mel_load(){
+
+  try{
+
+    const raw = localStorage.getItem(window.MEL_STORE_KEY);
+
+    if(!raw) return { calibrationFactor:1.0, autoTrain:false, updated:0 };
+
+    const obj = JSON.parse(raw);
+
+    if(!obj || typeof obj !== "object") return { calibrationFactor:1.0, autoTrain:false, updated:0 };
+
+    return obj;
+
+  }catch(e){
+
+    return { calibrationFactor:1.0, autoTrain:false, updated:0 };
+
+  }
+
+}
+
+
+
+function mel_save(obj){
+
+  try{
+
+    obj.updated = Date.now();
+
+    localStorage.setItem(window.MEL_STORE_KEY, JSON.stringify(obj));
+
+    return true;
+
+  }catch(e){
+
+    console.warn("MEL save error", e);
+
+    return false;
+
+  }
+
+}
+
+
+
+// Load / init MEL++ storage
+
+if(!window.MEL) window.MEL = mel_load();
+
+
+
+// ==================================
+
+// v24 Safe Helpers (additional)
+
+// ==================================
+
+function safeGet(obj, key, fallback){
+
+  try{
+
+    if(!obj || !(key in obj)) return fallback;
+
+    const v = obj[key];
+
+    return (v === null || v === undefined) ? fallback : v;
+
+  }catch(e){
+
+    return fallback;
+
+  }
+
+}
+
+
+
+function isValidNumber(x){
+
+  return typeof x === "number" && Number.isFinite(x);
+
+}
+
+</script>
+
 <!-- ===========================
+
+     v24 BLOCK 2 — ENGINE UPGRADE
+
+=========================== -->
+
+<script>
+
+
+
+/* ----------------------------------
+
+   AUTOEXTRACT OFFENSE v24 (improved)
+
+---------------------------------- */
+
+function autoExtractShotLocation_v24(team){
+
+  try{
+
+    const shots = safeNum(team.shots,10);
+
+    const sot   = safeNum(team.sot,3);
+
+    const final3= safeNum(team.final3,4);
+
+    const prog  = safeNum(team.prog,7);
+
+    const build = safeNum(team.build,5);
+
+    const poss  = safeNum(team.poss,50);
+
+    const cross = clamp(safeNum(team.cross,0)/100,0,1);
+
+
+
+    // distance → lower better
+
+    let dist = 15
+
+      - clamp(final3/12,0,4)
+
+      - clamp(prog/16,0,3)
+
+      - clamp((build-5)*0.28,-2.5,2.5)
+
+      + clamp((0.40 - (sot/Math.max(1,shots))) * 10, -3, 4);
+
+
+
+    dist = clamp(dist,7.5,26);
+
+
+
+    // angle → smaller means narrower angle
+
+    let angle = 18
+
+      - clamp(final3/14*10,0,12)
+
+      - clamp(prog/18*8,0,9)
+
+      + clamp((0.38 - sot/Math.max(1,shots)) * 28, -6, 10)
+
+      + clamp((0.22 - cross)*10, -4, 8);
+
+
+
+    angle = clamp(angle,6,45);
+
+
+
+    return {
+
+      avg_shot_dist_auto: roundTo(dist,2),
+
+      avg_shot_angle_auto: roundTo(angle,2)
+
+    };
+
+
+
+  }catch(e){
+
+    return { avg_shot_dist_auto:16, avg_shot_angle_auto:20 };
+
+  }
+
+}
+
+
+
+/* ------------------------------------------
+
+   AUTOEXTRACT DEFENSE v24 (improved version)
+
+------------------------------------------- */
+
+function autoExtractDefensiveShotLocation_v24(team, opp){
+
+  try{
+
+    const oppShots = safeNum(opp.shots,10);
+
+    const oppSOT   = safeNum(opp.sot,3);
+
+    const oppFinal3= safeNum(opp.final3,4);
+
+    const inter    = safeNum(team.inter,5);
+
+
+
+    let dist = 16
+
+      + clamp((oppShots-10)*0.3,-3,4)
+
+      + clamp((0.42 - oppSOT/Math.max(1,oppShots))*16,-5,6)
+
+      - clamp(oppFinal3/10*4,0,5);
+
+
+
+    dist = clamp(dist,8,28);
+
+
+
+    let angle = 22
+
+      - clamp(oppFinal3/10*6,0,10)
+
+      + clamp((0.40 - oppSOT/Math.max(1,oppShots))*32,-6,16)
+
+      + clamp((1 - inter/8)*5,-4,7);
+
+
+
+    angle = clamp(angle,8,48);
+
+
+
+    return {
+
+      avg_shot_dist_conceded_auto: roundTo(dist,2),
+
+      avg_shot_angle_conceded_auto: roundTo(angle,1)
+
+    };
+
+
+
+  }catch(e){
+
+    return { avg_shot_dist_conceded_auto:16, avg_shot_angle_conceded_auto:20 };
+
+  }
+
+}
+
+
+
+/* ---------------------------
+
+   XG+ v4 — Full Quality Model
+
+--------------------------- */
+
+function calcXGplus_v4(team){
+
+  try{
+
+    const shots = Math.max(1, safeNum(team.shots,10));
+
+    const sot   = safeNum(team.sot,3);
+
+    const final3= safeNum(team.final3,4);
+
+    const prog  = safeNum(team.prog,7);
+
+    const build = safeNum(team.build,5);
+
+    const conv  = clamp(safeNum(team.conv,12)/100, 0.02, 0.6);
+
+    const cross = clamp(safeNum(team.cross,0)/100,0,1);
+
+
+
+    // location (from auto extract if user not manually fill)
+
+    const dist  = safeNum(team.avg_shot_dist,   team.avg_shot_dist_auto);
+
+    const angle = safeNum(team.avg_shot_angle,  team.avg_shot_angle_auto);
+
+
+
+    let base = 0.05
+
+      + (sot/shots)*0.20
+
+      + (final3/60)*0.10
+
+      + (prog/130)*0.04;
+
+
+
+    base = clamp(base, 0.015, 0.48);
+
+
+
+    let loc = 1.0;
+
+    if(isValidNumber(dist) && isValidNumber(angle)){
+
+      loc = clamp(
+
+        1 + ((20 - dist)/30)*0.40
+
+          + ((25 - angle)/50)*0.30,
+
+        0.55, 1.95
+
+      );
+
+    }
+
+
+
+    loc *= clamp(1 + cross*0.15, 0.9, 1.25);
+
+
+
+    let perShot = clamp( base * loc * (1 + (build-5)/55), 0.005, 0.70 );
+
+
+
+    // MEL++ calibration factor
+
+    perShot *= safeGet(window.MEL,'calibrationFactor',1.0);
+
+
+
+    const total = clamp(perShot * shots, 0.01, 10.5);
+
+
+
+    return {
+
+      perShot: roundTo(perShot,4),
+
+      total: roundTo(total,4),
+
+      debug: {shots,sot,dist,angle,final3,prog,build,loc}
+
+    };
+
+
+
+  }catch(err){
+
+    console.warn("XG+ v4 error", err);
+
+    return { perShot:0.07, total:0.9, debug:{} };
+
+  }
+
+}
+
+
+
+/* ---------------------------
+
+   MOMENTUM ENGINE v24
+
+--------------------------- */
+
+function simulateMomentum_v24(h,a){
+
+  try{
+
+    const shotDiff = clamp(
+
+      (safeNum(h.shots,10)-safeNum(a.shots,10)) /
+
+      Math.max(1, safeNum(h.shots,10)+safeNum(a.shots,10)),
+
+      -1,1
+
+    );
+
+
+
+    const possDiff = clamp((safeNum(h.poss,50)-safeNum(a.poss,50))/100, -1,1);
+
+
+
+    let m = 1 + (shotDiff*0.22 + possDiff*0.18);
+
+
+
+    // history minor influence
+
+    const recent = (window.HISTORY_DATA||[]).slice(-20);
+
+    if(recent.length>6){
+
+      let hW=0,aW=0;
+
+      recent.forEach(r=>{
+
+        const H = safeNum(r.result?.lambdaH,0);
+
+        const A = safeNum(r.result?.lambdaA,0);
+
+        if(H>A) hW++; else if(A>H) aW++;
+
+      });
+
+      if(hW+aW>0) m *= clamp(1 + (hW-aW)/(hW+aW)*0.06, 0.92,1.10);
+
+    }
+
+
+
+    m = clamp(m, 0.70, 1.35);
+
+
+
+    return { momentum: roundTo(m,3) };
+
+  }catch(e){
+
+    return { momentum:1.0 };
+
+  }
+
+}
+
+
+
+/* -----------------------------------------
+
+   PCS v4 — Monte Carlo (deterministic-capable)
+
+------------------------------------------ */
+
+function pcsSimulateV4(team, opp, iters=900){
+
+  try{
+
+    if(team.avg_shot_dist==null || team.avg_shot_angle==null){
+
+      const auto = autoExtractShotLocation_v24(team);
+
+      team.avg_shot_dist  = auto.avg_shot_dist_auto;
+
+      team.avg_shot_angle = auto.avg_shot_angle_auto;
+
+    }
+
+
+
+    const perShot = calcXGplus_v4(team).perShot;
+
+    const shots   = Math.max(1, safeNum(team.shots,10));
+
+    const final3  = safeNum(team.final3,4);
+
+
+
+    let total=0, sq=0;
+
+    for(let i=0;i<iters;i++){
+
+      let chainLen = 1 + Math.floor(v24_randRange(0, Math.max(2,Math.round((team.prog||7)/5 + (team.build||5)/3))));
+
+      let chain=0;
+
+      let shotQ = perShot*(1 + final3/55);
+
+
+
+      for(let s=0;s<chainLen;s++){
+
+        if(v24_rand() < pressToNum(opp.press)*0.11){
+
+          chain *= 0.55;
+
+          break;
+
+        }
+
+        chain += 0.005 + v24_rand()*0.06;
+
+        shotQ += v24_rand()*0.02 + final3/80;
+
+      }
+
+
+
+      if(v24_rand() < (0.10 + final3/60 + (team.prog||7)/240)){
+
+        const dist = safeNum(team.avg_shot_dist,16);
+
+        const ang  = safeNum(team.avg_shot_angle,20);
+
+
+
+        const loc = clamp(
+
+          1 + ((16-dist)/24)*0.25 + ((22-ang)/50)*0.15,
+
+        0.80, 1.50);
+
+
+
+        const quality = shotQ * loc * clamp(1 + ((team.sot||3)/shots-0.33)*0.8, 0.75,1.4);
+
+
+
+        chain += quality*(0.045 + v24_rand()*0.11) * clamp(shots/12,0.4,3.0);
+
+      }
+
+
+
+      total += chain;
+
+      sq    += chain*chain;
+
+    }
+
+
+
+    const mean = total/iters;
+
+    const xTF  = clamp(mean*(1 + final3/34), 0.01, 7.5);
+
+
+
+    return {
+
+      xTF: roundTo(xTF,4),
+
+      mean: roundTo(mean,4),
+
+      sd: roundTo(Math.sqrt(Math.max(0,sq/iters - mean*mean)),4),
+
+      iterations: iters
+
+    };
+
+
+
+  }catch(err){
+
+    console.warn("PCS v4 error", err);
+
+    return { xTF:0.75, mean:0.6, sd:0.12, iterations:0 };
+
+  }
+
+}
+
+
+
+</script>
+
+<!-- ===========================
+
+     v24 BLOCK 3 — FINALIZER + UI + ANALYZE OVERRIDE
+
+=========================== -->
+
+<script>
+
+// ---------- Odds integrator v2 ----------
+
+function impliedProbFromOdds(o){
+
+  if(!o) return 0.33;
+
+  if(typeof o === 'number') return 1/Math.max(1e-6, o);
+
+  if(typeof o === 'string' && o.indexOf('/')>0){
+
+    // convert fractional like "1/2"
+
+    try{ const parts=o.split('/'); return 1/(Number(parts[0])/Number(parts[1]) + 1); }catch(e){}
+
+  }
+
+  if(o.dec) return 1/Math.max(1e-6, safeNum(o.dec, o));
+
+  return 0.33;
+
+}
+
+
+
+function computeOddsTrapV2(market){
+
+  try{
+
+    if(!market) return { trapScore:0, meta:{} };
+
+    const ph_open = impliedProbFromOdds(market.hdp_open);
+
+    const ph_now  = impliedProbFromOdds(market.hdp_now);
+
+    const move = ph_now - ph_open;
+
+    const liquidity = clamp(safeNum(market.liq,1), 0.2, 3.0);
+
+    const trap = clamp(Math.abs(move) * liquidity * 1.2, 0, 1.0);
+
+    const pou_open = impliedProbFromOdds(market.ou_open);
+
+    const pou_now  = impliedProbFromOdds(market.ou_now);
+
+    const ouMove = Math.abs(pou_now - pou_open);
+
+    const trapCombined = clamp(trap + ouMove*0.55, 0, 1.0);
+
+    return { trapScore: roundTo(trapCombined,3), meta:{move,ouMove,liquidity} };
+
+  }catch(e){ return { trapScore:0, meta:{} }; }
+
+}
+
+
+
+// ---------- finalize v24 ----------
+
+function finalize_v24(base, h, a, pcsEst, opts={}){
+
+  try{
+
+    let lambdaH = guardNumber(base.lambdaH, safeNum(h.goals,1.2));
+
+    let lambdaA = guardNumber(base.lambdaA, safeNum(a.goals,1.0));
+
+
+
+    // ICM penalties
+
+    const icmH = computeICM(h.absensi||{}), icmA = computeICM(a.absensi||{});
+
+    lambdaH *= icmH.atkPenalty; lambdaA *= icmA.atkPenalty;
+
+    lambdaH *= clamp(icmA.defPenalty,0.58,1.0); lambdaA *= clamp(icmH.defPenalty,0.58,1.0);
+
+
+
+    // XG target (v4)
+
+    const xgH = (typeof calcXGplus_v4==='function')? calcXGplus_v4(h).total : lambdaH;
+
+    const xgA = (typeof calcXGplus_v4==='function')? calcXGplus_v4(a).total : lambdaA;
+
+
+
+    // PCS v4 targets
+
+    const pcsH = pcsEst && pcsEst.xTF_H ? pcsEst.xTF_H : xgH;
+
+    const pcsA = pcsEst && pcsEst.xTF_A ? pcsEst.xTF_A : xgA;
+
+
+
+    // DPF influence
+
+    const dpfH = opts.dpfH || computeDPF(h,a,window.HISTORY_DATA);
+
+    const dpfA = opts.dpfA || computeDPF(a,h,window.HISTORY_DATA);
+
+    lambdaA *= clamp(1 - dpfH.pressureScore * 0.16, 0.56, 1.06);
+
+    lambdaH *= clamp(1 - dpfA.pressureScore * 0.16, 0.56, 1.06);
+
+
+
+    // Tier Ω
+
+    const tierWeightH = clamp(1 + (safeNum(h.tierOmega,0)-0.5)*0.18, 0.8, 1.26);
+
+    const tierWeightA = clamp(1 + (safeNum(a.tierOmega,0)-0.5)*0.18, 0.8, 1.26);
+
+    lambdaH *= tierWeightH; lambdaA *= tierWeightA;
+
+
+
+    // press influence
+
+    lambdaH *= clamp(1 + (pressToNum(h.press)-0.5)*0.14, 0.8, 1.28);
+
+    lambdaA *= clamp(1 + (pressToNum(a.press)-0.5)*0.14, 0.8, 1.28);
+
+
+
+    // softly mix toward pcs/xg
+
+    lambdaH = lerp(lambdaH, pcsH, 0.28);
+
+    lambdaA = lerp(lambdaA, pcsA, 0.28);
+
+
+
+    // momentum scaling
+
+    const mom = (typeof simulateMomentum_v24 === 'function') ? simulateMomentum_v24(h,a) : {momentum:1.0};
+
+    lambdaH *= mom.momentum; lambdaA *= clamp((lambdaA * (2 - mom.momentum))/Math.max(0.0001,1), 0.02, 12);
+
+
+
+    // MEL++ auto-tune (non-destructive)
+
+    if(window.MEL && window.MEL.autoTrain){
+
+      try{
+
+        const recent = (window.HISTORY_DATA || []).slice(-80);
+
+        if(recent.length>8){
+
+          let pred=0, real=0;
+
+          recent.forEach(r=>{
+
+            pred += safeNum(r.result && (r.result.lambdaH||0) + (r.result.lambdaA||0),0);
+
+            real += safeNum(r.h && r.h.goals,0) + safeNum(r.a && r.a.goals,0);
+
+          });
+
+          if(pred>0){
+
+            const fac = clamp((real/pred) * safeGet(window.MEL,'calibrationFactor',1.0), 0.75, 1.30);
+
+            window.MEL.calibrationFactor = fac;
+
+            mel_save(window.MEL);
+
+          }
+
+        }
+
+      }catch(e){}
+
+    }
+
+
+
+    // market trap nudging (only affects meta/confidence)
+
+    let market = opts.market || null;
+
+    const marketTrap = market ? computeOddsTrapV2(market) : {trapScore:0};
+
+
+
+    // small v24-stable jitter using seeded RNG
+
+    const vsm = computeVSM(h,a);
+
+    lambdaH *= clamp(1 + (vsm*0.05) * (v24_rand() - 0.5), 0.92, 1.06);
+
+    lambdaA *= clamp(1 + (vsm*0.05) * (v24_rand() - 0.5), 0.92, 1.06);
+
+
+
+    lambdaH = clamp(lambdaH, 0.02, 14.0);
+
+    lambdaA = clamp(lambdaA, 0.02, 14.0);
+
+
+
+    return { lambdaH: roundTo(lambdaH,4), lambdaA: roundTo(lambdaA,4), meta:{dpfH,dpfA,pcsEst,momentum:mom,market:marketTrap} };
+
+  }catch(e){
+
+    console.warn("finalize_v24 error", e);
+
+    return { lambdaH:1.1, lambdaA:1.0, meta:{} };
+
+  }
+
+}
+
+
+
+// ---------- override analyzeMatch to use v24 (safe override) ----------
+
+(function overrideAnalyze(){
+
+  try{
+
+    const old = window.analyzeMatch || null;
+
+    window.analyzeMatch_v23_backup = old;
+
+
+
+    window.analyzeMatch = function(){
+
+      try{
+
+        // read teams (uses existing readTeam if present, else fallback)
+
+        const h = (typeof readTeam === 'function') ? readTeam('h') : (
+
+          { name:document.getElementById('h_team')?.value||'H', goals:safeNum(document.getElementById('h_goals')?.value,1.2) }
+
+        );
+
+        const a = (typeof readTeam === 'function') ? readTeam('a') : (
+
+          { name:document.getElementById('a_team')?.value||'A', goals:safeNum(document.getElementById('a_goals')?.value,1.0) }
+
+        );
+
+
+
+        // auto-extract using v24 autoextract if not provided
+
+        const autoH = (typeof autoExtractShotLocation_v24 === 'function') ? autoExtractShotLocation_v24(h) : autoExtractShotLocation(h);
+
+        const autoA = (typeof autoExtractShotLocation_v24 === 'function') ? autoExtractShotLocation_v24(a) : autoExtractShotLocation(a);
+
+        if(!h.avg_shot_dist) h.avg_shot_dist = autoH.avg_shot_dist_auto;
+
+        if(!h.avg_shot_angle) h.avg_shot_angle = autoH.avg_shot_angle_auto;
+
+        if(!a.avg_shot_dist) a.avg_shot_dist = autoA.avg_shot_dist_auto;
+
+        if(!a.avg_shot_angle) a.avg_shot_angle = autoA.avg_shot_angle_auto;
+
+
+
+        // defensive auto
+
+        const defH = (typeof autoExtractDefensiveShotLocation_v24==='function') ? autoExtractDefensiveShotLocation_v24(h,a) : autoExtractDefensiveShotLocation(h,a);
+
+        const defA = (typeof autoExtractDefensiveShotLocation_v24==='function') ? autoExtractDefensiveShotLocation_v24(a,h) : autoExtractDefensiveShotLocation(a,h);
+
+        if(!h.avg_shot_dist_conceded) h.avg_shot_dist_conceded = defH.avg_shot_dist_conceded_auto;
+
+        if(!a.avg_shot_dist_conceded) a.avg_shot_dist_conceded = defA.avg_shot_dist_conceded_auto;
+
+
+
+        // PCS (v4)
+
+        const useWorker = !!(window.V24 && window.V24.workerEnabled);
+
+        const pcsH = (typeof pcsSimulateV4 === 'function') ? pcsSimulateV4(h,a, (useWorker?1200:900) ) : pcsSimulateV3(h,a,520);
+
+        const pcsA = (typeof pcsSimulateV4 === 'function') ? pcsSimulateV4(a,h, (useWorker?1200:900) ) : pcsSimulateV3(a,h,520);
+
+        const pcsEst = { xTF_H: pcsH.xTF, xTF_A: pcsA.xTF, raw:{h:pcsH,a:pcsA} };
+
+
+
+        // DPF
+
+        const dpfH = computeDPF(h,a,window.HISTORY_DATA);
+
+        const dpfA = computeDPF(a,h,window.HISTORY_DATA);
+
+
+
+        // base lambda
+
+        const base = { lambdaH: safeNum(h.goals,1.2), lambdaA: safeNum(a.goals,1.0) };
+
+
+
+        // market capture from small UI fields if present
+
+        const market = (function(){
+
+          try{
+
+            const mk = {};
+
+            const elOpenH = document.getElementById('market_hdp_open');
+
+            if(elOpenH) mk.hdp_open = safeNum(elOpenH.value) || null;
+
+            const elNowH = document.getElementById('market_hdp_now');
+
+            if(elNowH) mk.hdp_now = safeNum(elNowH.value) || null;
+
+            const elOpenOU = document.getElementById('market_ou_open');
+
+            if(elOpenOU) mk.ou_open = safeNum(elOpenOU.value) || null;
+
+            const elNowOU = document.getElementById('market_ou_now');
+
+            if(elNowOU) mk.ou_now = safeNum(elNowOU.value) || null;
+
+            const liq = document.getElementById('market_liq');
+
+            if(liq) mk.liq = safeNum(liq.value,1);
+
+            return Object.keys(mk).length? mk : null;
+
+          }catch(e){return null;}
+
+        })();
+
+
+
+        // finalize v24
+
+        const final = finalize_v24(base, h, a, pcsEst, { dpfH, dpfA, market });
+
+
+
+        // distribution & probs
+
+        const dist = scoreDistribution(final.lambdaH, final.lambdaA, 9);
+
+        const prob = threeWayProb(final.lambdaH, final.lambdaA);
+
+
+
+        // picks & summary
+
+        const pick1x2 = (prob.home > 0.48) ? '1' : (prob.away > 0.48) ? '2' : 'X';
+
+        const expectedTotal = final.lambdaH + final.lambdaA;
+
+        const pickOU = expectedTotal > 2.55 ? 'Over' : 'Under';
+
+        const pickHdp = (prob.home - prob.away > 0.18) ? `H -${roundTo((final.lambdaH-final.lambdaA)/0.6,2)}` : (prob.away - prob.home > 0.18) ? `A -${roundTo((final.lambdaA-final.lambdaH)/0.6,2)}` : 'No clear';
+
+
+
+        const res = { h,a,final,dist,prob,pcsEst,meta:{dpfH,dpfA,market},picks:{pick1x2,pickOU,pickHdp},conf: clamp(0.45 + Math.abs(prob.home - prob.away)*0.5, 0.05, 0.98) };
+
+
+
+        // render (reuse existing display areas)
+
+        const rb = document.getElementById('resultBox');
+
+        if(rb) rb.innerHTML = `<div><b>${h.name}</b> vs <b>${a.name}</b></div><div class="note">ΛH:${final.lambdaH} ΛA:${final.lambdaA} | Conf:${Math.round(res.conf*100)}%</div><div style="margin-top:6px">Picks: 1X2:<b>${res.picks.pick1x2}</b> | HDP:<b>${res.picks.pickHdp}</b> | OU:<b>${res.picks.pickOU}</b></div>`;
+
+
+
+        // draw visuals
+
+        try{ drawShotMapFromResult(res); drawDPFCanvas('dpfMap', mergeTwoGridsForViz(dpfH.grid, dpfA.grid)); }catch(e){}
+
+
+
+        // history entry includes meta
+
+        addHistoryEntry(h,a,{lambdaH:final.lambdaH, lambdaA:final.lambdaA, meta:res.meta, picks:res.picks, probs:res.prob, conf:res.conf});
+
+
+
+        // return result
+
+        return res;
+
+
+
+      }catch(err){
+
+        console.warn("analyzeMatch(v24) failed", err);
+
+        // fallback to previous analyze if exists
+
+        if(window.analyzeMatch_v23_backup) return window.analyzeMatch_v23_backup();
+
+        alert('Analysis error — check console (v24).');
+
+      }
+
+    };
+
+
+
+  }catch(e){ console.warn("overrideAnalyze err", e); }
+
+})();
+
+
+
+// ---------- UI additions: market fields and MEL slider (safe create) ----------
+
+(function createV24UI(){
+
+  try{
+
+    const container = document.querySelector('.container');
+
+    if(!container) return;
+
+
+
+    // avoid duplicates
+
+    if(!document.getElementById('v24_controls')){
+
+      const div = document.createElement('div'); div.className='card'; div.id='v24_controls';
+
+      div.innerHTML = '<div class="section-title">v24 Controls — MEL & Market</div>' +
+
+        '<div class="note">MEL calibration factor: <input id="melSlider" type="range" min="0.7" max="1.3" step="0.01" value="'+safeGet(window.MEL,'calibrationFactor',1.0)+'"> <span id="melVal">'+safeGet(window.MEL,'calibrationFactor',1.0)+'</span></div>' +
+
+        '<div class="note">MEL auto-train: <input id="melAuto" type="checkbox" '+(safeGet(window.MEL,'autoTrain',false)?'checked':'')+'> <button id="melSave" class="small" style="margin-left:8px">Save MEL</button></div>' +
+
+        '<div style="margin-top:8px" class="note">Market (optional): HDP open <input id="market_hdp_open" placeholder="1.95" style="width:70px"> now <input id="market_hdp_now" placeholder="1.85" style="width:70px"> OU open <input id="market_ou_open" placeholder="2.05" style="width:70px"> now <input id="market_ou_now" placeholder="2.05" style="width:70px"> Liquidity <input id="market_liq" placeholder="1" style="width:50px"></div>' +
+
+        '<div style="margin-top:8px"><button id="applyMelBtn" class="small">Apply MEL</button> <button id="toggleWorkerBtn" class="small">Toggle Worker</button></div>';
+
+      // insert near top (after header)
+
+      container.insertBefore(div, container.children[1]);
+
+
+
+      const melSlider = document.getElementById('melSlider');
+
+      const melVal = document.getElementById('melVal');
+
+      melSlider.addEventListener('input', function(){ melVal.textContent = this.value; if(!window.MEL) window.MEL={calibrationFactor:parseFloat(this.value)}; window.MEL.calibrationFactor = parseFloat(this.value); });
+
+
+
+      document.getElementById('melSave').addEventListener('click', function(){ mel_save(window.MEL||{calibrationFactor:1.0}); alert('MEL saved'); });
+
+      document.getElementById('applyMelBtn').addEventListener('click', function(){ mel_save(window.MEL||{calibrationFactor:1.0}); alert('MEL applied'); });
+
+
+
+      document.getElementById('toggleWorkerBtn').addEventListener('click', function(){
+
+        if(!window.V24) window.V24={};
+
+        window.V24.workerEnabled = !window.V24.workerEnabled;
+
+        alert('Worker enabled = ' + !!window.V24.workerEnabled + '. Note: web workers may be limited on some mobile browsers.');
+
+      });
+
+
+
+      document.getElementById('melAuto').addEventListener('change', function(e){
+
+        if(!window.MEL) window.MEL={calibrationFactor:1.0, autoTrain:false};
+
+        window.MEL.autoTrain = e.target.checked;
+
+        mel_save(window.MEL);
+
+        alert('MEL auto-train = ' + window.MEL.autoTrain);
+
+      });
+
+    }
+
+
+
+  }catch(e){ console.warn("createV24UI err", e); }
+
+})();
+
+
+
+</script>
+
      BAGIAN B — ENGINE UTAMA
 =========================== -->
 <script>
