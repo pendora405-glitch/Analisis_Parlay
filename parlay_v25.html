@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Parlay Titan v25 CLEAN</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    body {
+        background:#0f1117;
+        font-family:Arial, sans-serif;
+        color:#e7e7e7;
+        margin:0;
+        padding:0;
+    }
+    .container {
+        width:90%;
+        max-width:1200px;
+        margin:20px auto;
+        padding:20px;
+        background:#151821;
+        border-radius:10px;
+        box-shadow:0 0 18px rgba(0,0,0,0.35);
+    }
+    h1 {
+        text-align:center;
+        margin-bottom:20px;
+        color:#6cb4ff;
+        font-weight:600;
+    }
+    h2 {
+        margin-top:22px;
+        color:#9fcaff;
+    }
+    .row {
+        display:flex;
+        gap:15px;
+        flex-wrap:wrap;
+    }
+    .col {
+        flex:1;
+        min-width:280px;
+    }
+    input, select {
+        width:100%;
+        padding:8px;
+        margin:6px 0;
+        border-radius:6px;
+        border:none;
+        background:#1c1f28;
+        color:#e7e7e7;
+    }
+    button {
+        margin-top:12px;
+        padding:10px 15px;
+        width:100%;
+        border:none;
+        background:#2a61ff;
+        color:white;
+        border-radius:6px;
+        font-size:15px;
+        cursor:pointer;
+        font-weight:600;
+    }
+    button:hover {
+        background:#3a72ff;
+    }
+    .resultBox {
+        background:#10131a;
+        margin-top:25px;
+        padding:15px;
+        border-radius:8px;
+        border:1px solid #1d2433;
+    }
+    canvas {
+        background:#0d0f15;
+        border:1px solid #222836;
+        margin-top:15px;
+        width:100%;
+        max-width:460px;
+        height:260px;
+    }
+    #historyList {
+        margin-top:15px;
+    }
+    .history-item {
+        border-bottom:1px solid #242a38;
+        padding:10px 0;
+    }
+    .small-note {
+        font-size:13px;
+        color:#9ca3af;
+    }
+</style>
+
+</head>
+<body>
+<div class="container">
+
+<h1>PARLAY TITAN v25 — CLEAN EDITION</h1>
+
+<h2>Input Data Pertandingan</h2>
+
+<div class="row">
+
+    <div class="col">
+        <h3>Home Team</h3>
+        <input id="h_name" placeholder="Nama Tim Home">
+        <input id="h_shots" placeholder="Shots">
+        <input id="h_sot" placeholder="Shots on Target">
+        <input id="h_prog" placeholder="Progressive Passes">
+        <input id="h_final3" placeholder="Final Third Entries">
+        <input id="h_poss" placeholder="Possession %">
+        <input id="h_press" placeholder="Pressing Style (low/medium/high)">
+        <input id="h_inter" placeholder="Interceptions">
+        <input id="h_abs" placeholder="Absensi (GK:1; DF:2; MD:1; FW:0)">
+        <input id="h_elo" placeholder="ELO Rating">
+        <input id="h_build" placeholder="Build Quality (1-10)">
+        <input id="h_rest" placeholder="Rest Days">
+        <input id="h_rotation" placeholder="Rotation Level (0-10)">
+    </div>
+
+    <div class="col">
+        <h3>Away Team</h3>
+        <input id="a_name" placeholder="Nama Tim Away">
+        <input id="a_shots" placeholder="Shots">
+        <input id="a_sot" placeholder="Shots on Target">
+        <input id="a_prog" placeholder="Progressive Passes">
+        <input id="a_final3" placeholder="Final Third Entries">
+        <input id="a_poss" placeholder="Possession %">
+        <input id="a_press" placeholder="Pressing Style (low/medium/high)">
+        <input id="a_inter" placeholder="Interceptions">
+        <input id="a_abs" placeholder="Absensi (GK:1; DF:2; MD:1; FW:0)">
+        <input id="a_elo" placeholder="ELO Rating">
+        <input id="a_build" placeholder="Build Quality (1-10)">
+        <input id="a_rest" placeholder="Rest Days">
+        <input id="a_rotation" placeholder="Rotation Level (0-10)">
+    </div>
+
+</div>
+
+<h3>Market Data (opsional)</h3>
+<div class="row">
+    <div class="col">
+        <input id="odds_home" placeholder="Odds Home">
+        <input id="odds_draw" placeholder="Odds Draw">
+        <input id="odds_away" placeholder="Odds Away">
+    </div>
+</div>
+
+<button onclick="analyzeMatch_v25()">ANALYZE MATCH</button>
+
+<div id="resultBox" class="resultBox"></div>
+
+<h3>Shot Map</h3>
+<canvas id="shotMap"></canvas>
+
+<h3>DPF Map</h3>
+<canvas id="dpfMap"></canvas>
+
+<h3>Riwayat Analisis</h3>
+<div id="historyList"></div>
+<button onclick="exportHistoryJSON()">Export History JSON</button>
+<!-- v25 CLEAN — PART 2/10 : Core Helpers + RNG + Probability Base -->
+<script>
+/* =====================================================
+   v25 CORE HELPERS — aman, clean, tidak mengubah UI
+===================================================== */
+
+function safeNum(v, d = 0) {
+    const n = parseFloat(v);
+    return isNaN(n) ? d : n;
+}
+
+function clamp(v, min, max) {
+    return v < min ? min : (v > max ? max : v);
+}
+
+function roundTo(v, n = 3) {
+    return Math.round(v * Math.pow(10, n)) / Math.pow(10, n);
+}
+
+/* =====================================================
+   v25 RANDOM ENGINE — lebih stabil dari v24
+   - Memiliki distribusi lebih natural
+   - Tidak menghasilkan lonjakan besar
+   - Netral (tidak condong)
+===================================================== */
+function v25_rand() {
+    // Box–Muller transform, dist normal → convert back to controlled uniform
+    let u = Math.random();
+    let v = Math.random();
+    let z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    // Normalize to ~0..1 with soft clamp
+    let r = clamp((z + 3) / 6, 0.001, 0.999);
+    return r;
+}
+
+/* =====================================================
+   PRESSING CONVERTER v25 — lebih presisi
+===================================================== */
+function pressToNum(text) {
+    if (!text) return 0.5;
+    text = text.toString().trim().toLowerCase();
+    if (text.includes("low")) return 0.22;
+    if (text.includes("med")) return 0.50;
+    if (text.includes("high")) return 0.78;
+    if (text.includes("gegen")) return 0.85;
+    return 0.5;
+}
+
+/* =====================================================
+   POISSON & SCORING FUNCTIONS v25
+===================================================== */
+function poisson(k, lambda) {
+    if (lambda <= 0) return 0;
+    return Math.pow(lambda, k) * Math.exp(-lambda) / factorial(k);
+}
+
+function factorial(n) {
+    if (n < 0) return 1;
+    let r = 1;
+    for (let i = 2; i <= n; i++) r *= i;
+    return r;
+}
+
+/* =====================================================
+   SCORE DISTRIBUTION v25 (0–8 goals)
+===================================================== */
+function scoreDist(lambdaH, lambdaA) {
+    const dist = [];
+    for (let h = 0; h <= 8; h++) {
+        for (let a = 0; a <= 8; a++) {
+            dist.push({
+                h, a,
+                p: poisson(h, lambdaH) * poisson(a, lambdaA)
+            });
+        }
+    }
+    return dist;
+}
+
+/* =====================================================
+   PROBABILITAS 3-WAY (HOME–DRAW–AWAY)
+   v25: lebih presisi dan lebih stabil
+===================================================== */
+function prob3W(lambdaH, lambdaA) {
+    let pHome = 0;
+    let pDraw = 0;
+    let pAway = 0;
+
+    for (let h = 0; h <= 8; h++) {
+        for (let a = 0; a <= 8; a++) {
+            const p = poisson(h, lambdaH) * poisson(a, lambdaA);
+            if (h > a) pHome += p;
+            else if (h === a) pDraw += p;
+            else pAway += p;
+        }
+    }
+
+    const total = pHome + pDraw + pAway;
+    if (total === 0) return { home: 0.33, draw: 0.33, away: 0.33 };
+
+    return {
+        home: roundTo(pHome / total, 4),
+        draw: roundTo(pDraw / total, 4),
+        away: roundTo(pAway / total, 4)
+    };
+}
+</script>
+<!-- v25 CLEAN — PART 3/10 : AutoExtract v25 + Absence ICM + TeamReader -->
+<script>
+/* =====================================================
+   AUTO-EXTRACT OFFENSE v25
+   - Lebih stabil
+   - Memprioritaskan transisi, progresi, dan final third
+   - Tidak condong Over/Under
+===================================================== */
+function autoExtractOffense(t) {
+    try {
+        const shots = safeNum(t.shots, 10);
+        const sot = safeNum(t.sot, 4);
+        const prog = safeNum(t.prog, 12);
+        const final3 = safeNum(t.final3, 15);
+        const build = safeNum(t.build, 5);
+
+        // finishing quality
+        const finQ = clamp(sot / Math.max(1, shots), 0.05, 1.0);
+
+        // transition engine
+        const trans = clamp((prog / 25) + (final3 / 38), 0, 2);
+
+        // offense base
+        let off = 0;
+        off += shots * 0.13;
+        off += sot * 0.18;
+        off += prog * 0.06;
+        off += final3 * 0.08;
+        off += (build - 5) * 0.10;
+
+        // finishing bonus
+        off *= 0.75 + finQ * 0.55;
+
+        // smooth clamp
+        return roundTo(clamp(off, 2, 42), 3);
+
+    } catch (e) {
+        return 8;
+    }
+}
+
+/* =====================================================
+   AUTO-EXTRACT DEFENSE v25
+   - Memperhalus XG suppression
+   - Menggabungkan pressing lawan
+===================================================== */
+function autoExtractDefense(t) {
+    try {
+        const inter = safeNum(t.inter, 5);
+        const press = pressToNum(t.press);
+        const poss = safeNum(t.poss, 50);
+
+        let def = 0;
+
+        def += inter * 0.35;
+        def += (1 - press) * 12;
+        def += clamp((poss - 50) / 1.8, -8, 8);
+
+        return roundTo(clamp(def, 3, 38), 3);
+
+    } catch (e) {
+        return 10;
+    }
+}
+
+/* =====================================================
+   ICM v25 — Absence Impact
+   - GK / DF / MD / FW = berbeda bobot
+   - Lebih akurat dari versi v24
+===================================================== */
+function computeICM(absText) {
+    if (!absText) {
+        return {
+            atkPenalty: 1.0,
+            defPenalty: 1.0,
+            note: "No absences"
+        };
+    }
+
+    let atk = 1.0;
+    let def = 1.0;
+
+    try {
+        const parts = absText.toString().split(";");
+        for (let p of parts) {
+            p = p.trim().toUpperCase();
+            if (p.startsWith("GK")) def *= 0.88;
+            if (p.startsWith("DF")) def *= 0.92;
+            if (p.startsWith("MD")) {
+                atk *= 0.95;
+                def *= 0.97;
+            }
+            if (p.startsWith("FW")) atk *= 0.93;
+        }
+    } catch (e) {}
+
+    return {
+        atkPenalty: roundTo(clamp(atk, 0.55, 1), 3),
+        defPenalty: roundTo(clamp(def, 0.55, 1), 3),
+        note: "Penalty applied"
+    };
+}
+
+/* =====================================================
+   TEAM READER v25 — fondasi data sebelum XG+
+===================================================== */
+function readTeam_v25(prefix) {
+    return {
+        name: document.getElementById(prefix + "_name")?.value || "",
+        shots: safeNum(document.getElementById(prefix + "_shots")?.value),
+        sot: safeNum(document.getElementById(prefix + "_sot")?.value),
+        prog: safeNum(document.getElementById(prefix + "_prog")?.value),
+        final3: safeNum(document.getElementById(prefix + "_final3")?.value),
+        poss: safeNum(document.getElementById(prefix + "_poss")?.value),
+        press: document.getElementById(prefix + "_press")?.value || "",
+        inter: safeNum(document.getElementById(prefix + "_inter")?.value),
+        abs: document.getElementById(prefix + "_abs")?.value || "",
+        elo: safeNum(document.getElementById(prefix + "_elo")?.value),
+        build: safeNum(document.getElementById(prefix + "_build")?.value),
+        rest: safeNum(document.getElementById(prefix + "_rest")?.value),
+        rotation: safeNum(document.getElementById(prefix + "_rotation")?.value)
+    };
+}
+</script>
+<!-- v25 CLEAN — PART 4/10 : XG+ v5 Hybrid Neural Engine -->
+<script>
+/* =====================================================
+   XG+ v5 HYBRID NEURAL
+   - Tidak memakai model eksternal
+   - Murni full offline
+   - Menggabungkan 12 sinyal mikro
+   - Netral, tidak condong
+===================================================== */
+
+function xgp5_estimateShotLocation(team, opp) {
+    try {
+        const shots = Math.max(1, safeNum(team.shots, 10));
+        const sot = safeNum(team.sot, 3);
+        const prog = safeNum(team.prog, 10);
+        const final3 = safeNum(team.final3, 12);
+        const build = safeNum(team.build, 5);
+
+        const finQ = clamp(sot / shots, 0.05, 1.0);
+        const oppDef = clamp(autoExtractDefense(opp) / 40, 0, 1.2);
+
+        let dist =
+            18
+            - (prog * 0.08)
+            - (final3 * 0.06)
+            + (oppDef * 4)
+            + ((1 - finQ) * 5);
+
+        dist = clamp(dist, 7, 26);
+
+        let angle =
+            24
+            - (final3 * 0.05)
+            - ((build - 5) * 0.8)
+            + (oppDef * 3);
+
+        angle = clamp(angle, 6, 42);
+
+        return {
+            dist: roundTo(dist, 2),
+            angle: roundTo(angle, 2)
+        };
+
+    } catch (e) {
+        return { dist: 17, angle: 22 };
+    }
+}
+
+/* =====================================================
+   MICRO-WEIGHTS v25
+===================================================== */
+const XGP5_WEIGHTS = {
+    w_shots:      0.048,
+    w_sot:        0.11,
+    w_prog:       0.022,
+    w_final3:     0.028,
+    w_finQ:       0.18,
+    w_chain:      0.24,
+    w_pressure:   -0.16,
+    w_distance:   -0.015,
+    w_angle:      -0.009
+};
+
+/* =====================================================
+   Attack Chain Stability (ACR v25)
+===================================================== */
+function xgp5_chainStability(team) {
+    try {
+        const prog = safeNum(team.prog, 10);
+        const final3 = safeNum(team.final3, 12);
+        const sot = safeNum(team.sot, 3);
+        const shots = Math.max(1, safeNum(team.shots, 8));
+
+        const finQ = clamp(sot / shots, 0.05, 1.0);
+
+        let chain =
+            (prog / 28) * 0.45 +
+            (final3 / 40) * 0.35 +
+            finQ * 0.65;
+
+        return clamp(chain, 0.15, 1.35);
+
+    } catch (e) {
+        return 1.0;
+    }
+}
+
+/* =====================================================
+   XG+ v5 MAIN ENGINE
+   RETURNS: expected goals (xG adjusted)
+===================================================== */
+function xgp5(team, opp) {
+    try {
+        const shots = safeNum(team.shots, 10);
+        const sot = safeNum(team.sot, 3);
+        const prog = safeNum(team.prog, 10);
+        const final3 = safeNum(team.final3, 12);
+        const oppPress = pressToNum(opp.press);
+
+        const finQ = clamp(sot / Math.max(1, shots), 0.05, 1.0);
+
+        const loc = xgp5_estimateShotLocation(team, opp);
+        const chain = xgp5_chainStability(team);
+
+        let score =
+            shots * XGP5_WEIGHTS.w_shots +
+            sot * XGP5_WEIGHTS.w_sot +
+            prog * XGP5_WEIGHTS.w_prog +
+            final3 * XGP5_WEIGHTS.w_final3 +
+            finQ * XGP5_WEIGHTS.w_finQ +
+            chain * XGP5_WEIGHTS.w_chain +
+            oppPress * XGP5_WEIGHTS.w_pressure +
+            loc.dist * XGP5_WEIGHTS.w_distance +
+            loc.angle * XGP5_WEIGHTS.w_angle;
+
+        score = clamp(score, 0.15, 5.2);
+
+        return {
+            xg: roundTo(score, 4),
+            finQ,
+            chain,
+            loc
+        };
+
+    } catch (e) {
+        return {
+            xg: 1.1,
+            finQ: 0.3,
+            chain: 1.0,
+            loc: { dist: 17, angle: 20 }
+        };
+    }
+}
+
+</script>
+<!-- v25 CLEAN — PART 5/10
+     PCS v5 — Gaussian Monte-Carlo (stable) + Game State Sim v25
+-->
+
+<script>
+/* =====================================================
+   PCS v5 — Gaussian Monte-Carlo
+   - Uses v25_rand() and Box–Muller internal for gaussian sampling
+   - More stable on heavy mismatches (dynamic iterations)
+   - Returns xTF (threat factor), mean, sd, iterations, sample array (trimmed)
+   - Does NOT mutate team objects
+===================================================== */
+
+function _boxMullerNormal() {
+  // returns standard normal ~N(0,1)
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+function pcs_v5_sim(team, opp, iterationsBase = 900) {
+  try {
+    // safe local copies
+    const T = Object.assign({}, team);
+    const O = Object.assign({}, opp);
+
+    const baseXG = safeNum(T.xg_total || T.xg || 1.0);
+    const shots = Math.max(1, safeNum(T.shots, 10));
+    const chain = safeNum(T.chain || 1.0);
+    const reliability = safeNum(T.reliability || 1.0);
+
+    // imbalance factor based on shots & xg diff
+    const oppXG = safeNum(O.xg_total || O.xg || 1.0);
+    const imbalance = clamp(Math.abs(baseXG - oppXG) / Math.max(0.2, Math.max(baseXG, oppXG)), 0, 1);
+    const shotImbalance = clamp(Math.abs(shots - Math.max(1, safeNum(O.shots, 10))) / Math.max(1, shots), 0, 1);
+
+    // dynamic iteration scale (900..1500)
+    const iters = Math.round(iterationsBase + (imbalance + shotImbalance) * 600);
+
+    // sampling params: mean = baseXG scaled by reliability and chain & small noise
+    const meanBase = baseXG * clamp(0.9 + reliability * 0.12 + (chain - 1) * 0.06, 0.7, 1.4);
+    const sdBase = clamp(0.38 + Math.max(0.0, baseXG/6) * 0.12 + imbalance * 0.28, 0.08, 1.25);
+
+    let sum = 0, sumSq = 0;
+    const samples = [];
+    const pressImpact = clamp(pressToNum(O.press) * 0.08, 0, 0.2);
+
+    for (let i = 0; i < iters; i++) {
+      // gaussian perturbation around mean
+      const z = _boxMullerNormal();
+      // combine with v25_rand small bias to avoid exact normal behaviour
+      const randBias = (v25_rand() - 0.5) * 0.12;
+      let sample = meanBase + z * sdBase * (0.9 + randBias);
+
+      // pressure may shrink scoring propensity
+      sample *= (1 - pressImpact * (0.6 + v25_rand() * 0.8));
+
+      // card events / interruptions chance reduce sample
+      const cardChance = clamp((safeNum(T.inter, 0) + safeNum(O.inter, 0)) / 60, 0, 0.3);
+      if (Math.random() < cardChance * 0.025) sample *= clamp(0.7 + Math.random() * 0.15, 0.62, 0.95);
+
+      // prevent negative
+      sample = Math.max(0, sample);
+
+      samples.push(sample);
+      sum += sample;
+      sumSq += sample * sample;
+    }
+
+    const mean = sum / iters;
+    const variance = Math.max(0, (sumSq / iters) - (mean * mean));
+    const sd = Math.sqrt(variance);
+
+    // xTF: threat factor normalized and smoothed (bounded)
+    // Use logistic-like shrink to avoid extremes
+    const rawXTF = mean * (1 + chain * 0.08);
+    const xTF = roundTo(clamp(rawXTF * (0.94 + (1 - Math.tanh(sd)) * 0.06), 0.02, 10), 4);
+
+    // smoothing based on reliability & chain (dampen extremes further)
+    const smoothXTF = roundTo(lerp(xTF, mean, 0.18), 4);
+
+    // trimmed sample summary (min, p10, p50, p90, max)
+    samples.sort((a,b)=>a-b);
+    const summary = {
+      min: roundTo(samples[0],4),
+      p10: roundTo(samples[Math.floor(iters*0.1)]||samples[0],4),
+      p50: roundTo(samples[Math.floor(iters*0.5)]||mean,4),
+      p90: roundTo(samples[Math.floor(iters*0.9)]||samples[samples.length-1],4),
+      max: roundTo(samples[samples.length-1],4)
+    };
+
+    return {
+      xTF: smoothXTF,
+      mean: roundTo(mean,4),
+      sd: roundTo(sd,4),
+      iterations: iters,
+      summary: summary,
+      raw: { samplesCount: samples.length }
+    };
+
+  } catch (e) {
+    console.warn("pcs_v5_sim error", e);
+    return { xTF: 0.9, mean: safeNum(team.xg_total || 1.0), sd: 0.14, iterations: iterationsBase, summary: {}, raw:{} };
+  }
+}
+
+/* =====================================================
+   GAME STATE SIMULATION v25 (GSSv2)
+   - Simulates small dynamic multipliers when team leads/behind
+   - Returns multipliers for on-the-fly adjustment (not auto-applied)
+   - Meant to be used inside finalize_v25 to model reaction
+===================================================== */
+function gameStateSim_v25(h, a) {
+  try {
+    // base chase factors from earlier computeGSS
+    const gss = (typeof computeGSS === 'function') ? computeGSS(h,a) : { multipliers: { behindH: 1.03, behindA: 1.03 }, chaseH:0, chaseA:0 };
+
+    // fatigue effect: less rest -> more conservative when leading
+    const restH = safeNum(h.rest, 3), restA = safeNum(a.rest, 3);
+    const restFactorH = clamp(1 - (3 - Math.min(restH,3)) * 0.02, 0.92, 1.06);
+    const restFactorA = clamp(1 - (3 - Math.min(restA,3)) * 0.02, 0.92, 1.06);
+
+    // rotation instability
+    const rotH = clamp(1 - safeNum(h.rotation,0) * 0.01, 0.88, 1.06);
+    const rotA = clamp(1 - safeNum(a.rotation,0) * 0.01, 0.88, 1.06);
+
+    // aggressive bias when behind vs leading
+    const behindMultiplierH = clamp(gss.multipliers.behindH * restFactorH * rotH, 0.94, 1.16);
+    const behindMultiplierA = clamp(gss.multipliers.behindA * restFactorA * rotA, 0.94, 1.16);
+
+    // leading multiplier (teams often park a bit) — slight reduction
+    const leadingMultiplierH = clamp(1 / behindMultiplierH * 0.98, 0.86, 1.02);
+    const leadingMultiplierA = clamp(1 / behindMultiplierA * 0.98, 0.86, 1.02);
+
+    return {
+      behind: { H: roundTo(behindMultiplierH,3), A: roundTo(behindMultiplierA,3) },
+      leading: { H: roundTo(leadingMultiplierH,3), A: roundTo(leadingMultiplierA,3) },
+      meta: { restFactorH: roundTo(restFactorH,3), restFactorA: roundTo(restFactorA,3), rotH: roundTo(rotH,3), rotA: roundTo(rotA,3) }
+    };
+
+  } catch (e) {
+    return { behind: {H:1.03,A:1.03}, leading: {H:0.98,A:0.98}, meta:{} };
+  }
+}
+
+/* =====================================================
+   Export for debug & integration
+===================================================== */
+window.pcs_v5_sim = pcs_v5_sim;
+window.gameStateSim_v25 = gameStateSim_v25;
+
+</script>
+<!-- v25 CLEAN — PART 6/10
+     finalize_v25 — integrate XG+v5, PCS v5, Tactical DNA, Defensive Grid v3,
+     Chaos Probability Engine, Over/Under Neutralizer, GameState adjustments.
+-->
+<script>
+/* ===========================
+   Tactical DNA (light)
+   returns tactical fingerprint used internally (no UI required)
+=========================== */
+function tacticalDNA(h,a){
+  try{
+    // combine style proxies and structure
+    const hPress = pressToNum(h.press), aPress = pressToNum(a.press);
+    const hBuild = safeNum(h.build,5), aBuild = safeNum(a.build,5);
+    const hProg = safeNum(h.prog,10), aProg = safeNum(a.prog,10);
+    const dna = {
+      hAgg: clamp(hPress*0.9 + (hProg/30),0,1.4),
+      aAgg: clamp(aPress*0.9 + (aProg/30),0,1.4),
+      hBuild, aBuild,
+      note: "tDNA"
+    };
+    return dna;
+  }catch(e){ return {hAgg:1,aAgg:1}; }
+}
+
+/* ===========================
+   Defensive Grid v3 (refined computeDDS)
+   returns gridFrag and pressure index
+=========================== */
+function defensiveGrid_v3(team, opp){
+  try{
+    // reuse autoExtractDefense but generate grid-like frag map
+    const def = safeNum(autoExtractDefense(team), 8);
+    const oppOff = safeNum(autoExtractOffense(opp), 8);
+    const fragBase = clamp((oppOff/28) - (def/36), -0.2, 1.2);
+    // create 6x6 grid with jitter influenced by fragBase and absences
+    const absCount = ((team.abs||"").toString().match(/:/g)||[]).length;
+    const grid = [];
+    for(let r=0;r<6;r++){
+      const row=[];
+      for(let c=0;c<6;c++){
+        const v = clamp(fragBase + (Math.random()-0.5)*0.14 + absCount*0.02, 0, 1.2);
+        row.push(roundTo(v,3));
+      }
+      grid.push(row);
+    }
+    const pressure = clamp((def/40) * 0.9 + (1 - fragBase)*0.12, 0.02, 1.0);
+    return { fragIndex: roundTo(clamp(fragBase,0,1),3), grid, pressure: roundTo(pressure,3) };
+  }catch(e){ return { fragIndex:0, grid:[], pressure:0.12 }; }
+}
+
+/* ===========================
+   Chaos Probability Engine (CPE)
+   - uses CRM, ECI, EVI, LMS to compute chaotic risk [0..1]
+=========================== */
+function chaosProbability(h,a, meta){
+  try{
+    const crm = (typeof computeCRM==='function') ? computeCRM(h,a) : {crmScore:0};
+    const eci = (typeof computeECI==='function') ? computeECI(h,a) : {cardProb:0};
+    const evi = (typeof computeEVI==='function') ? computeEVI(h,a) : {varAdj:1};
+    const lms = (typeof computeLMS==='function') ? computeLMS(h,a) : {openness:0};
+
+    // combine signals conservatively
+    let score = 0;
+    score += crm.crmScore * 0.45;
+    score += eci.cardProb * 0.30;
+    score += _safeNum = 0; // placeholder to keep consistent
+    score += _safeNum; // no-op to avoid lint
+    score += Math.abs(lms.openness) * 0.12;
+    // factor in important matches less chaotic
+    const impWeight = (meta && meta.importance && meta.importance.weight) ? meta.importance.weight : 1;
+    score = clamp(score * (1.0 / impWeight), 0, 1);
+    return roundTo(score,3);
+  }catch(e){ return 0; }
+}
+
+/* ===========================
+   Over/Under Neutralizer
+   - adjusts varMultiplier only, ensures total goals don't blow up
+=========================== */
+function ouNeutralizer(lambdaH, lambdaA, meta){
+  try{
+    const total = lambdaH + lambdaA;
+    // target smoothing: cap variance influence for very high totals
+    let varAdjust = 1.0;
+    if(total > 4.5) varAdjust = clamp(1 - (total - 4.5) * 0.06, 0.7, 1.0);
+    if(total < 1.2) varAdjust = clamp(1 + (1.2 - total) * 0.06, 1.0, 1.12);
+    // if tactical indicates parked bus from both sides, reduce variance
+    const tH = (meta && meta.tactical && meta.tactical.tH) ? meta.tactical.tH : null;
+    const tA = (meta && meta.tactical && meta.tactical.tA) ? meta.tactical.tA : null;
+    if(tH && tA && tH.atkMult<0.9 && tA.atkMult<0.9) varAdjust *= 0.92;
+    return roundTo(clamp(varAdjust, 0.65, 1.12), 3);
+  }catch(e){ return 1.0; }
+}
+
+/* ===========================
+   finalize_v25 — full integration
+   - DOES NOT force lambda by market
+   - returns { H, A, meta, confidence, varMultiplier }
+=========================== */
+function finalize_v25(base, h, a, pcs, opts){
+  try{
+    opts = opts || {};
+    // prepare basic meta
+    const meta = meta || {};
+
+    // Tactical DNA
+    const tDNA = tacticalDNA(h,a);
+
+    // defensive grid
+    const dGridH = defensiveGrid_v3(h,a);
+    const dGridA = defensiveGrid_v3(a,h);
+
+    // xg using xgp5 (more advanced)
+    const xgHobj = (typeof xgp5 === 'function') ? xgp5(h,a) : { xg: safeNum(h.xg_total, safeNum(base.H,1)) };
+    const xgAobj = (typeof xgp5 === 'function') ? xgp5(a,h) : { xg: safeNum(a.xg_total, safeNum(base.A,1)) };
+
+    // attach into team for PCS
+    h.xg_total = safeNum(xgHobj.xg, safeNum(base.H,1));
+    a.xg_total = safeNum(xgAobj.xg, safeNum(base.A,1));
+
+    // compute pcs_v5 if available
+    let pcsH = (pcs && pcs.H) ? pcs.H : null;
+    let pcsA = (pcs && pcs.A) ? pcs.A : null;
+    try{
+      if(typeof pcs_v5_sim === 'function'){
+        const rH = pcs_v5_sim(h,a);
+        const rA = pcs_v5_sim(a,h);
+        pcsH = safeNum(rH.xTF, pcsH || rH.xTF);
+        pcsA = safeNum(rA.xTF, pcsA || rA.xTF);
+        meta.pcs_raw = { rH, rA };
+      }
+    }catch(e){ /* ignore */ }
+
+    // base lambdas anchored on base (user GPG) but nudged by xg and pcs
+    let lambdaH = safeNum(base.H, 1) * clamp(1 + (h.xg_total - safeNum(base.H,1))*0.12, 0.75, 1.5);
+    let lambdaA = safeNum(base.A, 1) * clamp(1 + (a.xg_total - safeNum(base.A,1))*0.12, 0.75, 1.5);
+
+    // mix towards pcs targets moderately
+    lambdaH = lerp(lambdaH, safeNum(pcsH, lambdaH), 0.30);
+    lambdaA = lerp(lambdaA, safeNum(pcsA, lambdaA), 0.30);
+
+    // apply defensive grid pressure
+    lambdaH *= clamp(1 - dGridA.pressure * 0.14, 0.6, 1.1);
+    lambdaA *= clamp(1 - dGridH.pressure * 0.14, 0.6, 1.1);
+
+    // elo & importance & streak multipliers (light)
+    const eloInf = (typeof eloInfluence === 'function') ? eloInfluence(h.elo, a.elo) : { multH:1, multA:1 };
+    const imp = (typeof importanceFactor === 'function') ? importanceFactor(opts.matchType || 'league', opts.matchStage || '') : { weight:1, confBoost:0 };
+    const streak = (typeof streakMomentum === 'function') ? streakMomentum(h.name, a.name, 8) : { mH:1, mA:1 };
+
+    lambdaH *= eloInf.multH * streak.mH * imp.weight;
+    lambdaA *= eloInf.multA * streak.mA * imp.weight;
+
+    // game state simulation adjustment (not applied permanently—used for meta)
+    const gs = (typeof gameStateSim_v25 === 'function') ? gameStateSim_v25(h,a) : { behind:{H:1.03,A:1.03}, leading:{H:0.98,A:0.98} };
+
+    // small vsm jitter scaled by MEL calibration
+    const melF = (typeof mel_getFactor === 'function') ? mel_getFactor() : 1.0;
+    const vsm = (typeof computeVSM === 'function') ? computeVSM(h,a) : 0.5;
+    lambdaH *= clamp(1 + (vsm*0.04)*(v25_rand()-0.5) * melF, 0.88, 1.10);
+    lambdaA *= clamp(1 + (vsm*0.04)*(v25_rand()-0.5) * melF, 0.88, 1.10);
+
+    // finalize clamps
+    const finalH = roundTo(clamp(lambdaH, 0.02, 16), 4);
+    const finalA = roundTo(clamp(lambdaA, 0.02, 16), 4);
+
+    // chaos probability (CPE)
+    const cpe = chaosProbability(h,a, { importance: imp });
+
+    // market influence (keep light semantics)
+    const market = (opts && opts.market) ? opts.market : null;
+    const marketInfo = (typeof computeMarketInfluence === 'function') ? computeMarketInfluence(market) : { trapScore:0, confBoost:0, varMultiplier:1 };
+
+    // over/under neutralizer for var multiplier
+    const ouAdj = ouNeutralizer(finalH, finalA, { tactical:{ tH: tDNA, tA: tDNA }, importance: imp });
+
+    // base probs & confidence
+    const probs = prob3W(finalH, finalA);
+    let baseConf = clamp(0.45 + Math.abs(probs.home - probs.away)*0.5, 0.02, 0.995);
+
+    // combine confidence adjustments conservatively:
+    // - importance increases confidence slightly
+    // - marketInfo.confBoost increases confidence slightly
+    // - chaos decreases confidence
+    // - streak may nudge small
+    let conf = baseConf;
+    conf *= (1 + safeNum(imp.confBoost,0));
+    conf *= (1 + safeNum(marketInfo.confBoost,0));
+    conf *= clamp(1 - cpe*0.30, 0.72, 1.02);
+    conf *= clamp(1 + (streak.hScore - streak.aScore) * 0.02, 0.94, 1.06);
+    conf = clamp(conf, 0.02, 0.995);
+
+    // combine varMultiplier (market * ouAdj * chaos)
+    let varMultiplier = clamp((marketInfo.varMultiplier || 1) * ouAdj * (1 + cpe*0.08), 0.55, 1.25);
+
+    // meta assembly
+    const metaOut = {
+      tactical: { tDNA },
+      dGrid: { dGridH, dGridA },
+      xg: { h: xgHobj, a: xgAobj },
+      pcs: { input: pcs, pcsH: pcsH, pcsA: pcsA },
+      gs, elo: eloInf, importance: imp, streak, cpe, marketInfo
+    };
+
+    return {
+      H: finalH,
+      A: finalA,
+      meta: metaOut,
+      confidence: roundTo(conf,3),
+      varMultiplier: roundTo(varMultiplier,3)
+    };
+
+  }catch(e){
+    console.warn("finalize_v25 error", e);
+    // fallback: call finalize_v242 if exists
+    if(typeof finalize_v242 === 'function') return finalize_v242(base,h,a,pcs,opts);
+    return { H: safeNum(base.H,1), A: safeNum(base.A,1), meta:{}, confidence:0.5, varMultiplier:1.0 };
+  }
+}
+
+/* ===========================
+   Compatibility & attach
+   - Expose finalize_v25 and optionally override finalize_v242 safely
+=========================== */
+try{
+  window.finalize_v25 = finalize_v25;
+  // If the environment already uses finalize_v242, do not override automatically.
+  // But provide an idempotent helper to switch engine:
+  window.useFinalizeV25 = function(enable){
+    if(enable){
+      window._orig_finalize = window._orig_finalize || window.finalize_v242 || window.finalize_v241 || null;
+      window.finalize_v242 = finalize_v25;
+      window.finalize_v241 = finalize_v25;
+      console.log("Using finalize_v25 as active finalizer.");
+    }else{
+      if(window._orig_finalize) {
+        window.finalize_v242 = window._orig_finalize;
+        window.finalize_v241 = window._orig_finalize;
+        console.log("Reverted finalize to original.");
+      }
+    }
+  };
+}catch(e){ console.warn("finalize_v25 attach failed", e); }
+
+</script>
+<!-- v25 CLEAN — PART 7/10
+     analyzeMatch_v25, UI hooks, render, history + export
+-->
+<script>
+/* ===========================
+   In-memory history store (v25)
+=========================== */
+window._PARLAY_HISTORY_V25 = window._PARLAY_HISTORY_V25 || [];
+
+/* ===========================
+   Helper: build team object from UI (v25)
+=========================== */
+function buildTeamFromUI(prefix){
+  return {
+    name: document.getElementById(prefix + "_name")?.value || "",
+    shots: safeNum(document.getElementById(prefix + "_shots")?.value, 10),
+    sot: safeNum(document.getElementById(prefix + "_sot")?.value, 3),
+    prog: safeNum(document.getElementById(prefix + "_prog")?.value, 10),
+    final3: safeNum(document.getElementById(prefix + "_final3")?.value, 12),
+    poss: safeNum(document.getElementById(prefix + "_poss")?.value, 50),
+    press: document.getElementById(prefix + "_press")?.value || "medium",
+    inter: safeNum(document.getElementById(prefix + "_inter")?.value, 6),
+    abs: document.getElementById(prefix + "_abs")?.value || "",
+    elo: safeNum(document.getElementById(prefix + "_elo")?.value, 1500),
+    build: safeNum(document.getElementById(prefix + "_build")?.value, 5),
+    rest: safeNum(document.getElementById(prefix + "_rest")?.value, 3),
+    rotation: safeNum(document.getElementById(prefix + "_rotation")?.value, 0)
+  };
+}
+
+/* ===========================
+   Build market object from UI (v25)
+   Optional fields: odds_home, odds_draw, odds_away
+=========================== */
+function readMarket_v25(){
+  try{
+    const mk = {};
+    const oh = document.getElementById("odds_home")?.value;
+    const od = document.getElementById("odds_draw")?.value;
+    const oa = document.getElementById("odds_away")?.value;
+    if(oh) mk.home = safeNum(oh);
+    if(od) mk.draw = safeNum(od);
+    if(oa) mk.away = safeNum(oa);
+    return Object.keys(mk).length ? mk : null;
+  }catch(e){ return null; }
+}
+
+/* ===========================
+   Core analyzeMatch_v25
+=========================== */
+function analyzeMatch_v25(){
+  try{
+    const h = buildTeamFromUI("h");
+    const a = buildTeamFromUI("a");
+
+    // compute xg via xgp5 (if available)
+    if(typeof xgp5 === "function"){
+      const xh = xgp5(h,a);
+      const xa = xgp5(a,h);
+      h.xg_total = safeNum(xh.xg, safeNum(h.xg_total, h.xg || 1.0));
+      a.xg_total = safeNum(xa.xg, safeNum(a.xg_total, a.xg || 1.0));
+      // attach loc/chain for PCS
+      h.loc = xh.loc; h.chain = xh.chain; h.finQ = xh.finQ;
+      a.loc = xa.loc; a.chain = xa.chain; a.finQ = xa.finQ;
+    }else{
+      h.xg_total = safeNum(h.xg_total, 1.0);
+      a.xg_total = safeNum(a.xg_total, 1.0);
+    }
+
+    // compute ACR/continuity reliability if available
+    if(typeof computeACR === "function"){
+      const acrH = computeACR(h,a);
+      const acrA = computeACR(a,h);
+      h.reliability = acrH.reliability; a.reliability = acrA.reliability;
+    }else{
+      h.reliability = 1; a.reliability = 1;
+    }
+
+    // PCS v5 simulation
+    let pcsRes = { H: null, A: null, rawH:null, rawA:null };
+    try{
+      if(typeof pcs_v5_sim === "function"){
+        const rH = pcs_v5_sim(h,a);
+        const rA = pcs_v5_sim(a,h);
+        pcsRes.H = safeNum(rH.xTF, rH.mean || 1.0);
+        pcsRes.A = safeNum(rA.xTF, rA.mean || 1.0);
+        pcsRes.rawH = rH; pcsRes.rawA = rA;
+      }
+    }catch(e){
+      console.warn("PCS v5 failed", e);
+    }
+
+    // base lambdas anchored by simple heuristics (user can override by adding h.xg_total to base)
+    const base = { H: safeNum(h.xg_total, 1.0), A: safeNum(a.xg_total, 1.0) };
+
+    // market read (optional)
+    const market = readMarket_v25();
+
+    // finalize: prefer finalize_v25 if present; else fallback to finalize_v242/241
+    const finalizer = (typeof finalize_v25 === "function") ? finalize_v25
+                      : (typeof finalize_v242 === "function") ? finalize_v242
+                      : (typeof finalize_v241 === "function") ? finalize_v241
+                      : null;
+
+    if(!finalizer){
+      console.error("No finalizer available (finalize_v25/v242/v241).");
+      alert("Engine error: finalizer missing.");
+      return null;
+    }
+
+    const final = finalizer(base, h, a, pcsRes, { market: market });
+
+    // compute derived
+    const probs = prob3W(final.H, final.A);
+    const expectedTotal = roundTo(final.H + final.A, 3);
+    const pickOU = expectedTotal > 2.55 ? "Over" : "Under";
+    const pick1x2 = (probs.home > probs.away) ? "1" : (probs.away > probs.home ? "2" : "X");
+
+    // render result
+    const rb = document.getElementById("resultBox");
+    if(rb){
+      rb.innerHTML = `<div style="font-weight:700; color:#bfe0ff">${h.name || 'Home'} vs ${a.name || 'Away'}</div>
+        <div class="small-note">λH: <b>${final.H}</b> — λA: <b>${final.A}</b> | Expected total: <b>${expectedTotal}</b></div>
+        <div class="small-note">Picks: 1X2: <b>${pick1x2}</b> — OU: <b>${pickOU}</b></div>
+        <div class="small-note">Confidence: <b>${Math.round(safeNum(final.confidence,0.5)*100)}%</b> — VarMult: <b>${final.varMultiplier}</b></div>
+        <div class="small-note" style="margin-top:6px">Meta: <small>${JSON.stringify({ cpe: final.meta?.cpe, importance: final.meta?.importance?.weight, elo: final.meta?.elo?.diff }, null, 0)}</small></div>
+      `;
+    }
+
+    // render visuals if present
+    if(typeof window._renderShotMap_v25 === "function") window._renderShotMap_v25(h,a);
+    if(typeof window._renderDPF_v25 === "function") window._renderDPF_v25(final.meta?.dGrid?.dGridH || final.meta?.dGrid?.dGridA);
+
+    // push history
+    const entry = {
+      time: (new Date()).toISOString(),
+      home: h,
+      away: a,
+      market: market,
+      final: final,
+      probs: probs,
+      pcs: pcsRes
+    };
+    window._PARLAY_HISTORY_V25.unshift(entry);
+    // keep length reasonable
+    if(window._PARLAY_HISTORY_V25.length > 300) window._PARLAY_HISTORY_V25.length = 300;
+    renderHistory_v25();
+
+    return { entry, final, probs, pcsRes };
+  }catch(e){
+    console.error("analyzeMatch_v25 error", e);
+    alert("Analysis failed — see console.");
+    return null;
+  }
+}
+
+/* ===========================
+   Render history (v25)
+=========================== */
+function renderHistory_v25(){
+  const box = document.getElementById("historyList");
+  if(!box) return;
+  box.innerHTML = "";
+  for(const item of window._PARLAY_HISTORY_V25){
+    const div = document.createElement("div");
+    div.className = "history-item";
+    div.innerHTML = `<div><b>${item.home.name || 'Home'}</b> vs <b>${item.away.name || 'Away'}</b> — <span class="small-note">${item.time}</span></div>
+      <div class="small-note">λH:${item.final.H} λA:${item.final.A} — Conf:${Math.round(item.final.confidence*100)}%</div>`;
+    box.appendChild(div);
+  }
+}
+
+/* ===========================
+   Export history JSON (v25)
+=========================== */
+function exportHistoryJSON(){
+  try{
+    const data = JSON.stringify(window._PARLAY_HISTORY_V25, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "parlay_history_v25.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }catch(e){
+    alert("Export failed: " + e);
+  }
+}
+
+/* ===========================
+   Hook analyze button (if present)
+   If UI uses onclick attribute, it will call analyzeMatch_v25() directly
+=========================== */
+window.addEventListener("DOMContentLoaded", ()=>{
+  try{
+    const btn = document.querySelector("button[onclick='analyzeMatch_v25()']");
+    if(btn) btn.onclick = analyzeMatch_v25;
+  }catch(e){}
+});
+</script>
+<!-- v25 CLEAN — PART 8/10
+     Renderers: ShotMap_v25, DPF_v25, Worker wrapper (optional)
+-->
+
+<script>
+/* ===========================
+   ShotMap_v25 — uses team.loc if available
+   - draws heat-like shot points and expected shot cluster
+=========================== */
+window._renderShotMap_v25 = function(h, a){
+  try{
+    const cv = document.getElementById("shotMap");
+    if(!cv) return;
+    const cx = cv.getContext("2d");
+    // clear
+    cx.clearRect(0,0,cv.width,cv.height);
+    // pitch background
+    cx.fillStyle = "#07101a";
+    cx.fillRect(0,0,cv.width,cv.height);
+
+    // helper to draw cluster
+    function drawCluster(team, color){
+      const shots = Math.max(1, safeNum(team.shots, 8));
+      const loc = team.loc || { dist: safeNum(team.dist_off, 16), angle: safeNum(team.angle_off, 20) };
+      // convert polar-ish estimate to canvas coords
+      const cxMid = cv.width * 0.5;
+      const cyMid = cv.height * 0.6;
+      for(let i=0;i<shots;i++){
+        const jitterX = (Math.random()-0.5) * 0.18 * cv.width;
+        const jitterY = (Math.random()-0.5) * 0.12 * cv.height;
+        const radial = clamp((26 - loc.dist)/26, 0.05, 0.95);
+        const angleNorm = (loc.angle - 6) / (48 - 6); // 0..1
+        const x = cxMid + (radial * (cx.width*0.42) * (angleNorm - 0.5)) + jitterX;
+        const y = cyMid - (radial * (cv.height*0.36)) + jitterY;
+        cx.beginPath();
+        cx.fillStyle = color;
+        cx.globalAlpha = 0.9;
+        cx.arc(x, y, 4 + (Math.random()*3), 0, Math.PI*2);
+        cx.fill();
+      }
+    }
+
+    drawCluster(h, "rgba(98,165,255,0.95)");
+    drawCluster(a, "rgba(255,117,117,0.95)");
+
+    // small legend
+    cx.globalAlpha = 1.0;
+    cx.fillStyle = "#9fbfe8";
+    cx.fillRect(8,8,8,8);
+    cx.fillStyle = "#fff";
+    cx.font = "12px Arial";
+    cx.fillText("Home cluster", 22, 16);
+    cx.fillStyle = "#ff9f9f";
+    cx.fillRect(110,8,8,8);
+    cx.fillStyle = "#fff";
+    cx.fillText("Away cluster", 124, 16);
+  }catch(e){
+    console.warn("ShotMap_v25 error", e);
+  }
+};
+
+/* ===========================
+   DPF_v25 — draws defensive grid from dGrid.grid (6x6)
+=========================== */
+window._renderDPF_v25 = function(gridObj){
+  try{
+    const cv = document.getElementById("dpfMap");
+    if(!cv || !gridObj || !gridObj.grid) return;
+    const cx = cv.getContext("2d");
+    cx.clearRect(0,0,cv.width,cv.height);
+    const grid = gridObj.grid;
+    const rows = grid.length;
+    const cols = grid[0] ? grid[0].length : 0;
+    const cellW = cv.width / cols;
+    const cellH = cv.height / rows;
+
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const v = clamp(grid[r][c], 0, 1.2);
+        // color ramp: low -> dark blue, mid -> teal, high -> orange-red
+        let color;
+        if(v < 0.3) color = `rgba(${Math.floor(20 + v*40)},${Math.floor(30 + v*60)},${Math.floor(90 + v*120)},0.95)`;
+        else if(v < 0.7) color = `rgba(${Math.floor(20+v*90)},${Math.floor(120 - v*40)},${Math.floor(120 - v*20)},0.95)`;
+        else color = `rgba(${Math.floor(160 + (v-0.7)*120)},${Math.floor(60 - (v-0.7)*40)},${Math.floor(40)},0.95)`;
+
+        cx.fillStyle = color;
+        cx.fillRect(c*cellW, r*cellH, cellW, cellH);
+        // subtle grid lines
+        cx.strokeStyle = "rgba(0,0,0,0.15)";
+        cx.strokeRect(c*cellW, r*cellH, cellW, cellH);
+      }
+    }
+  }catch(e){
+    console.warn("DPF_v25 render error", e);
+  }
+};
+
+/* ===========================
+   WEB WORKER (optional) — inline safe blob
+   - compute heavy market or PCS parts if desired
+   - fallback to sync if worker not available
+=========================== */
+let _v25_worker = null;
+try{
+  const wkCode = `
+    self.onmessage = function(e){
+      try{
+        const d = e.data || {};
+        if(d.cmd === 'ping'){ self.postMessage({cmd:'pong'}); return; }
+        if(d.cmd === 'marketCalc'){
+          // very small calc stub - echo back
+          const r = { trapScore:0, confBoost:0, varMultiplier:1 };
+          self.postMessage({ cmd:'marketResult', result: r });
+        }
+      }catch(err){
+        self.postMessage({ cmd:'error', error: err.toString() });
+      }
+    };
+  `;
+  const blob = new Blob([wkCode], { type: 'application/javascript' });
+  _v25_worker = new Worker(URL.createObjectURL(blob));
+}catch(e){
+  _v25_worker = null;
+  console.warn("v25 worker not available", e);
+}
+
+function runWorkerMarketCalc(market){
+  return new Promise((resolve)=>{
+    if(!_v25_worker) return resolve({ error: "no-worker" });
+    const to = setTimeout(()=>resolve({ error: "timeout" }), 1500);
+    _v25_worker.onmessage = (ev)=>{
+      clearTimeout(to);
+      resolve(ev.data.result || ev.data);
+    };
+    _v25_worker.postMessage({ cmd:'marketCalc', market });
+  });
+}
+
+/* ===========================
+   Expose renderer hooks (safe)
+=========================== */
+window._renderShotMap_v25 = window._renderShotMap_v25;
+window._renderDPF_v25 = window._renderDPF_v25;
+window.runWorkerMarketCalc = runWorkerMarketCalc;
+
+</script>
+<!-- v25 CLEAN — PART 9/10
+     Advanced History Viewer · Export CSV/JSON · Legend · Small UI tweaks
+-->
+
+<script>
+/* ===========================
+   HISTORY ADVANCED VIEW v25
+   - render list with quick inspect (show meta)
+   - filter by team name (client-side)
+=========================== */
+function renderHistoryAdvanced(){
+  try{
+    const box = document.getElementById("historyList");
+    if(!box) return;
+    box.innerHTML = "";
+
+    const list = window._PARLAY_HISTORY_V25 || [];
+    // optional simple filter control (non-invasive)
+    let filterVal = (document.getElementById("historyFilter") && document.getElementById("historyFilter").value) || "";
+    filterVal = (filterVal || "").toString().trim().toLowerCase();
+
+    for(const item of list){
+      try{
+        const hname = (item.home.name || "").toString();
+        const aname = (item.away.name || "").toString();
+        if(filterVal){
+          if(hname.toLowerCase().indexOf(filterVal) === -1 && aname.toLowerCase().indexOf(filterVal) === -1) continue;
+        }
+        const div = document.createElement("div");
+        div.className = "history-item";
+        div.style.display = "flex";
+        div.style.flexDirection = "column";
+        div.style.gap = "6px";
+
+        const top = document.createElement("div");
+        top.innerHTML = `<div style="font-weight:700">${hname || 'Home'} vs ${aname || 'Away'}</div>
+                         <div class="small-note">λH: ${item.final.H} | λA: ${item.final.A} — Conf: ${Math.round((item.final.confidence||0)*100)}%</div>
+                         <div class="small-note">${item.time}</div>`;
+
+        const btnRow = document.createElement("div");
+        btnRow.style.display = "flex";
+        btnRow.style.gap = "8px";
+
+        const inspectBtn = document.createElement("button");
+        inspectBtn.textContent = "Inspect";
+        inspectBtn.style.padding = "6px 8px";
+        inspectBtn.style.fontSize = "13px";
+        inspectBtn.onclick = ()=>{ showInspectModal(item); };
+
+        const copyBtn = document.createElement("button");
+        copyBtn.textContent = "Copy JSON";
+        copyBtn.style.padding = "6px 8px";
+        copyBtn.style.fontSize = "13px";
+        copyBtn.onclick = ()=>{ navigator.clipboard && navigator.clipboard.writeText(JSON.stringify(item,null,2)); alert("Copied JSON to clipboard"); };
+
+        btnRow.appendChild(inspectBtn);
+        btnRow.appendChild(copyBtn);
+
+        div.appendChild(top);
+        div.appendChild(btnRow);
+
+        box.appendChild(div);
+      }catch(e){ console.warn("history render item failed", e); }
+    }
+  }catch(e){
+    console.warn("renderHistoryAdvanced error", e);
+  }
+}
+
+/* ===========================
+   Inspect modal (light, DOM-only)
+=========================== */
+function showInspectModal(item){
+  try{
+    // reusable modal container
+    let modal = document.getElementById("v25_inspect_modal");
+    if(!modal){
+      modal = document.createElement("div");
+      modal.id = "v25_inspect_modal";
+      modal.style.position = "fixed";
+      modal.style.left = "8px";
+      modal.style.right = "8px";
+      modal.style.top = "8px";
+      modal.style.bottom = "8px";
+      modal.style.background = "rgba(6,8,12,0.95)";
+      modal.style.color = "#e7eefc";
+      modal.style.padding = "14px";
+      modal.style.zIndex = 99999;
+      modal.style.overflow = "auto";
+      modal.style.border = "1px solid rgba(255,255,255,0.04)";
+      modal.style.borderRadius = "8px";
+
+      const close = document.createElement("button");
+      close.textContent = "Close";
+      close.style.position = "absolute";
+      close.style.right = "12px";
+      close.style.top = "12px";
+      close.onclick = ()=>{ modal.remove(); };
+
+      modal.appendChild(close);
+      document.body.appendChild(modal);
+    }else{
+      modal.innerHTML = "";
+      const close = document.createElement("button");
+      close.textContent = "Close";
+      close.style.position = "absolute";
+      close.style.right = "12px";
+      close.style.top = "12px";
+      close.onclick = ()=>{ modal.remove(); };
+      modal.appendChild(close);
+    }
+
+    const pre = document.createElement("pre");
+    pre.style.whiteSpace = "pre-wrap";
+    pre.style.fontSize = "12px";
+    pre.style.lineHeight = "1.3";
+    pre.textContent = JSON.stringify(item, null, 2);
+    modal.appendChild(pre);
+  }catch(e){ console.warn("inspect modal failed", e); }
+}
+
+/* ===========================
+   EXPORT CSV utility (safe)
+   - flattens history and creates CSV
+=========================== */
+function exportHistoryCSV(){
+  try{
+    const list = window._PARLAY_HISTORY_V25 || [];
+    if(!list.length){
+      alert("No history to export.");
+      return;
+    }
+    // build rows: time, home, away, lambdaH, lambdaA, conf, varMult, market (if any)
+    const rows = [["time","home","away","lambdaH","lambdaA","confidence","varMultiplier","market"]];
+    for(const it of list){
+      const row = [
+        it.time || "",
+        (it.home && it.home.name) || "",
+        (it.away && it.away.name) || "",
+        (it.final && it.final.H) || "",
+        (it.final && it.final.A) || "",
+        (it.final && it.final.confidence) || "",
+        (it.final && it.final.varMultiplier) || "",
+        JSON.stringify(it.market || "")
+      ];
+      rows.push(row.map(r=> `"${(r+"").replace(/"/g,'""')}"` ).join(","));
+    }
+    const csv = rows.map(r=> Array.isArray(r)? r.join(","): r).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "parlay_history_v25.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }catch(e){ alert("Export CSV failed: " + e); }
+}
+
+/* ===========================
+   Simple legend renderer under canvases
+   - non-invasive small text
+=========================== */
+function renderLegends(){
+  try{
+    const container = document.getElementById("resultBox");
+    if(!container) return;
+    const lg = document.getElementById("v25_legend");
+    if(lg) return; // only once
+    const el = document.createElement("div");
+    el.id = "v25_legend";
+    el.style.marginTop = "8px";
+    el.className = "small-note";
+    el.innerHTML = "Legend: <b style='color:#6cb4ff'>Home</b> cluster — <b style='color:#ff9f9f'>Away</b> cluster. DPF shows defensive fragility (warmer = fragile).";
+    container.appendChild(el);
+  }catch(e){ console.warn("renderLegends fail", e); }
+}
+
+/* ===========================
+   Hook an optional history filter input (non-invasive)
+   If UI has an element with id 'historyFilter', wire events
+=========================== */
+window.addEventListener("DOMContentLoaded", ()=>{
+  try{
+    const hf = document.getElementById("historyFilter");
+    if(hf){
+      hf.oninput = ()=> { renderHistoryAdvanced(); };
+    }
+    // initial render
+    renderHistoryAdvanced();
+    renderLegends();
+  }catch(e){}
+});
+
+/* ===========================
+   Expose functions
+=========================== */
+window.renderHistoryAdvanced = renderHistoryAdvanced;
+window.exportHistoryCSV = exportHistoryCSV;
+window.showInspectModal = showInspectModal;
+window.renderLegends = renderLegends;
+
+</script>
+<!-- v25 CLEAN — PART 10/10
+     Final safety checks · wrappers · compatibility · close HTML
+-->
+
+<script>
+/* ===========================
+   FINAL SAFETY CHECKS & COMPATIBILITY
+   - Idempotent attaches only
+   - Warn (console) if something missing, but do not break page
+=========================== */
+(function(){
+  // ensure core helper existence (best-effort)
+  const required = [
+    "safeNum","clamp","roundTo","v25_rand","pressToNum",
+    "poisson","prob3W","autoExtractOffense","autoExtractDefense",
+    "computeICM","xgp5","pcs_v5_sim","finalize_v25","analyzeMatch_v25"
+  ];
+
+  required.forEach(fn=>{
+    if(typeof window[fn] !== "function"){
+      console.warn("v25 notice: missing function (will fallback where possible) ->", fn);
+    }
+  });
+
+  // idempotent bind for old analyze button patterns
+  try{
+    // If page used inline onclick, it's already wired. Otherwise bind any button with text 'ANALYZE MATCH' or same onclick attribute
+    if(!document.querySelector("button[onclick='analyzeMatch_v25()']")){
+      const candidates = Array.from(document.getElementsByTagName("button"));
+      for(const b of candidates){
+        const txt = (b.textContent||"").toString().trim().toLowerCase();
+        if(txt === "analyze match" || txt === "analyze" || txt === "analyze match ⚽"){
+          b.onclick = b.onclick || function(){ try{ analyzeMatch_v25(); }catch(e){ console.error(e); } };
+        }
+      }
+    }
+  }catch(e){
+    console.warn("v25 binding fallback failed", e);
+  }
+
+  // expose a safe test runner for quick validation
+  window.v25_sanityTest = function(){
+    try{
+      const dummyH = { name:"HOME", shots:10, sot:3, prog:10, final3:12, poss:52, press:"medium", inter:6, abs:"", elo:1500, build:5, rest:3, rotation:0 };
+      const dummyA = { name:"AWAY", shots:9, sot:2, prog:9, final3:10, poss:48, press:"medium", inter:5, abs:"", elo:1500, build:5, rest:3, rotation:0 };
+      const base = { H: safeNum(dummyH.xg_total || 1.1), A: safeNum(dummyA.xg_total || 1.0) };
+      const pcs = { H:1.0, A:1.0 };
+      const out = (typeof finalize_v25 === 'function') ? finalize_v25(base, dummyH, dummyA, pcs, {}) : (typeof finalize_v242 === 'function' ? finalize_v242(base,dummyH,dummyA,pcs,{}) : null);
+      console.log("v25 sanity test result:", out);
+      return out;
+    }catch(e){
+      console.warn("v25 sanity test error", e);
+      return null;
+    }
+  };
+
+  // idempotent safety flag
+  if(window.__PARLAY_V25_READY__ !== true){
+    window.__PARLAY_V25_READY__ = true;
+    console.log("Parlay Titan v25 CLEAN loaded. Use analyzeMatch_v25() to run analysis.");
+  }else{
+    console.log("Parlay Titan v25 CLEAN already initialized.");
+  }
+})();
+</script>
+
+<!-- Close container and body -->
+</div> <!-- .container -->
+</body>
+</html>
