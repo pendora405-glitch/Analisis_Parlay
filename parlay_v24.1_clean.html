@@ -1,0 +1,1056 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Parlay Titan v24.1 Clean (Full)</title>
+
+<style>
+:root{
+  --bg:#f3f7fb; --card:#fff; --accent:#196bff; --muted:#5b6b7a; --line:#e2eefc;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:Inter, "Segoe UI", Roboto, Arial, sans-serif;background:var(--bg);color:#0b1220}
+.container{max-width:1180px;margin:18px auto;padding:16px}
+.card{background:var(--card);padding:14px;border-radius:12px;margin-bottom:12px;box-shadow:0 6px 18px rgba(9,30,66,0.04)}
+.header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.title{font-weight:700;font-size:18px}
+.subtitle{font-size:13px;color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.input,select,textarea{padding:9px;border-radius:8px;border:1px solid var(--line);font-size:14px;background:#fff;width:100%}
+.btn{background:var(--accent);color:#fff;border:0;padding:9px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+.btn.small{padding:7px 10px;font-size:13px}
+.section-title{font-weight:700;margin-bottom:6px}
+.note{font-size:13px;color:var(--muted)}
+.small-note{font-size:12px;color:var(--muted)}
+.canvas{background:#fff;border-radius:10px;border:1px solid var(--line);padding:8px}
+.history-item{padding:8px;border-radius:8px;background:#f6f9ff;margin-bottom:8px}
+.legend{font-size:12px;color:var(--muted);margin-top:6px}
+.footer-note{text-align:center;color:var(--muted);font-size:13px;margin-top:8px}
+</style>
+
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="card header">
+    <div>
+      <div class="title">⚽ Parlay Titan — v24.1 Clean</div>
+      <div class="subtitle">Engine: v24.1 — XG+v4 · PCS v4 · Momentum · MEL++ · Market Influence (light)</div>
+    </div>
+    <div class="row">
+      <button id="btnAnalyze" class="btn">🔍 ANALYZE MATCH</button>
+      <button id="btnReset" class="btn small">Reset</button>
+      <button id="btnExport" class="btn small">Export History</button>
+    </div>
+  </div>
+
+  <!-- HOME TEAM INPUTS -->
+  <div class="card">
+    <div class="section-title">HOME TEAM</div>
+    <div class="grid" style="margin-top:8px">
+      <input id="h_team" class="input" placeholder="Home team name">
+      <input id="h_goals" class="input" placeholder="GPG — goals per game (e.g. 1.2)">
+      <input id="h_gc" class="input" placeholder="GC — conceded per game">
+      <input id="h_shots" class="input" placeholder="Shots per match">
+      <input id="h_sot" class="input" placeholder="Shots on target per match">
+      <input id="h_final3" class="input" placeholder="Final third entries per match">
+      <input id="h_prog" class="input" placeholder="Progressive passes per match">
+      <input id="h_poss" class="input" placeholder="Possession %">
+      <input id="h_build" class="input" placeholder="Build-up rating (1-10)">
+      <input id="h_cross" class="input" placeholder="Crosses per match">
+      <input id="h_inter" class="input" placeholder="Interceptions per match">
+      <input id="h_dzc" class="input" placeholder="Danger zone conceded">
+      <input id="h_rest" class="input" placeholder="Rest days">
+      <input id="h_rotation" class="input" placeholder="Rotation level (0-10)">
+      <select id="h_press" class="input"><option value="low">Low press</option><option value="medium" selected>Medium press</option><option value="high">High press</option></select>
+      <input id="h_abs" class="input" placeholder="Absensi format GK:x,DF:x,MD:x,FW:x">
+      <input id="h_tier" class="input" placeholder="Tier Ω (0-1 scale)">
+      <input id="h_elo" class="input" placeholder="ELO (optional)">
+    </div>
+  </div>
+
+  <!-- AWAY TEAM INPUTS -->
+  <div class="card">
+    <div class="section-title">AWAY TEAM</div>
+    <div class="grid" style="margin-top:8px">
+      <input id="a_team" class="input" placeholder="Away team name">
+      <input id="a_goals" class="input" placeholder="GPG — goals per game (e.g. 1.0)">
+      <input id="a_gc" class="input" placeholder="GC — conceded per game">
+      <input id="a_shots" class="input" placeholder="Shots per match">
+      <input id="a_sot" class="input" placeholder="Shots on target per match">
+      <input id="a_final3" class="input" placeholder="Final third entries per match">
+      <input id="a_prog" class="input" placeholder="Progressive passes per match">
+      <input id="a_poss" class="input" placeholder="Possession %">
+      <input id="a_build" class="input" placeholder="Build-up rating (1-10)">
+      <input id="a_cross" class="input" placeholder="Crosses per match">
+      <input id="a_inter" class="input" placeholder="Interceptions per match">
+      <input id="a_dzc" class="input" placeholder="Danger zone conceded">
+      <input id="a_rest" class="input" placeholder="Rest days">
+      <input id="a_rotation" class="input" placeholder="Rotation level (0-10)">
+      <select id="a_press" class="input"><option value="low">Low press</option><option value="medium" selected>Medium press</option><option value="high">High press</option></select>
+      <input id="a_abs" class="input" placeholder="Absensi format GK:x,DF:x,MD:x,FW:x">
+      <input id="a_tier" class="input" placeholder="Tier Ω (0-1 scale)">
+      <input id="a_elo" class="input" placeholder="ELO (optional)">
+    </div>
+  </div>
+
+  <!-- CONTROLS: MEL & MARKET INPUTS (placeholders; actual engine in Part 2) -->
+  <div class="card">
+    <div class="section-title">v24 Controls — MEL & Market</div>
+    <div class="row" style="margin-top:8px;align-items:center">
+      <div class="small-note">MEL calibration: <input id="melSliderPlaceholder" type="range" min="0.7" max="1.3" step="0.01" value="1" style="vertical-align:middle"></div>
+      <div class="small-note" style="margin-left:10px">Market HDP open <input id="market_hdp_open" class="input" style="width:90px" placeholder="1.95"></div>
+      <div class="small-note">now <input id="market_hdp_now" class="input" style="width:90px" placeholder="1.85"></div>
+      <div class="small-note" style="margin-left:10px">OU open <input id="market_ou_open" class="input" style="width:90px" placeholder="2.05"></div>
+      <div class="small-note">now <input id="market_ou_now" class="input" style="width:90px" placeholder="2.05"></div>
+      <div class="small-note" style="margin-left:10px">Liquidity <input id="market_liq" class="input" style="width:70px" placeholder="1"></div>
+    </div>
+    <div class="legend">Market fields optional. Market Influence Light Mode only reduces uncertainty — it will not change λ values.</div>
+  </div>
+
+  <!-- RESULT + VISUAL PLACEHOLDERS -->
+  <div class="card">
+    <div class="section-title">Result</div>
+    <div id="resultBox" class="small-note" style="margin-top:8px">No analysis yet.</div>
+
+    <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap">
+      <div class="canvas" style="flex:1;min-width:320px">
+        <div class="small-note">Shot Map</div>
+        <canvas id="shotMap" width="520" height="320"></canvas>
+        <div class="legend">Home (blue) — Away (red)</div>
+      </div>
+
+      <div class="canvas" style="width:360px;min-width:260px">
+        <div class="small-note">Defensive Pressure Field</div>
+        <canvas id="dpfMap" width="340" height="220"></canvas>
+        <div class="legend">Pressure visualization</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="card">
+    <div class="section-title">History</div>
+    <div id="historyList" style="margin-top:10px"></div>
+    <div class="footer-note">History stored in-memory and exportable as JSON.</div>
+  </div>
+
+<!-- PART 1/10 END — next: Core helpers, RNG, MEL++, AutoExtract, XG+v4, PCS v4 (Part 2) -->
+  <!-- v24.1 CLEAN — PART 2/10
+     Core helpers · RNG v24 · MEL++ · basic utilities
+-->
+
+<script>
+/* ===========================
+   BASIC HELPERS
+=========================== */
+function safeNum(v, def=0){
+  const n = parseFloat(v);
+  return isNaN(n) ? def : n;
+}
+
+function clamp(v, min, max){
+  return v < min ? min : (v > max ? max : v);
+}
+
+function roundTo(v, dec=3){
+  return Math.round(v * Math.pow(10,dec)) / Math.pow(10,dec);
+}
+
+function lerp(a,b,t){ return a + (b-a)*t; }
+
+function pressToNum(p){
+  if(!p) return 0.5;
+  if(p==="low") return 0.25;
+  if(p==="medium") return 0.5;
+  if(p==="high") return 0.8;
+  return 0.5;
+}
+
+/* ===========================
+   RNG v24 — deterministic seed
+=========================== */
+window._v24_seed = 123456789;
+
+function v24_rand(){
+  // LCG — simple, stable, fast
+  window._v24_seed = (1664525 * window._v24_seed + 1013904223) % 4294967296;
+  return window._v24_seed / 4294967296;
+}
+
+function v24_randRange(a,b){
+  return a + (b-a)*v24_rand();
+}
+
+/* ===========================
+   MEL++ v24 (Match Environment Logic)
+   - Controls global volatility
+   - Adjusted via calibration slider (0.7 – 1.3)
+   - Used later in finalize_v241 Part 6
+=========================== */
+window.MEL = {
+  calibration: 1.00,   // default
+  auto: false
+};
+
+function mel_save(m){
+  try{ window.MEL = m; }catch(e){}
+}
+
+function mel_getFactor(){
+  // Converts MEL calibration to multiplier for final volatility
+  // 1.0 = neutral, below 1 = reduce variance, above 1 = increase variance
+  return clamp(window.MEL.calibration, 0.7, 1.3);
+}
+
+// bind slider if found
+window.addEventListener("DOMContentLoaded", ()=>{
+  const sl = document.getElementById("melSliderPlaceholder");
+  if(sl){
+    sl.value = window.MEL.calibration;
+    sl.oninput = ()=>{ window.MEL.calibration = safeNum(sl.value,1); };
+  }
+});
+</script>
+<!-- v24.1 CLEAN — PART 3/10
+     AutoExtract Offense · AutoExtract Defense · Absensi ICM · Team Reader
+-->
+
+<script>
+/* ===========================
+   AUTOEXTRACT OFFENSE v24
+   Converts raw stats → attack rating
+=========================== */
+function autoExtractOffense(t){
+  try{
+    const shots      = safeNum(t.shots, 10);
+    const sot        = safeNum(t.sot, 3);
+    const final3     = safeNum(t.final3, 18);
+    const prog       = safeNum(t.prog, 14);
+    const poss       = safeNum(t.poss, 50);
+    const crosses    = safeNum(t.cross, 12);
+    const build      = clamp(safeNum(t.build,5), 1, 10);
+    const tier       = clamp(safeNum(t.tier,0.5), 0, 1);
+
+    // combine → offense core
+    const base = 
+        (shots*0.22) +
+        (sot*0.45) +
+        (final3*0.08) +
+        (prog*0.06) +
+        (poss*0.03) +
+        (crosses*0.02) +
+        (build*0.4);
+
+    const tierAdj = 1 + (tier-0.5)*0.22;
+    const out = clamp(base * tierAdj, 0.1, 60);
+    return out;
+
+  }catch(e){ return 5; }
+}
+
+/* ===========================
+   AUTOEXTRACT DEFENSE v24
+   Converts defensive stats → defensive rating
+=========================== */
+function autoExtractDefense(t){
+  try{
+    const inter = safeNum(t.inter, 9);
+    const dzc   = safeNum(t.dzc, 12);
+    const poss  = safeNum(t.poss, 50);
+    const final3= safeNum(t.final3, 18);
+
+    // defensive strength: high interceptions, low DZ conceded
+    let base = 
+       (inter * 0.28) +
+       ((60 - dzc)*0.12) +
+       ((55 - final3)*0.05) +
+       ((poss*0.02));
+
+    base = clamp(base, -30, 40);
+
+    return base;
+
+  }catch(e){ return 0; }
+}
+
+/* ===========================
+   ABSENSI → ICM v24
+   GK/DF/MD/FW penalty (0–1)
+=========================== */
+function computeICM(absStr){
+  try{
+    if(!absStr) return { atkPenalty:1, defPenalty:1 };
+    const parts = absStr.split(",");
+    let gk=0,df=0,md=0,fw=0;
+    parts.forEach(seg=>{
+      const s = seg.trim().toUpperCase();
+      if(s.startsWith("GK")) gk = safeNum(s.split(":")[1],0);
+      if(s.startsWith("DF")) df = safeNum(s.split(":")[1],0);
+      if(s.startsWith("MD")) md = safeNum(s.split(":")[1],0);
+      if(s.startsWith("FW")) fw = safeNum(s.split(":")[1],0);
+    });
+
+    // convert abs count → penalty factor (0–1)
+    const atkLoss = clamp(1 - (fw*0.10 + md*0.07), 0.55, 1);
+    const defLoss = clamp(1 - (df*0.10 + gk*0.20), 0.45, 1);
+    return { atkPenalty: atkLoss, defPenalty: defLoss };
+
+  }catch(e){
+    return { atkPenalty:1, defPenalty:1 };
+  }
+}
+
+/* ===========================
+   TEAM READER v24
+=========================== */
+function readTeam_v24(prefix){
+  return {
+    name: document.getElementById(prefix+"_team")?.value || "",
+    goals: safeNum(document.getElementById(prefix+"_goals")?.value, 1),
+    gc:    safeNum(document.getElementById(prefix+"_gc")?.value, 1),
+
+    shots: safeNum(document.getElementById(prefix+"_shots")?.value, 10),
+    sot:   safeNum(document.getElementById(prefix+"_sot")?.value, 3),
+    final3:safeNum(document.getElementById(prefix+"_final3")?.value, 18),
+    prog:  safeNum(document.getElementById(prefix+"_prog")?.value, 14),
+    poss:  safeNum(document.getElementById(prefix+"_poss")?.value, 50),
+    build: safeNum(document.getElementById(prefix+"_build")?.value, 5),
+    cross: safeNum(document.getElementById(prefix+"_cross")?.value, 12),
+    inter: safeNum(document.getElementById(prefix+"_inter")?.value, 9),
+    dzc:   safeNum(document.getElementById(prefix+"_dzc")?.value, 12),
+
+    rest:     safeNum(document.getElementById(prefix+"_rest")?.value, 3),
+    rotation: safeNum(document.getElementById(prefix+"_rotation")?.value, 2),
+    press:    document.getElementById(prefix+"_press")?.value || "medium",
+    abs:      document.getElementById(prefix+"_abs")?.value || "",
+    tier:     safeNum(document.getElementById(prefix+"_tier")?.value, 0.5),
+    elo:      safeNum(document.getElementById(prefix+"_elo")?.value, 1500)
+  };
+}
+</script>
+<!-- v24.1 CLEAN — PART 4/10
+     XG+ v4 — attack & defense interaction model
+-->
+
+<script>
+/* ===========================
+   XG+ v4 ENGINE
+   - uses AutoExtract Offense & Defense
+   - produces base expected goals H/A (pre-PCS)
+=========================== */
+
+function xgplus_v4(h, a){
+  try{
+    // offense strengths
+    const offH = autoExtractOffense(h);
+    const offA = autoExtractOffense(a);
+
+    // defense strengths
+    const defH = autoExtractDefense(h);
+    const defA = autoExtractDefense(a);
+
+    // convert to attack–defense interaction
+    const atkH = clamp(offH / (20 + Math.max(defA, -5)), 0.05, 3.5);
+    const atkA = clamp(offA / (20 + Math.max(defH, -5)), 0.05, 3.5);
+
+    // finishing quality (SOT vs shots)
+    const finH = clamp(safeNum(h.sot,3) / Math.max(1, safeNum(h.shots,10)), 0.15, 0.60);
+    const finA = clamp(safeNum(a.sot,3) / Math.max(1, safeNum(a.shots,10)), 0.15, 0.60);
+
+    const finAdjH = 0.9 + finH*0.6;
+    const finAdjA = 0.9 + finA*0.6;
+
+    // possession influence
+    const possH = clamp((safeNum(h.poss,50) - 50)/100, -0.15, 0.20);
+    const possA = clamp((safeNum(a.poss,50) - 50)/100, -0.15, 0.20);
+
+    // build-up & progression influence
+    const buildAdjH = 1 + clamp((safeNum(h.build,5)-5)*0.04, -0.25, 0.30);
+    const buildAdjA = 1 + clamp((safeNum(a.build,5)-5)*0.04, -0.25, 0.30);
+
+    const progAdjH  = 1 + clamp((safeNum(h.prog,14)-14)*0.01, -0.20, 0.25);
+    const progAdjA  = 1 + clamp((safeNum(a.prog,14)-14)*0.01, -0.20, 0.25);
+
+    // fatigue & rotation
+    const restAdjH = clamp(1 + (safeNum(h.rest,3)-3)*0.05, 0.80, 1.15);
+    const restAdjA = clamp(1 + (safeNum(a.rest,3)-3)*0.05, 0.80, 1.15);
+
+    const rotAdjH = clamp(1 - safeNum(h.rotation,2)*0.035, 0.70, 1.05);
+    const rotAdjA = clamp(1 - safeNum(a.rotation,2)*0.035, 0.70, 1.05);
+
+    // press → pressure on opponent's build-up
+    const pressH = pressToNum(h.press);
+    const pressA = pressToNum(a.press);
+
+    const pressAdjH = clamp(1 + (pressH-0.5)*0.22, 0.80, 1.22);
+    const pressAdjA = clamp(1 + (pressA-0.5)*0.22, 0.80, 1.22);
+
+    // combine all multipliers
+    const xgH = atkH * finAdjH * (1+possH) * buildAdjH * progAdjH * restAdjH * rotAdjH * pressAdjH;
+    const xgA = atkA * finAdjA * (1+possA) * buildAdjA * progAdjA * restAdjA * rotAdjA * pressAdjA;
+
+    // small randomization (stable)
+    const jitterH = 0.97 + v24_rand()*0.06;
+    const jitterA = 0.97 + v24_rand()*0.06;
+
+    const outH = clamp(xgH * jitterH, 0.05, 6.5);
+    const outA = clamp(xgA * jitterA, 0.05, 6.5);
+
+    return { H: roundTo(outH,4), A: roundTo(outA,4),
+             meta:{offH,offA,defH,defA,finAdjH,finAdjA} };
+  }
+  catch(e){
+    console.warn("xgplus_v4 error",e);
+    return {H:1,A:1,meta:{}};
+  }
+}
+</script>
+<!-- v24.1 CLEAN — PART 5/10
+     PCS v4 — Monte Carlo simulation (deterministic-capable)
+-->
+<script>
+/* ===========================
+   PCS v4 — Monte Carlo
+   - Uses v24 RNG (v24_rand / v24_randRange)
+   - Produces xTF (threat factor) / mean / sd
+   - Lightweight & safe for browser use
+=========================== */
+function pcs_v4_sim(team, opp, iterations=800){
+  try{
+    // ensure shot location available
+    if(!isFinite(team.dist_off) || !isFinite(team.angle_off)){
+      const auto = autoExtractOffense(team);
+      team.dist_off = team.dist_off || auto;
+      team.angle_off = team.angle_off || auto;
+    }
+
+    const perShot = safeNum(team.xg_per, 0.08); // per-shot baseline (from XG)
+    const shots   = Math.max(1, safeNum(team.shots, 10));
+    const f3      = safeNum(team.final3, 18);
+
+    let sum = 0, sumSq = 0;
+
+    for(let it=0; it<iterations; it++){
+      // chain length: small sequence of buildup actions
+      const segMax = Math.max(2, Math.round((safeNum(team.prog,14)/6) + (safeNum(team.build,5)/3)));
+      const seg = 1 + Math.floor(v24_randRange(0, segMax));
+
+      let chainThreat = 0;
+      let shotQuality = perShot * (1 + f3/50);
+
+      for(let s=0; s<seg; s++){
+        // pressure from opponent may cut sequence
+        if(v24_rand() < pressToNum(opp.press) * 0.11){
+          chainThreat *= 0.6;
+          break;
+        }
+        // incremental possession threat
+        chainThreat += 0.004 + v24_rand()*0.055;
+        shotQuality += v24_rand()*0.02;
+      }
+
+      // chance to attempt shot within chain
+      if(v24_rand() < (0.095 + f3/70 + (safeNum(team.prog,14))/260)){
+        const dist = safeNum(team.dist_off, 16);
+        const angle = safeNum(team.angle_off, 20);
+
+        const locFactor = clamp(1 + ((16 - dist)/26)*0.25 + ((22 - angle)/50)*0.14, 0.75, 1.55);
+        const sotRatio = clamp((safeNum(team.sot,3)/shots) - 0.33, -0.33, 0.66);
+        const quality = shotQuality * locFactor * clamp(1 + sotRatio*0.9, 0.7, 1.4);
+
+        chainThreat += quality * (0.042 + v24_rand()*0.1) * clamp(shots/12, 0.4, 3.0);
+      }
+
+      sum += chainThreat;
+      sumSq += chainThreat * chainThreat;
+    }
+
+    const mean = sum / iterations;
+    const variance = Math.max(0, (sumSq / iterations) - (mean * mean));
+    const sd = Math.sqrt(variance);
+
+    // xTF scales mean into threat factor (soft caps)
+    const xTF = clamp(mean * (1 + f3/36), 0.01, 8.0);
+
+    return { xTF: roundTo(xTF,4), mean: roundTo(mean,4), sd: roundTo(sd,4), iterations: iterations };
+  }catch(e){
+    console.warn("pcs_v4_sim error", e);
+    return { xTF: 0.75, mean: 0.6, sd: 0.12, iterations:0 };
+  }
+}
+</script>
+<!-- v24.1 CLEAN — PART 6/10
+     Market helpers · finalize_v241 (light mode) · Poisson & distributions
+-->
+
+<script>
+/* ===========================
+   Market helpers (computeImplied & computeMarketInfluence)
+   - light mode: only affects confidence & variance multiplier
+=========================== */
+function computeImplied(o){
+  try{
+    if(o===null || o===undefined) return null;
+    if(typeof o === 'number') return 1/Math.max(1e-6, o);
+    if(typeof o === 'string'){
+      const v = parseFloat(o);
+      if(!isNaN(v)) return 1/Math.max(1e-6, v);
+      return null;
+    }
+    if(typeof o === 'object'){
+      if(o.dec) return 1/Math.max(1e-6, safeNum(o.dec,0));
+      if(o.od)  return 1/Math.max(1e-6, safeNum(o.od,0));
+    }
+    return null;
+  }catch(e){ return null; }
+}
+
+function computeMarketInfluence(market){
+  try{
+    if(!market) return { trapScore:0, confBoost:0, varMultiplier:1.0, meta:{} };
+    const ph_open = computeImplied(market.hdp_open);
+    const ph_now  = computeImplied(market.hdp_now);
+    const pou_open = computeImplied(market.ou_open);
+    const pou_now  = computeImplied(market.ou_now);
+
+    const moveH = (ph_open !== null && ph_now !== null) ? Math.abs(ph_now - ph_open) : 0;
+    const moveOU= (pou_open !== null && pou_now !== null) ? Math.abs(pou_now - pou_open) : 0;
+    const move = Math.max(moveH, moveOU);
+
+    const liq = clamp(safeNum(market.liq,1), 0.25, 3.0);
+
+    const trapScore = clamp(move * liq * 1.25, 0, 1.0);
+    const confBoost = clamp(trapScore * 0.28, 0, 0.28);
+    const varMultiplier = clamp(1 - trapScore * 0.32, 0.68, 1.0);
+
+    return { trapScore: roundTo(trapScore,3), confBoost: roundTo(confBoost,3), varMultiplier: roundTo(varMultiplier,3), meta:{move, moveH, moveOU, liq} };
+  }catch(e){
+    return { trapScore:0, confBoost:0, varMultiplier:1.0, meta:{} };
+  }
+}
+
+/* ===========================
+   finalize_v241 — uses xg/pcs/dpf/icm/momentum
+   - DOES NOT change λ values based on market
+   - Attaches market influence to meta
+   - Returns { H, A, meta, confidence, varMultiplier }
+=========================== */
+function finalize_v241(base, h, a, pcs, opts){
+  try{
+    opts = opts || {};
+    const absH = computeICM(h.abs || "");
+    const absA = computeICM(a.abs || "");
+
+    // base lambdas
+    let lambdaH = (safeNum(base.H,1) * absH.atkPenalty);
+    let lambdaA = (safeNum(base.A,1) * absA.atkPenalty);
+
+    // DPF influence
+    const dpfH = computeDPF(h,a);
+    const dpfA = computeDPF(a,h);
+    lambdaA *= clamp(1 - dpfH.pressure * 0.15, 0.6, 1.05);
+    lambdaH *= clamp(1 - dpfA.pressure * 0.15, 0.6, 1.05);
+
+    // mix toward PCS targets
+    const pcsH = safeNum(pcs.H, lambdaH);
+    const pcsA = safeNum(pcs.A, lambdaA);
+    lambdaH = lerp(lambdaH, pcsH, 0.28);
+    lambdaA = lerp(lambdaA, pcsA, 0.28);
+
+    // momentum, tier, press
+    const mom = momentum_v24(h,a);
+    lambdaH *= mom;
+    lambdaA *= (2 - mom);
+
+    const tierH = clamp(1 + (safeNum(h.tier,0.5)-0.5)*0.18, 0.8, 1.26);
+    const tierA = clamp(1 + (safeNum(a.tier,0.5)-0.5)*0.18, 0.8, 1.26);
+    lambdaH *= tierH; lambdaA *= tierA;
+
+    lambdaH *= clamp(1 + (pressToNum(h.press)-0.5)*0.12, 0.85, 1.18);
+    lambdaA *= clamp(1 + (pressToNum(a.press)-0.5)*0.12, 0.85, 1.18);
+
+    // small VSM jitter
+    const vsm = computeVSM(h,a);
+    lambdaH *= clamp(1 + (vsm*0.05)*(v24_rand()-0.5), 0.9, 1.08);
+    lambdaA *= clamp(1 + (vsm*0.05)*(v24_rand()-0.5), 0.9, 1.08);
+
+    const finalH = roundTo(clamp(lambdaH, 0.02, 12), 4);
+    const finalA = roundTo(clamp(lambdaA, 0.02, 12), 4);
+
+    // market light mode — only affects confidence/variance metadata
+    const market = opts.market || null;
+    const marketInfo = computeMarketInfluence(market);
+
+    // compute 3-way probs for base confidence
+    const probs = prob3W(finalH, finalA);
+    let baseConf = clamp(0.45 + Math.abs(probs.home - probs.away) * 0.5, 0.05, 0.98);
+    const conf = clamp(baseConf * (1 + marketInfo.confBoost), 0, 0.995);
+
+    return {
+      H: finalH,
+      A: finalA,
+      meta: { dpfH, dpfA, pcs, mom, marketInfluence: marketInfo },
+      confidence: roundTo(conf,3),
+      varMultiplier: marketInfo.varMultiplier
+    };
+
+  }catch(e){
+    console.warn("finalize_v241 error", e);
+    return { H: safeNum(base.H,1), A: safeNum(base.A,1), meta:{}, confidence:0.5, varMultiplier:1.0 };
+  }
+}
+
+/* ===========================
+   Poisson / Distribution utilities
+=========================== */
+function factorial(n){
+  n = Math.max(0, Math.floor(n));
+  if(n <= 1) return 1;
+  let r=1;
+  for(let i=2;i<=n;i++) r *= i;
+  return r;
+}
+
+function poisson(k, lambda){
+  // guard
+  if(lambda <= 0) return k === 0 ? 1 : 0;
+  return Math.exp(-lambda) * Math.pow(lambda, k) / factorial(k);
+}
+
+function scoreDist(lambdaH, lambdaA, max=8){
+  const out = [];
+  for(let h=0; h<=max; h++){
+    for(let a=0; a<=max; a++){
+      const p = poisson(h, lambdaH) * poisson(a, lambdaA);
+      out.push({ h, a, p });
+    }
+  }
+  return out;
+}
+
+function prob3W(lambdaH, lambdaA){
+  let pH=0, pA=0, pX=0;
+  for(let h=0; h<=8; h++){
+    for(let a=0; a<=8; a++){
+      const p = poisson(h, lambdaH) * poisson(a, lambdaA);
+      if(h > a) pH += p;
+      else if(a > h) pA += p;
+      else pX += p;
+    }
+  }
+  return { home: roundTo(pH,4), draw: roundTo(pX,4), away: roundTo(pA,4) };
+}
+</script>
+<!-- v24.1 CLEAN — PART 7/10
+     analyzeMatch v24.1, UI hooks, result render, lightweight safety
+-->
+
+<script>
+/* ===========================
+   BUILD market object from UI (if present)
+=========================== */
+function readMarketFromUI(){
+  try{
+    const mk = {};
+    const el1 = document.getElementById('market_hdp_open');
+    const el2 = document.getElementById('market_hdp_now');
+    const el3 = document.getElementById('market_ou_open');
+    const el4 = document.getElementById('market_ou_now');
+    const liq = document.getElementById('market_liq');
+    if(el1 && el1.value) mk.hdp_open = el1.value.trim();
+    if(el2 && el2.value) mk.hdp_now  = el2.value.trim();
+    if(el3 && el3.value) mk.ou_open = el3.value.trim();
+    if(el4 && el4.value) mk.ou_now  = el4.value.trim();
+    if(liq && liq.value) mk.liq = safeNum(liq.value, 1);
+    return Object.keys(mk).length ? mk : null;
+  }catch(e){ return null; }
+}
+
+/* ===========================
+   analyzeMatch v24.1
+=========================== */
+window.analyzeMatch = function(){
+  try{
+    // read teams
+    const h = readTeam_v24('h');
+    const a = readTeam_v24('a');
+
+    // attach abs parsed if string present
+    h.abs = h.abs || document.getElementById('h_abs')?.value || "";
+    a.abs = a.abs || document.getElementById('a_abs')?.value || "";
+
+    // autoextract offense/defense => attach dist_off/angle_off
+    const offH = autoExtractOffense(h);
+    const offA = autoExtractOffense(a);
+    // autoExtractOffense returns a numeric attack rating — but earlier parts expect dist/angle fields.
+    // Here we compute simple dist/angle heuristics derived from attack rating & defensive strength for PCS/XG.
+    h.dist_off = clamp(16 - (offH/30) * 4, 8, 26);
+    h.angle_off = clamp(20 - (offH/40) * 6, 6, 40);
+    a.dist_off = clamp(16 - (offA/30) * 4, 8, 26);
+    a.angle_off = clamp(20 - (offA/40) * 6, 6, 40);
+
+    const defH = autoExtractDefense(h);
+    const defA = autoExtractDefense(a);
+    h.dist_def = clamp(16 + (defH/30)*3, 8, 28);
+    a.dist_def = clamp(16 + (defA/30)*3, 8, 28);
+
+    // XG+ v4 (base expectation)
+    const xgRes = xgplus_v4(h, a);
+    // attach per-shot to team for PCS
+    h.xg_total = xgRes.H; h.xg_per = Math.max(0.006, xgRes.H / Math.max(1, safeNum(h.shots,10)));
+    a.xg_total = xgRes.A; a.xg_per = Math.max(0.006, xgRes.A / Math.max(1, safeNum(a.shots,10)));
+
+    // PCS Monte-Carlo
+    const pcsHobj = pcs_v4_sim(h, a, 800);
+    const pcsAobj = pcs_v4_sim(a, h, 800);
+    const pcsRes = { H: pcsHobj.xTF, A: pcsAobj.xTF, rawH: pcsHobj, rawA: pcsAobj };
+
+    // base lambdas (use user GPG as starting anchor)
+    const base = { H: safeNum(h.goals, 1.1), A: safeNum(a.goals, 1.0) };
+
+    // market read
+    const market = readMarketFromUI();
+
+    // finalize (market passed as opts.market)
+    const final = finalize_v241(base, h, a, pcsRes, { market: market });
+
+    // distributions and probabilities
+    const dist = scoreDist(final.H, final.A, 7);
+    const probs = prob3W(final.H, final.A);
+    const expectedTotal = roundTo(final.H + final.A, 3);
+
+    // picks
+    const pickOU = expectedTotal > 2.55 ? 'Over' : 'Under';
+    const pick1x2 = probs.home > 0.48 ? '1' : (probs.away > 0.48 ? '2' : 'X');
+
+    // render results (use final.confidence if exists)
+    const confDisplay = (final && final.confidence !== undefined) ? final.confidence : clamp(0.45 + Math.abs(probs.home - probs.away)*0.5, 0.05, 0.98);
+    const confPct = Math.round(confDisplay * 100);
+
+    const rb = document.getElementById('resultBox');
+    if(rb){
+      rb.innerHTML = `<div style="font-weight:700">${h.name || 'Home' } vs ${ a.name || 'Away' }</div>
+                      <div class="small-note" style="margin-top:6px">λH: <b>${final.H}</b> — λA: <b>${final.A}</b> | Expected total: <b>${expectedTotal}</b></div>
+                      <div class="small-note" style="margin-top:6px">Picks: 1X2: <b>${pick1x2}</b> — OU: <b>${pickOU}</b> — Confidence: <b>${confPct}%</b></div>
+                      <div class="small-note" style="margin-top:8px">Market trap: <b>${safeNum(final.meta?.marketInfluence?.trapScore,0)}</b> | varMultiplier: <b>${safeNum(final.varMultiplier,1)}</b></div>`;
+    }
+
+    // render visuals (renderers implemented in Part 9/10)
+    if(typeof window._renderShotMap === 'function') window._renderShotMap(h,a);
+    if(typeof window._renderDPF === 'function') window._renderDPF(final.meta.dpfH, final.meta.dpfA);
+
+    // add history entry (addHistoryEntry implemented later)
+    try{
+      if(typeof window.addHistoryEntry === 'function'){
+        const histFinal = { H: final.H, A: final.A, confidence: final.confidence, varMultiplier: final.varMultiplier, market: final.meta.marketInfluence };
+        window.addHistoryEntry(h, a, histFinal);
+      }else{
+        // fallback push to _PARLAY_HISTORY if exists
+        window._PARLAY_HISTORY = window._PARLAY_HISTORY || [];
+        window._PARLAY_HISTORY.push({ time: new Date().toISOString(), h, a, final });
+      }
+    }catch(e){ console.warn('history add failed', e); }
+
+    // return final for programmatic access
+    return { final, probs, pcsRes, xgRes, expectedTotal, pickOU, pick1x2, confidence: confDisplay };
+  }catch(e){
+    console.error('analyzeMatch error', e);
+    alert('Analysis error — check console.');
+    return null;
+  }
+};
+
+/* ===========================
+   Hook UI buttons (safe)
+=========================== */
+try{
+  const btn = document.getElementById('btnAnalyze');
+  if(btn) btn.onclick = ()=> { try{ window.analyzeMatch(); }catch(e){ console.error(e); } };
+  const rbtn = document.getElementById('btnReset');
+  if(rbtn) rbtn.onclick = ()=> { location.reload(); };
+  const exbtn = document.getElementById('btnExport');
+  if(exbtn) exbtn.onclick = ()=> { 
+    try{
+      if(typeof window.exportHistoryJSON === 'function') window.exportHistoryJSON();
+      else alert('Export: not ready (Part 9).');
+    }catch(e){ alert('Export error'); }
+  };
+}catch(e){ console.warn('UI hook error', e); }
+
+</script>
+<!-- v24.1 CLEAN — PART 8/10
+     Web Worker integration (safe stub)
+-->
+
+<script>
+/* ===========================
+   WORKER SCRIPT (inline as blob)
+=========================== */
+const workerCode_v24 = `
+  self.safeNum = ${safeNum.toString()};
+  self.clamp = ${clamp.toString()};
+  self.lerp = ${lerp.toString()};
+
+  // computeImplied & computeMarketInfluence for worker
+  ${computeImplied.toString()}
+  ${computeMarketInfluence.toString()}
+
+  self.onmessage = function(e){
+    const data = e.data || {};
+    if(data.cmd === 'ping'){
+      self.postMessage({ cmd:'pong', time: Date.now() });
+    }
+    if(data.cmd === 'calcMarket'){
+      try{
+        const r = computeMarketInfluence(data.market || null);
+        self.postMessage({ cmd:'result', result: r });
+      }catch(err){
+        self.postMessage({ cmd:'error', error: err.toString() });
+      }
+    }
+  };
+`;
+
+/* ===========================
+   CREATE WORKER
+=========================== */
+let _worker_v24 = null;
+try{
+  const blob = new Blob([workerCode_v24], { type:'application/javascript' });
+  const url = URL.createObjectURL(blob);
+  _worker_v24 = new Worker(url);
+}catch(e){
+  console.warn('worker creation failed', e);
+  _worker_v24 = null;
+}
+
+/* ===========================
+   WORKER WRAPPER
+=========================== */
+function runAnalysisInWorker(market){
+  return new Promise((resolve)=>{
+    if(!_worker_v24) return resolve({error:"Worker not available"});
+    const timer = setTimeout(()=>resolve({error:'timeout'}), 2000);
+
+    _worker_v24.onmessage = (ev)=>{
+      clearTimeout(timer);
+      if(ev.data.cmd === 'result'){
+        resolve(ev.data.result);
+      }else if(ev.data.cmd === 'error'){
+        resolve({error: ev.data.error});
+      }
+    };
+
+    _worker_v24.postMessage({ cmd:'calcMarket', market });
+  });
+}
+
+/* ===========================
+   Trigger worker test (optional)
+=========================== */
+window.addEventListener('DOMContentLoaded', ()=>{
+  if(_worker_v24){
+    // optional quick ping test
+    try{
+      _worker_v24.postMessage({cmd:'ping'});
+    }catch(e){}
+  }
+});
+</script>
+<!-- v24.1 CLEAN — PART 9/10
+     ShotMap Renderer • DPF Renderer • History • Export JSON
+-->
+
+<script>
+/* ===========================
+   SHOT MAP RENDER v24
+=========================== */
+window._renderShotMap = function(h,a){
+  try{
+    const cv = document.getElementById("shotMap");
+    if(!cv) return;
+    const cx = cv.getContext("2d");
+    cx.clearRect(0,0,cv.width,cv.height);
+
+    // pitch
+    cx.strokeStyle = "#c7d8ee";
+    cx.lineWidth = 2;
+    cx.strokeRect(20,20,cv.width-40,cv.height-40);
+
+    function drawShots(team, color){
+      const count = Math.max(1, safeNum(team.shots,10));
+      for(let i=0;i<count;i++){
+        const x = 20 + (cv.width-40)*Math.random();
+        const y = 20 + (cv.height-40)*Math.random();
+        cx.fillStyle = color;
+        cx.beginPath();
+        cx.arc(x,y,4,0,Math.PI*2);
+        cx.fill();
+      }
+    }
+
+    drawShots(h, "rgba(30,100,255,0.85)");
+    drawShots(a, "rgba(255,66,66,0.85)");
+  }catch(e){
+    console.warn("ShotMap error", e);
+  }
+};
+
+/* ===========================
+   DPF RENDER v24
+=========================== */
+function computeDPF(t, opp){
+  try{
+    const press = pressToNum(opp.press);
+    const inter = safeNum(opp.inter, 9);
+    const dzc   = safeNum(opp.dzc, 12);
+
+    const pressure = clamp(
+      (press * 0.55)
+      + (inter * 0.03)
+      + ((22 - dzc)*0.015),
+      0.02, 1.0
+    );
+
+    return {
+      pressure: roundTo(pressure,3),
+      map: Array.from({length: 12}, ()=>{
+        return Array.from({length: 6}, ()=>{
+          const v = pressure + (Math.random()*0.12 - 0.06);
+          return clamp(v, 0.02, 1.0);
+        });
+      })
+    };
+  }catch(e){
+    return { pressure:0.15, map:[] };
+  }
+}
+
+window._renderDPF = function(dpfH, dpfA){
+  try{
+    const cv = document.getElementById("dpfMap");
+    if(!cv || !dpfH) return;
+    const cx = cv.getContext("2d");
+    cx.clearRect(0,0,cv.width,cv.height);
+
+    const rows = dpfH.map.length;
+    const cols = rows ? dpfH.map[0].length : 0;
+    if(!rows) return;
+
+    const cellW = cv.width / cols;
+    const cellH = cv.height / rows;
+
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const v = dpfH.map[r][c];
+        const col = Math.floor(255 - v*180);
+        cx.fillStyle = `rgb(${col},${col},255)`;
+        cx.fillRect(c*cellW, r*cellH, cellW, cellH);
+      }
+    }
+  }catch(e){
+    console.warn("DPF render fail", e);
+  }
+};
+
+/* ===========================
+   HISTORY SYSTEM v24
+=========================== */
+window._PARLAY_HISTORY = [];
+
+window.addHistoryEntry = function(h, a, result){
+  try{
+    window._PARLAY_HISTORY.push({
+      time: new Date().toISOString(),
+      home: h,
+      away: a,
+      final: result
+    });
+    renderHistory();
+  }catch(e){
+    console.warn("History add error", e);
+  }
+};
+
+function renderHistory(){
+  const box = document.getElementById("historyList");
+  if(!box) return;
+  box.innerHTML = "";
+
+  for(const item of window._PARLAY_HISTORY){
+    const div = document.createElement("div");
+    div.className = "history-item";
+    div.innerHTML = `
+      <div><b>${item.home.name}</b> vs <b>${item.away.name}</b></div>
+      <div class="small-note">λH: ${item.final.H} | λA: ${item.final.A} | Conf: ${Math.round(item.final.confidence*100)}%</div>
+      <div class="small-note">Time: ${item.time}</div>
+    `;
+    box.appendChild(div);
+  }
+}
+
+/* ===========================
+   EXPORT HISTORY JSON
+=========================== */
+window.exportHistoryJSON = function(){
+  try{
+    const data = JSON.stringify(window._PARLAY_HISTORY, null, 2);
+    const blob = new Blob([data], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "parlay_history_v24.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }catch(e){
+    alert("Export error: " + e);
+  }
+};
+</script>
+<!-- v24.1 CLEAN — PART 10/10
+     Final safety patch + close HTML
+-->
+
+<script>
+/* ===========================
+   FINAL SAFETY CHECK
+   Ensures all major functions exist
+=========================== */
+window.addEventListener("DOMContentLoaded", ()=>{
+  const checks = [
+    "autoExtractOffense",
+    "autoExtractDefense",
+    "xgplus_v4",
+    "pcs_v4_sim",
+    "finalize_v241",
+    "prob3W",
+    "scoreDist",
+    "computeDPF",
+    "analyzeMatch",
+    "_renderShotMap",
+    "_renderDPF",
+    "addHistoryEntry",
+    "exportHistoryJSON"
+  ];
+
+  for(const fn of checks){
+    if(typeof window[fn] !== "function"){
+      console.warn("⚠ Missing function:", fn);
+    }
+  }
+});
+
+/* ===========================
+   END MESSAGE (Optional)
+=========================== */
+console.log("Parlay Titan v24.1 CLEAN loaded successfully.");
+</script>
+
+</div> <!-- end .container -->
+</body>
+</html>
