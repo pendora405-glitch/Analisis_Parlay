@@ -921,6 +921,272 @@ if(typeof window !== 'undefined'){
   window.finalize_v241 = window.finalize_v241 || finalize_v241_wrapper;
 }
 </script>
+  <!-- v24.3-CLEAN: Enhancements block (C1–C7) — paste once, before analyzeMatch -->
+<script>
+(function(){
+  // Safety guards - reuse existing helpers if available
+  const _safeNum = (typeof safeNum === 'function') ? safeNum : (v,d=0)=>{ const n=parseFloat(v); return isNaN(n)?d:n; };
+  const _clamp = (typeof clamp === 'function') ? clamp : (v,a,b)=>v<a?a:(v>b?b:v);
+  const _roundTo = (typeof roundTo === 'function') ? roundTo : (v,n=3)=>{ return Math.round(v*Math.pow(10,n))/Math.pow(10,n); };
+  const _v24_rand = (typeof v24_rand === 'function') ? v24_rand : ()=>Math.random();
+
+  /* ===========================
+     C1: Contingency Risk Model (CRM v1.0)
+     - estimate match-level anomaly risk [0..1]
+  ============================*/
+  function computeCRM(h,a){
+    try{
+      // basic signals: high rotation, many absences, low rest, high press mismatch
+      const rotH = _safeNum(h.rotation,0), rotA = _safeNum(a.rotation,0);
+      const absH = (h.abs || "").toString(), absA = (a.abs || "").toString();
+      const absCountH = (absH.match(/:/g)||[]).length;
+      const absCountA = (absA.match(/:/g)||[]).length;
+      const restH = _safeNum(h.rest,3), restA = _safeNum(a.rest,3);
+      const pressDiff = Math.abs((_safeNum(pressToNum(h.press),0.5) || 0.5) - (_safeNum(pressToNum(a.press),0.5),0.5) || 0.5);
+
+      // heuristic scoring
+      let score = 0;
+      score += _clamp((rotH+rotA)/20, 0, 0.35);         // rotation risk
+      score += _clamp((absCountH + absCountA) * 0.06, 0, 0.25); // absences
+      score += _clamp(Math.max(0,2 - restH)/10 + Math.max(0,2 - restA)/10, 0, 0.15); // low rest
+      score += _clamp(pressDiff * 0.12, 0, 0.12);       // press mismatch
+      // small random floor
+      score = _clamp(score + (_v24_rand()-0.5)*0.02, 0, 1);
+      // contingency factors
+      return { crmScore: _roundTo(score,3), adjustments: { confidenceDelta: -score*0.25 } };
+    }catch(e){
+      return { crmScore:0, adjustments:{ confidenceDelta:0 } };
+    }
+  }
+
+  /* ===========================
+     C2: Live Momentum Simulation (static mode, LMS v1)
+     - estimates early/late tempo tilt and openness tendency
+  ============================*/
+  function computeLMS(h,a){
+    try{
+      // derive tempo proxies from shots and progressive passes
+      const shotsH = _safeNum(h.shots,10), shotsA = _safeNum(a.shots,10);
+      const progH = _safeNum(h.prog,7), progA = _safeNum(a.prog,7);
+      const possH = _safeNum(h.poss,50), possA = _safeNum(a.poss,50);
+
+      const tempoH = _clamp((shotsH/12) * 0.6 + (progH/20)*0.4, 0, 1);
+      const tempoA = _clamp((shotsA/12) * 0.6 + (progA/20)*0.4, 0, 1);
+
+      // openness: higher shots and progressive and low defensive interceptions
+      const openH = _clamp((shotsH/14) + (progH/24) - (_safeNum(h.inter,5))/40, 0, 2);
+      const openA = _clamp((shotsA/14) + (progA/24) - (_safeNum(a.inter,5))/40, 0, 2);
+
+      // propensity: +ve -> open, -ve -> closed
+      const openness = _roundTo(((openH - openA) / 2),3);
+      const tempoDiff = _roundTo(tempoH - tempoA,3);
+
+      // outputs moderate multipliers (1 +/- small)
+      return { tempoDiff, openness, multipliers: { H: _clamp(1 + tempoDiff*0.06, 0.94, 1.06), A: _clamp(1 - tempoDiff*0.06, 0.94, 1.06) } };
+    }catch(e){
+      return { tempoDiff:0, openness:0, multipliers:{H:1,A:1} };
+    }
+  }
+
+  /* ===========================
+     C3: Expected Cards Influence (ECI v1.0)
+     - small effect on XG variance & expected goals
+  ============================*/
+  function computeECI(h,a){
+    try{
+      // naive signals: higher fouls implied by high press and high tackles(inter)
+      const pressH = _safeNum(pressToNum(h.press),0.5), pressA = _safeNum(pressToNum(a.press),0.5);
+      const interH = _safeNum(h.inter,5), interA = _safeNum(a.inter,5);
+      const riskH = _clamp(pressH*0.6 + interH/20, 0, 1);
+      const riskA = _clamp(pressA*0.6 + interA/20, 0, 1);
+      const cardProb = _clamp((riskH + riskA)/4, 0, 0.35); // combined chance moderate
+      // effect: expected goals dampened slightly if high card prob (caution & broken play)
+      const xgVarAdj = 1 - cardProb*0.12; // up to ~ -4% to -0%
+      return { cardProb: _roundTo(cardProb,3), xgVarAdj: _roundTo(xgVarAdj,3) };
+    }catch(e){
+      return { cardProb:0, xgVarAdj:1 };
+    }
+  }
+
+  /* ===========================
+     C4: Expected VAR Impact (EVI v1)
+     - very small smoothing to distribution
+  ============================*/
+  function computeEVI(h,a){
+    try{
+      // VAR influence proxies: competition importance & quality of finishing (sot/shots)
+      const finH = _clamp((_safeNum(h.sot,3)/Math.max(1,_safeNum(h.shots,10))), 0.05, 1);
+      const finA = _clamp((_safeNum(a.sot,3)/Math.max(1,_safeNum(a.shots,10))), 0.05, 1);
+      const finAvg = (finH+finA)/2;
+      // tighter finishing -> VAR more likely to overturn close calls (slightly increase variance)
+      const varAdj = _clamp(1 + (finAvg - 0.33)*0.06, 0.97, 1.06);
+      return { varAdj: _roundTo(varAdj,3), finAvg: _roundTo(finAvg,3) };
+    }catch(e){
+      return { varAdj:1, finAvg:0.33 };
+    }
+  }
+
+  /* ===========================
+     C5: Deep Defensive Stability (DDS v2)
+     - calculates fragility index of defense
+  ============================*/
+  function computeDDS(h,a){
+    try{
+      // use opponent attack vs team defensive metrics
+      const oppOff = _safeNum(autoExtractOffense(a), 8);
+      const defH = _safeNum(autoExtractDefense(h), 6);
+      const absencePenalty = ((h.abs || "").toString().match(/:/g)||[]).length * 0.07;
+      const frag = _clamp((oppOff/30) - (defH/40) + absencePenalty, 0, 1.5);
+      // normalized frag index 0..1
+      const fragIndex = _clamp(frag/1.2, 0, 1);
+      return { fragIndex: _roundTo(fragIndex,3), raw: _roundTo(frag,3) };
+    }catch(e){
+      return { fragIndex:0, raw:0 };
+    }
+  }
+
+  /* ===========================
+     C6: Attack-Chain Reliability (ACR v1.2)
+     - continuity of threat; affects PCS smoothing
+  ============================*/
+  function computeACR(h,a){
+    try{
+      const prog = _safeNum(h.prog,7), final3 = _safeNum(h.final3,12);
+      const sotRatio = _clamp(_safeNum(h.sot,3)/Math.max(1,_safeNum(h.shots,10)), 0.05, 0.9);
+      const build = _safeNum(h.build,5);
+      const continuity = _clamp((prog/30) + (final3/40) + (sotRatio*0.6) + (build-4)/12, 0, 1.5);
+      const reliability = _clamp(continuity/1.05, 0.6, 1.2);
+      return { reliability: _roundTo(reliability,3), continuity: _roundTo(continuity,3) };
+    }catch(e){
+      return { reliability:1, continuity:0 };
+    }
+  }
+
+  /* ===========================
+     C7: Game State Sensitivity (GSS v1)
+     - reaction profile when leading/behind
+  ============================*/
+  function computeGSS(h,a){
+    try{
+      // heuristics: teams with higher progressive passes & possession change more when chasing
+      const progH = _safeNum(h.prog,7), progA = _safeNum(a.prog,7);
+      const possH = _safeNum(h.poss,50), possA = _safeNum(a.poss,50);
+      const attackH = _safeNum(autoExtractOffense(h),5), attackA = _safeNum(autoExtractOffense(a),5);
+
+      const chaseH = _clamp((progH/25) + ((50-possH)/50) + (attackH/40), 0, 1.5);
+      const chaseA = _clamp((progA/25) + ((50-possA)/50) + (attackA/40), 0, 1.5);
+
+      // multipliers for being behind: more chase -> slight increase in scoring rate
+      return { chaseH: _roundTo(chaseH,3), chaseA: _roundTo(chaseA,3), multipliers: { behindH: _clamp(1 + chaseH*0.04, 0.96, 1.12), behindA: _clamp(1 + chaseA*0.04, 0.96, 1.12) } };
+    }catch(e){
+      return { chaseH:0, chaseA:0, multipliers:{behindH:1,behindA:1} };
+    }
+  }
+
+  /* ===========================
+     Integration helper — attach enhancements to finalize output
+     - Conservative adjustments only: small confidence bump or variance tweak
+     - Does NOT alter lambda H/A
+  ============================*/
+  function enhanceFinalMeta(finalObj, h, a, pcs){
+    try{
+      const crm = computeCRM(h,a);
+      const lms = computeLMS(h,a);
+      const eci = computeECI(h,a);
+      const evi = computeEVI(h,a);
+      const dds = computeDDS(h,a);
+      const acrH = computeACR(h,a);
+      const acrA = computeACR(a,h);
+      const gss = computeGSS(h,a);
+
+      // combine conservative confidence delta:
+      // - CRM reduces confidence
+      // - LMS openness increases confidence slightly if both sides show stable tempo
+      // - ECI reduces if cardProb high
+      // - DDS fragility reduces confidence for the fragile side (affect varMultiplier only)
+      // Keep total effect small (±0.06)
+      let confDelta = 0;
+      confDelta += (crm.adjustments?.confidenceDelta || 0);        // negative typically
+      confDelta += _clamp((lms.multipliers.H + lms.multipliers.A)/2 - 1, -0.03, 0.03);
+      confDelta += (_clamp(1 - eci.cardProb, -0.02, 0.02) - 0.0);  // slight
+      confDelta += _clamp(( (acrH.reliability + acrA.reliability)/2 - 1 ), -0.03, 0.03) * 0.4;
+
+      // varMultiplier tweak (combine EVI & CRM & DDS)
+      let varMult = _clamp((evi.varAdj || 1.0) * (1 - (crm.crmScore*0.12)) * (1 - (dds.fragIndex*0.06)), 0.6, 1.08);
+
+      // attach all modules into meta.enhancements
+      finalObj.meta = finalObj.meta || {};
+      finalObj.meta.enhancements = {
+        crm, lms, eci, evi, dds, acrH, acrA, gss,
+        combined: { confDelta: _roundTo(confDelta,3), varMult: _roundTo(varMult,3) }
+      };
+
+      // apply conservative confidence tweak (bounded)
+      const baseConf = _safeNum(finalObj.confidence, 0.5);
+      finalObj.confidence = _roundTo(_clamp(baseConf + confDelta, 0.02, 0.995), 3);
+
+      // combine varMultiplier (reported)
+      finalObj.varMultiplier = _roundTo(_clamp((finalObj.varMultiplier || 1) * varMult, 0.6, 1.2), 3);
+
+      return finalObj;
+    }catch(e){
+      console.warn("enhanceFinalMeta error", e);
+      return finalObj;
+    }
+  }
+
+  /* ===========================
+     Auto-wrap existing finalize (non-destructive)
+     - If finalize_v242 exists, wrap it to call enhancements automatically
+     - Else if finalize_v241 exists, wrap it
+     - Else do nothing (expose finalize_v243 to be used manually)
+  ============================*/
+  try{
+    const oldFinal = (typeof window.finalize_v242 === 'function') ? window.finalize_v242
+                    : (typeof window.finalize_v241 === 'function') ? window.finalize_v241
+                    : null;
+
+    if(oldFinal){
+      // create wrapped version
+      const wrapped = function(base, h, a, pcs, opts){
+        // call original finalize
+        const res = oldFinal(base,h,a,pcs,opts) || {};
+        // do not mutate original if primitive; create shallow copy
+        const out = Object.assign({}, res);
+        // apply enhancements (conservative)
+        const enhanced = enhanceFinalMeta(out, h, a, pcs);
+        return enhanced;
+      };
+      // attach as finalize_v243 and replace existing finalize_v242 to wrapped (safe)
+      window.finalize_v243 = wrapped;
+      // Replace finalize_v242 only if it hasn't been wrapped already (idempotent)
+      if(window.__FINALIZE_V24X_WRAPPED__ !== true){
+        window.original_finalize_v24x = oldFinal;
+        window.finalize_v242 = wrapped;
+        window.__FINALIZE_V24X_WRAPPED__ = true;
+        console.log("Parlay v24.3 enhancements: finalize wrapped (finalize_v242 -> finalize_v243).");
+      }else{
+        console.log("Parlay v24.3 enhancements: already wrapped.");
+      }
+    }else{
+      // expose finalize_v243 for manual use if no existing finalize found
+      window.finalize_v243 = function(base,h,a,pcs,opts){
+        const res = (typeof window.finalize_v241 === 'function') ? window.finalize_v241(base,h,a,pcs,opts) : { H: safeNum(base.H,1), A: safeNum(base.A,1), meta:{}, confidence:0.5, varMultiplier:1.0 };
+        return enhanceFinalMeta(Object.assign({}, res), h, a, pcs);
+      };
+      console.log("Parlay v24.3 enhancements: finalize_v243 available (manual).");
+    }
+  }catch(e){
+    console.warn("v24.3 enhancements install failed", e);
+  }
+
+  // expose functions for debugging if needed
+  window._v24_enhancements = {
+    computeCRM, computeLMS, computeECI, computeEVI, computeDDS, computeACR, computeGSS, enhanceFinalMeta
+  };
+
+})();
+</script>
 <!-- v24.1 CLEAN — PART 7/10
      analyzeMatch v24.1, UI hooks, result render, lightweight safety
 -->
