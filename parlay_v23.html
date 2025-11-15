@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Parlay Titan v23 Ultra</title>
+
+<style>
+:root{
+  --bg:#eef2f9;
+  --card:#ffffff;
+  --accent:#196bff;
+  --line:#d8e1f1;
+  --muted:#6c7a8f;
+}
+body{
+  margin:0;
+  padding:0;
+  font-family: Inter, "Segoe UI", Roboto, sans-serif;
+  background:var(--bg);
+  color:#111;
+}
+.container{
+  max-width:1250px;
+  margin:22px auto;
+  padding:12px;
+}
+.card{
+  background:var(--card);
+  padding:18px;
+  border-radius:14px;
+  margin-bottom:18px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.07);
+}
+h2{
+  margin-top:0;
+}
+.section-title{
+  font-size:18px;
+  font-weight:700;
+  margin-bottom:10px;
+}
+.input-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:10px;
+}
+input,select,textarea{
+  padding:8px;
+  border-radius:8px;
+  border:1px solid var(--line);
+  font-size:14px;
+  width:100%;
+  box-sizing:border-box;
+  background:#fff;
+}
+button{
+  background:var(--accent);
+  border:none;
+  padding:10px 14px;
+  border-radius:8px;
+  font-size:14px;
+  font-weight:600;
+  color:white;
+  cursor:pointer;
+}
+button.small{padding:6px 10px;font-size:12px;}
+.note{font-size:13px;color:var(--muted);}
+.history-item{
+  background:#f7f9ff;
+  padding:8px;
+  border-radius:8px;
+  margin-bottom:6px;
+}
+canvas{
+  background:white;
+  border-radius:10px;
+  border:1px solid #dfe4f0;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ========================== -->
+<!--   TITLE & HEADER PANEL     -->
+<!-- ========================== -->
+<div class="card">
+  <h2>⚽ Parlay Titan v23 Ultra — Full Engine</h2>
+  <p class="note">Versi stabil lengkap tanpa contoh, tanpa condong, hasil real berdasarkan input terbaru.</p>
+</div>
+
+
+<!-- ========================== -->
+<!--        INPUT HOME         -->
+<!-- ========================== -->
+<div class="card">
+  <div class="section-title">HOME TEAM</div>
+  <div class="input-grid">
+
+    <input id="h_team" placeholder="Home team name">
+    <input id="h_goals" placeholder="Goals avg">
+    <input id="h_gc" placeholder="Conceded avg">
+    <input id="h_shots" placeholder="Shots per match">
+    <input id="h_sot" placeholder="Shots on target">
+    <input id="h_final3" placeholder="Final third entries">
+    <input id="h_prog" placeholder="Progressive passes">
+    <input id="h_poss" placeholder="Possession %">
+    <input id="h_build" placeholder="Build-up play">
+    <input id="h_cross" placeholder="Crosses">
+    <input id="h_inter" placeholder="Interceptions">
+    <input id="h_dzc" placeholder="Danger zone conceded">
+    <input id="h_rest" placeholder="Rest days">
+    <input id="h_rotation" placeholder="Rotation level (0–10)">
+    <select id="h_press">
+      <option value="low">Low press</option>
+      <option value="medium" selected>Medium press</option>
+      <option value="high">High press</option>
+    </select>
+    <input id="h_abs" placeholder="Absensi (GK:x,DF:x,MD:x,FW:x)">
+    <input id="h_nationELO" placeholder="ELO (optional)">
+  </div>
+</div>
+
+
+<!-- ========================== -->
+<!--        INPUT AWAY         -->
+<!-- ========================== -->
+<div class="card">
+  <div class="section-title">AWAY TEAM</div>
+  <div class="input-grid">
+
+    <input id="a_team" placeholder="Away team name">
+    <input id="a_goals" placeholder="Goals avg">
+    <input id="a_gc" placeholder="Conceded avg">
+    <input id="a_shots" placeholder="Shots per match">
+    <input id="a_sot" placeholder="Shots on target">
+    <input id="a_final3" placeholder="Final third entries">
+    <input id="a_prog" placeholder="Progressive passes">
+    <input id="a_poss" placeholder="Possession %">
+    <input id="a_build" placeholder="Build-up play">
+    <input id="a_cross" placeholder="Crosses">
+    <input id="a_inter" placeholder="Interceptions">
+    <input id="a_dzc" placeholder="Danger zone conceded">
+    <input id="a_rest" placeholder="Rest days">
+    <input id="a_rotation" placeholder="Rotation level (0–10)">
+    <select id="a_press">
+      <option value="low">Low press</option>
+      <option value="medium" selected>Medium press</option>
+      <option value="high">High press</option>
+    </select>
+    <input id="a_abs" placeholder="Absensi (GK:x,DF:x,MD:x,FW:x)">
+    <input id="a_nationELO" placeholder="ELO (optional)">
+  </div>
+</div>
+
+
+<!-- ========================== -->
+<!--     ACTION BUTTON PANEL    -->
+<!-- ========================== -->
+<div class="card">
+  <button onclick="analyzeMatch()">🔍 ANALYZE MATCH</button>
+  <button class="small" onclick="clearHistory()">Clear History</button>
+  <button class="small" onclick="exportHistory()">Export History</button>
+</div>
+
+
+<!-- ========================== -->
+<!--        RESULT PANEL        -->
+<!-- ========================== -->
+<div class="card">
+  <div class="section-title">RESULT</div>
+  <div id="resultBox">Belum ada hasil.</div>
+
+  <div style="margin-top:20px;">
+    <div class="section-title">Shot Map</div>
+    <canvas id="shotMap" width="520" height="320"></canvas>
+  </div>
+
+  <div style="margin-top:20px;">
+    <div class="section-title">Defensive Pressure Field</div>
+    <canvas id="dpfMap" width="520" height="180"></canvas>
+  </div>
+</div>
+
+
+<!-- ========================== -->
+<!--       HISTORY PANEL        -->
+<!-- ========================== -->
+<div class="card">
+  <div class="section-title">HISTORY</div>
+  <div id="historyList"></div>
+</div>
+<!-- ===========================
+     BAGIAN B — ENGINE UTAMA
+=========================== -->
+<script>
+/* ---------------------------
+   CORE HELPERS
+--------------------------- */
+function safeNum(v, def=0){ v = Number(v); return Number.isFinite(v) ? v : def; }
+function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+function guardNumber(x, def=0){ if(x===null||x===undefined) return def; if(typeof x!=='number') x=Number(x); return Number.isFinite(x)?x:def; }
+function roundTo(x,p=3){ return Math.round((x||0)*Math.pow(10,p))/Math.pow(10,p); }
+function lerp(a,b,t){ return a + (b-a)*t; }
+function pressToNum(p){ if(!p) return 0.5; p=p.toString().toLowerCase(); if(p==='low') return 0.3; if(p==='high') return 0.9; return 0.5; }
+function parseAbsensi(str){ const out={GK:0,DF:0,MD:0,FW:0}; if(!str) return out; const parts=str.split(','); for(const p of parts){ const s=p.split(':'); if(s.length===2){ const k=s[0].trim().toUpperCase(); const v=safeNum(s[1].trim(),0); if(out.hasOwnProperty(k)) out[k]=v; }} return out; }
+
+/* ---------------------------
+   HISTORY STORAGE
+--------------------------- */
+window.HISTORY_DATA = window.HISTORY_DATA || [];
+
+/* ---------------------------
+   XG+ v3 (per-shot & proxy)
+--------------------------- */
+function calcXGplus_v3(team){
+  try{
+    const shots = Math.max(0, safeNum(team.shots,10));
+    const sot = Math.max(0, safeNum(team.sot,3));
+    const final3 = safeNum(team.final3,4);
+    const prog = safeNum(team.prog,7);
+    const build = safeNum(team.build,5);
+    const convPct = clamp(safeNum(team.conv,12)/100, 0.02, 0.6);
+    const dist = safeNum(team.avg_shot_dist, null);
+    const angle = safeNum(team.avg_shot_angle, null);
+
+    let perShot;
+    if(dist && angle){
+      const distFactor = clamp(1/(1 + (dist-8)*0.06), 0.08, 2.2);
+      const angleFactor = clamp(1 - (Math.abs(angle)/90)*0.48, 0.52, 1.18);
+      perShot = clamp(0.10 * distFactor * angleFactor * (1 + (final3/40)), 0.01, 0.6);
+    } else {
+      const sotRatio = shots>0 ? (sot/shots) : 0.35;
+      perShot = clamp(0.04 + (sotRatio*0.14) + (final3/60) + (prog/120), 0.01, 0.45);
+    }
+
+    perShot *= clamp(1 + (build-5)/60, 0.9, 1.22);
+    perShot *= clamp(1 + (convPct-0.12)*0.28, 0.85, 1.35);
+
+    // optional history calibration
+    let histFactor = 1.0;
+    if(Array.isArray(window.HISTORY_DATA) && window.HISTORY_DATA.length>12){
+      try{
+        const labeled = window.HISTORY_DATA.slice(-200).filter(e=> e.result && (e.result.lambdaH!==undefined));
+        if(labeled.length>8){
+          let predSum=0, realSum=0;
+          labeled.forEach(e=>{
+            predSum += safeNum(e.result.lambdaH,0) + safeNum(e.result.lambdaA,0);
+            realSum += safeNum(e.h && e.h.goals,0) + safeNum(e.a && e.a.goals,0);
+          });
+          if(predSum>0) histFactor = clamp(realSum/predSum, 0.7, 1.4);
+        }
+      }catch(e){}
+    }
+
+    const total = clamp(perShot * shots * histFactor, 0.005, 8.0);
+    return { perShot: roundTo(perShot,4), total: roundTo(total,4), debug:{dist,angle,shots,sot,final3,prog,build,histFactor} };
+  }catch(e){ console.warn("calcXGplus_v3 err", e); return { perShot:0.08, total:0.8, debug:{} }; }
+}
+
+/* ---------------------------
+   AUTO-EXTRACT (offense & defense)
+--------------------------- */
+function autoExtractShotLocation(team){
+  try{
+    const shots = safeNum(team.shots,10);
+    const sot = safeNum(team.sot,3);
+    const final3 = safeNum(team.final3,4);
+    const prog = safeNum(team.prog,7);
+    const build = safeNum(team.build,5);
+    const poss = safeNum(team.poss,50);
+    const cross = clamp(safeNum(team.cross,25)/100,0,2);
+
+    let dist = 16 - clamp(final3/12,0,4) - clamp(prog/18,0,3) - clamp((build-5)*0.35,-2.5,2.5);
+    dist += clamp((0.42 - (sot/Math.max(1,shots))) * 12, -3, 4);
+    dist += clamp((cross-0.22)*6, -1.5, 2.2);
+    dist = clamp(dist,7.5,27);
+
+    let angle = 20 - clamp(final3/15*12,0,14) - clamp(prog/22*12,0,10) + clamp((0.4 - (sot/Math.max(1,shots)))*30,-8,8) + clamp((0.22-cross)*10,-6,8);
+    angle = clamp(angle,6,42);
+
+    return { avg_shot_dist_auto: roundTo(dist,2), avg_shot_angle_auto: roundTo(angle,2) };
+  }catch(e){ return { avg_shot_dist_auto:16, avg_shot_angle_auto:20 }; }
+}
+
+function autoExtractDefensiveShotLocation(team, opp){
+  try{
+    const oppShots = safeNum(opp.shots,10);
+    const oppSOT = safeNum(opp.sot,3);
+    const oppFinal3 = safeNum(opp.final3,4);
+    const teamInter = safeNum(team.inter,5);
+
+    let dist = 16 + clamp((oppShots-10)*0.35,-3,4) + clamp((0.45 - oppSOT/Math.max(1,oppShots))*18,-4,6) - clamp(oppFinal3/10*3.6,0,5);
+    dist = clamp(dist,8,28);
+    let angle = 22 - clamp(oppFinal3/10*6,0,10) + clamp((0.42 - oppSOT/Math.max(1,oppShots))*36,-6,16) + clamp((1 - teamInter/8)*6,-4,8);
+    angle = clamp(angle,8,48);
+    return { avg_shot_dist_conceded_auto:roundTo(dist,2), avg_shot_angle_conceded_auto:roundTo(angle,1) };
+  }catch(e){ return { avg_shot_dist_conceded_auto:16, avg_shot_angle_conceded_auto:20 }; }
+}
+
+/* ---------------------------
+   PCS v3 (chain-based sim)
+--------------------------- */
+function pcsSimulateV3(team, opp, iterations=600){
+  try{
+    if(team.avg_shot_dist==null || team.avg_shot_angle==null){
+      const auto = autoExtractShotLocation(team);
+      if(team.avg_shot_dist==null) team.avg_shot_dist = auto.avg_shot_dist_auto;
+      if(team.avg_shot_angle==null) team.avg_shot_angle = auto.avg_shot_angle_auto;
+    }
+    const prog = safeNum(team.prog,7); const final3 = safeNum(team.final3,4);
+    const shots = Math.max(1, safeNum(team.shots,10)); const sot = Math.max(0, safeNum(team.sot,3));
+    const perShot = (typeof calcXGplus_v3 === 'function') ? calcXGplus_v3(team).perShot : 0.08;
+    const oppConcededDist = safeNum(opp.avg_shot_dist_conceded,16);
+    const concededFactor = clamp(1 + ((16-oppConcededDist)/16)*0.24,0.82,1.36);
+    let total=0, totalSq=0;
+    for(let it=0; it<iterations; it++){
+      let chainLen = 1 + Math.floor(Math.random()*Math.max(2,Math.round(prog/5 + (team.build||5)/3)));
+      let chainThreat=0; let chainShotQuality=perShot*(1+final3/60);
+      for(let s=0;s<chainLen;s++){
+        if(Math.random() < pressToNum(opp.press||'medium')*0.12){ chainThreat *= 0.6; break; }
+        chainThreat += 0.006 + Math.random()*0.06;
+        chainShotQuality += Math.random()*0.02 + final3/80;
+      }
+      if(Math.random() < (0.12 + final3/60 + prog/220)){
+        let shotQuality = chainShotQuality * concededFactor;
+        const dist = safeNum(team.avg_shot_dist,16), ang = safeNum(team.avg_shot_angle,20);
+        const locBonus = clamp(1 + ((16-dist)/24)*0.26 + ((25-ang)/50)*0.16,0.82,1.42);
+        shotQuality *= locBonus;
+        shotQuality *= clamp(1 + ((sot/shots)-0.33)*0.9,0.75,1.4);
+        chainThreat += shotQuality * (0.045 + Math.random()*0.12) * clamp(shots/12,0.4,2.6);
+      }
+      total += chainThreat; totalSq += chainThreat*chainThreat;
+    }
+    const mean = total/iterations; const sd = Math.sqrt(Math.max(0, totalSq/iterations - mean*mean));
+    const xTF = clamp(mean*(1 + final3/34), 0.01, 6.0);
+    return { xTF: roundTo(xTF,4), mean: roundTo(mean,4), sd: roundTo(sd,4), enhanced:true };
+  }catch(e){ console.warn("pcsSimulateV3 err", e); return { xTF:0.7, mean:0.7, sd:0.12, enhanced:false }; }
+}
+
+/* ---------------------------
+   DEFENSIVE PRESSURE FIELD (DPF)
+--------------------------- */
+function computeDPF(team, opp, history, opts={}){
+  try{
+    const df_abs = safeNum(team.df_abs,0), gk_abs = safeNum(team.gk_abs,0), inter = safeNum(team.inter,5), dzc = safeNum(team.dzc,1);
+    const rest = safeNum(team.rest,3), rotation = safeNum(team.rotation,0);
+    const pressVal = pressToNum(team.press||'medium');
+
+    const oppFinal3 = safeNum(opp.final3,4), oppProg = safeNum(opp.prog,7), oppShots = safeNum(opp.shots,10);
+    const frag = clamp(1 - (df_abs*0.14 + gk_abs*0.22), 0.5, 1.15);
+
+    let compact = clamp((inter/8)*0.6 + (1 - (dzc-1)*0.08), 0.45, 1.2);
+    compact *= clamp(1 - (rest-3)*0.055 - rotation*0.03, 0.72, 1.14);
+
+    const pressEffect = clamp(0.6 + (pressVal-0.3), 0.7, 1.4);
+    const oppThreat = clamp((oppFinal3/8)*0.6 + (oppProg/16)*0.25 + (oppShots/18)*0.15, 0.2, 1.9);
+
+    let raw = clamp((compact*pressEffect)*(1.05/frag)*(1/Math.max(0.6,oppThreat)), 0.18, 2.2);
+    let score = clamp((raw - 0.5)/1.4, 0, 1);
+
+    if(history && Array.isArray(history) && history.length>10){
+      try{
+        const avgInter = history.reduce((s,e)=> s + safeNum(e.h && e.h.inter,0) + safeNum(e.a && e.a.inter,0),0) / Math.max(1, history.length*2);
+        const histAdj = clamp(1 + (avgInter - 5)/18, 0.88, 1.12);
+        score = clamp(score * histAdj, 0, 1);
+      }catch(e){}
+    }
+
+    const cols = opts.cols || 12, rows = opts.rows || 6; const grid=[];
+    for(let r=0;r<rows;r++){
+      const row=[];
+      for(let c=0;c<cols;c++){
+        const cx = Math.abs((c/(cols-1)) - 0.5), ry = r/(rows-1);
+        const posBias = clamp(1 + (1-ry)*0.6 - cx*0.5, 0.6, 1.5);
+        let v = clamp(score * posBias * (0.82 + Math.random()*0.36), 0, 1);
+        v *= clamp(1 - Math.abs(cx-0.0)*((1-compact)*0.9), 0.6, 1.08);
+        v *= clamp(1/frag, 0.7, 1.3);
+        row.push(roundTo(v,3));
+      }
+      grid.push(row);
+    }
+
+    return { pressureScore: roundTo(score,3), grid, meta:{ compactness: roundTo(compact,3), fragility: roundTo(frag,3), pressEffect: roundTo(pressEffect,3), oppThreat: roundTo(oppThreat,3) } };
+  }catch(e){ console.warn("computeDPF err", e); return { pressureScore:0.45, grid:[[0.45]], meta:{} }; }
+}
+
+/* ---------------------------
+   ICM (Injury cluster model)
+--------------------------- */
+function computeICM(abs){
+  try{
+    const GK = safeNum(abs.GK,0), DF = safeNum(abs.DF,0), MD = safeNum(abs.MD,0), FW = safeNum(abs.FW,0);
+    const atkPenalty = clamp(1 - (FW*0.15 + MD*0.08), 0.55, 1.0);
+    const defPenalty = clamp(1 - (DF*0.18 + GK*0.25), 0.5, 1.0);
+    return { atkPenalty: roundTo(atkPenalty,3), defPenalty: roundTo(defPenalty,3) };
+  }catch(e){ return { atkPenalty:0.85, defPenalty:0.85 }; }
+}
+
+/* ---------------------------
+   VSM (Variation Sensitivity)
+--------------------------- */
+function computeVSM(h,a){
+  try{
+    const shotVar = Math.abs(safeNum(h.shots,10) - safeNum(a.shots,10)) / 14;
+    const final3Var = Math.abs(safeNum(h.final3,4) - safeNum(a.final3,4)) / 8;
+    const pressVar = Math.abs(pressToNum(h.press) - pressToNum(a.press));
+    const restVar = Math.abs(safeNum(h.rest,3) - safeNum(a.rest,3)) / 5;
+    let vsm = 0.4*shotVar + 0.25*final3Var + 0.2*pressVar + 0.15*restVar;
+    return clamp(vsm, 0.03, 0.65);
+  }catch(e){ return 0.2; }
+}
+
+/* ---------------------------
+   ODDS TRAP (simple)
+--------------------------- */
+function computeOddsTrap(odds){
+  try{
+    if(!odds) return { trapHdp:0, trapOu:0, meta:{} };
+    function imp(o){ if(!o) return 0.33; return 1/Math.max(1e-6,o); }
+    const ph_open = imp(odds.hdp_open), ph_now = imp(odds.hdp_now);
+    const diffHdp = Math.abs(ph_now - ph_open);
+    const ou_open = imp(odds.ou_open), ou_now = imp(odds.ou_now);
+    const diffOu = Math.abs(ou_now - ou_open);
+    const trapHdp = clamp(diffHdp*0.8, 0, 1);
+    const trapOu = clamp(diffOu*0.8, 0, 1);
+    return { trapHdp: roundTo(trapHdp,3), trapOu: roundTo(trapOu,3), meta:{ diffHdp, diffOu } };
+  }catch(e){ return { trapHdp:0, trapOu:0, meta:{} }; }
+}
+
+/* ---------------------------
+   FINALIZE v23 Ultra
+--------------------------- */
+function finalize_v23(base, h, a, pcsEst, opts={}){
+  try{
+    let lambdaH = guardNumber(base.lambdaH, safeNum(h.goals,1.2));
+    let lambdaA = guardNumber(base.lambdaA, safeNum(a.goals,1.0));
+
+    const icmH = computeICM(h.absensi||{}), icmA = computeICM(a.absensi||{});
+    lambdaH *= icmH.atkPenalty; lambdaA *= icmA.atkPenalty;
+    lambdaH *= clamp(icmA.defPenalty,0.6,1.0); lambdaA *= clamp(icmH.defPenalty,0.6,1.0);
+
+    const xgH = (typeof calcXGplus_v3==='function')? calcXGplus_v3(h).total : lambdaH;
+    const xgA = (typeof calcXGplus_v3==='function')? calcXGplus_v3(a).total : lambdaA;
+
+    const pcsH = pcsEst && pcsEst.xTF_H ? pcsEst.xTF_H : xgH;
+    const pcsA = pcsEst && pcsEst.xTF_A ? pcsEst.xTF_A : xgA;
+
+    lambdaH *= clamp(1 + (pressToNum(h.press)-0.5)*0.12, 0.84, 1.2);
+    lambdaA *= clamp(1 + (pressToNum(a.press)-0.5)*0.12, 0.84, 1.2);
+
+    const dpfH = opts.dpfH || computeDPF(h,a,window.HISTORY_DATA);
+    const dpfA = opts.dpfA || computeDPF(a,h,window.HISTORY_DATA);
+
+    lambdaA *= clamp(1 - dpfH.pressureScore * 0.14, 0.6, 1.05);
+    lambdaH *= clamp(1 - dpfA.pressureScore * 0.14, 0.6, 1.05);
+    if(dpfH.pressureScore > 0.82) lambdaH *= 1.03;
+    if(dpfA.pressureScore > 0.82) lambdaA *= 1.03;
+
+    lambdaH = lerp(lambdaH, pcsH, 0.22);
+    lambdaA = lerp(lambdaA, pcsA, 0.22);
+
+    if(h.national && a.national){
+      // simple ELO adjust if ELO provided
+      const hELO = safeNum(h.nationELO,1500), aELO = safeNum(a.nationELO,1500);
+      const eloDiff = hELO - aELO;
+      const nAdj = clamp(1 + eloDiff/2500, 0.86, 1.14);
+      lambdaH *= nAdj; lambdaA *= 1/nAdj;
+    }
+
+    const vsm = computeVSM(h,a);
+    lambdaH *= clamp(1 + (vsm*0.08)*(Math.random()-0.5), 0.85, 1.15);
+    lambdaA *= clamp(1 + (vsm*0.08)*(Math.random()-0.5), 0.85, 1.15);
+
+    // MEL hint: minor calibration from history (non-destructive)
+    if(Array.isArray(window.HISTORY_DATA) && window.HISTORY_DATA.length>6){
+      try{
+        const recent = window.HISTORY_DATA.slice(-60);
+        let pred=0, real=0;
+        recent.forEach(r=>{ pred += safeNum(r.result && (r.result.lambdaH||0) + (r.result.lambdaA||0),0); real += safeNum(r.h && r.h.goals,0) + safeNum(r.a && r.a.goals,0); });
+        if(pred>0){ const fac = clamp(real/pred,0.78,1.22); lambdaH *= fac; lambdaA *= fac; }
+      }catch(e){}
+    }
+
+    lambdaH = clamp(lambdaH, 0.03, 9.5); lambdaA = clamp(lambdaA, 0.03, 9.5);
+    const out = { lambdaH: roundTo(lambdaH,4), lambdaA: roundTo(lambdaA,4), meta:{ dpfH, dpfA, pcsEst } };
+    return out;
+  }catch(e){ console.warn("finalize_v23 err", e); return { lambdaH:1.1, lambdaA:1.0 }; }
+}
+
+/* ---------------------------
+   POISSON & DISTRIBUTION
+--------------------------- */
+function factorial(n){ if(n<=1) return 1; let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+function poisson(k, lambda){ return Math.pow(lambda,k)*Math.exp(-lambda)/Math.max(1, factorial(k)); }
+function scoreDistribution(lambdaH, lambdaA, maxGoal=8){
+  const dist={}; let sum=0;
+  for(let i=0;i<=maxGoal;i++){ for(let j=0;j<=maxGoal;j++){ const p = poisson(i,lambdaH)*poisson(j,lambdaA); dist[`${i}-${j}`]=p; sum+=p; } }
+  for(const k in dist) dist[k] /= Math.max(1e-12, sum);
+  return dist;
+}
+function threeWayProb(lambdaH, lambdaA){
+  let pHome=0,pAway=0,pDraw=0;
+  const max=9;
+  for(let i=0;i<=max;i++){ for(let j=0;j<=max;j++){ const p = poisson(i,lambdaH)*poisson(j,lambdaA); if(i>j) pHome+=p; else if(i<j) pAway+=p; else pDraw+=p; } }
+  const s = pHome+pAway+pDraw; return { home: pHome/s, draw: pDraw/s, away: pAway/s };
+}
+
+/* ---------------------------
+   DRAW HELPERS (ShotMap & DPF)
+--------------------------- */
+function drawShotMapFromResult(res){
+  try{
+    const c = document.getElementById('shotMap'); if(!c) return;
+    const ctx = c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
+    ctx.fillStyle = '#f8fbff'; ctx.fillRect(0,0,c.width,c.height);
+    ctx.strokeStyle = '#dfeaf6'; ctx.strokeRect(8,8,c.width-16,c.height-16);
+
+    const h = res.h, a = res.a;
+    const shotsH = Math.max(1, safeNum(h.shots,10)), shotsA = Math.max(1, safeNum(a.shots,10));
+    const nH = Math.min(18, Math.max(4, Math.round(shotsH/1.2)));
+    const nA = Math.min(18, Math.max(4, Math.round(shotsA/1.2)));
+    const dH = safeNum(h.avg_shot_dist, h.avg_shot_dist_auto || 16), angH = safeNum(h.avg_shot_angle, h.avg_shot_angle_auto || 20);
+    const dA = safeNum(a.avg_shot_dist, a.avg_shot_dist_auto || 16), angA = safeNum(a.avg_shot_angle, a.avg_shot_angle_auto || 20);
+
+    function locFromDistAngle(dist, angle, side){
+      const w=c.width, hgt=c.height, maxD=28, minD=7;
+      const r = clamp((dist - minD) / (maxD - minD), 0, 1);
+      const radius = (0.15 + r * 0.8) * (Math.min(w,hgt)/2 - 20);
+      const ang = (angle / 45) * (Math.PI / 2);
+      const xOff = Math.sin(ang) * radius;
+      const yOff = Math.cos(ang) * radius;
+      const centerX = side === 'home' ? w*0.35 : w*0.65;
+      const centerY = hgt*0.45;
+      const jitterX = (Math.random()-0.5)*12, jitterY=(Math.random()-0.5)*10;
+      return { x: clamp(centerX + (side==='home'?xOff:-xOff) + jitterX, 10, w-10), y: clamp(centerY - yOff + jitterY, 10, hgt-10) };
+    }
+
+    const points=[];
+    for(let i=0;i<nH;i++) points.push({ side:'home', dist: clamp(dH + (Math.random()-0.5)*3,8,28), angle: clamp(angH + (Math.random()-0.5)*8,6,48), weight: 0.8 + Math.random()*1.6 });
+    for(let i=0;i<nA;i++) points.push({ side:'away', dist: clamp(dA + (Math.random()-0.5)*3,8,28), angle: clamp(angA + (Math.random()-0.5)*8,6,48), weight: 0.8 + Math.random()*1.6 });
+
+    for(const p of points){
+      const pos = locFromDistAngle(p.dist, p.angle, p.side);
+      const wght = clamp(p.weight, 0.2, 3.2);
+      const grad = ctx.createRadialGradient(pos.x,pos.y,1,pos.x,pos.y,24*wght);
+      if(p.side === 'home'){ grad.addColorStop(0,'rgba(46,125,209,0.9)'); grad.addColorStop(1,'rgba(46,125,209,0.04)'); }
+      else { grad.addColorStop(0,'rgba(209,46,46,0.9)'); grad.addColorStop(1,'rgba(209,46,46,0.04)'); }
+      ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(pos.x,pos.y,20*wght,0,Math.PI*2); ctx.fill();
+    }
+    ctx.fillStyle = '#222'; ctx.font = '12px Arial'; ctx.fillText('Home shots (blue) — Away shots (red)', 12, c.height-8);
+  }catch(e){ console.warn("drawShotMapFromResult err", e); }
+}
+
+function drawDPFCanvas(canvasId, grid){
+  try{
+    const c = document.getElementById(canvasId); if(!c) return;
+    const ctx = c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
+    const rows = grid.length, cols = grid[0].length;
+    const cw = c.width / cols, ch = c.height / rows;
+    let min=1, max=0;
+    for(const r of grid) for(const v of r){ if(v<min) min=v; if(v>max) max=v; }
+    const range = Math.max(1e-6, max-min);
+    function colorFor(v){ const t=(v-min)/range; const r=Math.round(40 + (220-40)*t); const g=Math.round(200 - (160*t)); const b=Math.round(255 - (215*t)); return `rgb(${r},${g},${b})`; }
+    for(let r=0;r<rows;r++){ for(let cidx=0;cidx<cols;cidx++){ ctx.fillStyle = colorFor(grid[r][cidx]); ctx.fillRect(cidx*cw, r*ch, cw, ch); } }
+  }catch(e){ console.warn("drawDPFCanvas err", e); }
+}
+
+/* ---------------------------
+   HISTORY & EXPORT
+--------------------------- */
+function addHistoryEntry(h,a,res){
+  try{
+    const entry = { time: new Date().toLocaleString(), h: Object.assign({},h), a: Object.assign({},a), result: Object.assign({}, res) };
+    window.HISTORY_DATA.push(entry);
+    renderHistoryList();
+  }catch(e){ console.warn("addHistoryEntry err", e); }
+}
+function renderHistoryList(){
+  try{
+    const box = document.getElementById('historyList'); if(!box) return;
+    box.innerHTML = window.HISTORY_DATA.slice().reverse().map(e=>`<div class="history-item"><b>${e.h.name} vs ${e.a.name}</b><div class="note">ΛH:${safeNum(e.result.lambdaH,0).toFixed(2)} ΛA:${safeNum(e.result.lambdaA,0).toFixed(2)}</div><div class="note">${e.time}</div></div>`).join('');
+  }catch(e){ console.warn("renderHistoryList err", e); }
+}
+function exportHistory(){
+  try{
+    const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.HISTORY_DATA,null,2));
+    const a = document.createElement('a'); a.href = data; a.download = 'parlay_history_v23.json'; a.click();
+  }catch(e){ console.warn("exportHistory err", e); }
+}
+function clearHistory(){ window.HISTORY_DATA = []; renderHistoryList(); }
+
+/* ---------------------------
+   ANALYZE RUNNER (UI hook)
+--------------------------- */
+function readTeam(prefix){
+  return {
+    name: (document.getElementById(prefix+'_team')?.value || prefix.toUpperCase()+' TEAM'),
+    goals: safeNum(document.getElementById(prefix+'_goals')?.value, 1.0),
+    gc: safeNum(document.getElementById(prefix+'_gc')?.value, 0),
+    shots: safeNum(document.getElementById(prefix+'_shots')?.value, 10),
+    sot: safeNum(document.getElementById(prefix+'_sot')?.value, 3),
+    final3: safeNum(document.getElementById(prefix+'_final3')?.value, 4),
+    prog: safeNum(document.getElementById(prefix+'_prog')?.value, 6),
+    poss: safeNum(document.getElementById(prefix+'_poss')?.value, 50),
+    build: safeNum(document.getElementById(prefix+'_build')?.value, 5),
+    cross: safeNum(document.getElementById(prefix+'_cross')?.value, 0),
+    inter: safeNum(document.getElementById(prefix+'_inter')?.value, 5),
+    dzc: safeNum(document.getElementById(prefix+'_dzc')?.value, 1),
+    rest: safeNum(document.getElementById(prefix+'_rest')?.value, 3),
+    rotation: safeNum(document.getElementById(prefix+'_rotation')?.value, 0),
+    press: (document.getElementById(prefix+'_press')?.value || 'medium'),
+    absensi: parseAbsensi(document.getElementById(prefix+'_abs')?.value || ""),
+    nationELO: safeNum(document.getElementById(prefix+'_nationELO')?.value, null)
+  };
+}
+
+function analyzeMatch(){
+  try{
+    const h = readTeam('h'); const a = readTeam('a');
+    // auto-extract if missing
+    const autoH = autoExtractShotLocation(h); const autoA = autoExtractShotLocation(a);
+    if(!h.avg_shot_dist) h.avg_shot_dist = autoH.avg_shot_dist_auto;
+    if(!h.avg_shot_angle) h.avg_shot_angle = autoH.avg_shot_angle_auto;
+    if(!a.avg_shot_dist) a.avg_shot_dist = autoA.avg_shot_dist_auto;
+    if(!a.avg_shot_angle) a.avg_shot_angle = autoA.avg_shot_angle_auto;
+
+    // defensive auto
+    const defH = autoExtractDefensiveShotLocation(h,a); const defA = autoExtractDefensiveShotLocation(a,h);
+    if(!h.avg_shot_dist_conceded) h.avg_shot_dist_conceded = defH.avg_shot_dist_conceded_auto;
+    if(!a.avg_shot_dist_conceded) a.avg_shot_dist_conceded = defA.avg_shot_dist_conceded_auto;
+
+    // PCS estimates
+    const pcsH = pcsSimulateV3(h,a,520); const pcsA = pcsSimulateV3(a,h,520);
+    const pcsEst = { xTF_H: pcsH.xTF, xTF_A: pcsA.xTF, raw:{h:pcsH,a:pcsA} };
+
+    // DPF
+    const dpfH = computeDPF(h,a,window.HISTORY_DATA); const dpfA = computeDPF(a,h,window.HISTORY_DATA);
+
+    // base lambda from gpg (fallback)
+    const base = { lambdaH: safeNum(h.goals,1.2), lambdaA: safeNum(a.goals,1.0) };
+
+    const final = finalize_v23(base, h, a, pcsEst, { dpfH, dpfA });
+
+    const dist = scoreDistribution(final.lambdaH, final.lambdaA, 8);
+    const prob = threeWayProb(final.lambdaH, final.lambdaA);
+
+    const pick1x2 = (prob.home > 0.48) ? '1' : (prob.away > 0.48) ? '2' : 'X';
+    const expectedTotal = final.lambdaH + final.lambdaA;
+    const pickOU = expectedTotal > 2.55 ? 'Over' : 'Under';
+    const pickHdp = (prob.home - prob.away > 0.18) ? `H -${roundTo((final.lambdaH-final.lambdaA)/0.6,2)}` : (prob.away - prob.home > 0.18) ? `A -${roundTo((final.lambdaA-final.lambdaH)/0.6,2)}` : 'No clear';
+
+    const res = { h,a, final, dist, prob, pcsEst, meta:{ dpfH, dpfA }, picks:{ pick1x2, pickOU, pickHdp }, conf: clamp(0.45 + Math.abs(prob.home-prob.away)*0.5, 0.05, 0.98) };
+    // render & history
+    document.getElementById('resultBox').innerHTML = `<div><b>${h.name}</b> vs <b>${a.name}</b></div><div class="note">ΛH: ${final.lambdaH} — ΛA: ${final.lambdaA} | Conf: ${Math.round(res.conf*100)}%</div><div style="margin-top:8px">Picks: 1X2:<b>${res.picks.pick1x2}</b> | HDP:<b>${res.picks.pickHdp}</b> | OU:<b>${res.picks.pickOU}</b></div>`;
+    drawShotMapFromResult(res); drawDPFCanvas('dpfMap', mergeTwoGridsForViz(dpfH.grid, dpfA.grid));
+    addHistoryEntry(h,a,res);
+    return res;
+  }catch(e){ console.warn("analyzeMatch err", e); alert('Analysis error — check console'); }
+}
+
+/* helper merge grids */
+function mergeTwoGridsForViz(g1,g2){
+  try{
+    if(!g1 || !g2) return g1||g2||[[0.4]];
+    const rows = Math.max(g1.length, g2.length);
+    const cols1 = g1[0].length, cols2 = g2[0].length;
+    const out=[];
+    for(let r=0;r<rows;r++){
+      const row=[];
+      const r1 = g1[r] || g1[Math.floor(g1.length/2)];
+      const r2 = g2[r] || g2[Math.floor(g2.length/2)];
+      for(let c=0;c<cols1;c++) row.push(r1[c] || 0);
+      row.push(0); row.push(0);
+      for(let c=0;c<cols2;c++) row.push(r2[c] || 0);
+      out.push(row);
+    }
+    return out;
+  }catch(e){ return g1; }
+}
+
+/* auto render history on load */
+renderHistoryList();
+
+</script>
+<!-- END BAGIAN B -->
+<!-- ===========================
+      BAGIAN C — FINALIZER
+=========================== -->
+
+<script>
+// OPTIONAL: Worker Hook (Tidak aktif, aman untuk masa depan)
+window.TITAN_WORKER = null;
+function enableWorkerFuture(){
+  try{
+    if(window.TITAN_WORKER) return;
+    const blob = new Blob([`
+      self.onmessage = function(e){
+        try{
+          const d=e.data;
+          const r={msg:"Worker ready", time:Date.now(), echo:d};
+          self.postMessage(r);
+        }catch(err){
+          self.postMessage({error:String(err)});
+        }
+      };
+    `], {type:'application/javascript'});
+    const url = URL.createObjectURL(blob);
+    window.TITAN_WORKER = new Worker(url);
+    window.TITAN_WORKER.onmessage = function(e){ console.log("Worker:", e.data); };
+  }catch(err){ console.warn("Worker init failed", err); }
+}
+
+// OPTIONAL reset form
+function resetForm(){
+  const ids = [
+    "h_team","h_goals","h_gc","h_shots","h_sot","h_final3","h_prog","h_poss","h_build","h_cross","h_inter","h_dzc","h_rest","h_rotation","h_press","h_abs","h_nationELO",
+    "a_team","a_goals","a_gc","a_shots","a_sot","a_final3","a_prog","a_poss","a_build","a_cross","a_inter","a_dzc","a_rest","a_rotation","a_press","a_abs","a_nationELO"
+  ];
+  ids.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    if(el.tagName==="SELECT") el.selectedIndex=1;
+    else el.value="";
+  });
+  document.getElementById('resultBox').innerHTML="Belum ada hasil.";
+  const c1=document.getElementById('shotMap');
+  const c2=document.getElementById('dpfMap');
+  if(c1){const x=c1.getContext('2d'); x.clearRect(0,0,c1.width,c1.height);}
+  if(c2){const x=c2.getContext('2d'); x.clearRect(0,0,c2.width,c2.height);}
+}
+
+// Add button dynamically:
+(function appendResetBtn(){
+  const cardList = document.getElementsByClassName('card');
+  if(cardList && cardList.length>2){
+    const target = cardList[2]; // action panel card
+    const btn = document.createElement('button');
+    btn.className="small";
+    btn.style.marginLeft="8px";
+    btn.textContent="Reset Input";
+    btn.onclick=resetForm;
+    target.appendChild(btn);
+  }
+})();
+
+// Safety: Prevent null script failure
+document.addEventListener("DOMContentLoaded", function(){
+  try{
+    if(typeof analyzeMatch!=="function"){
+      document.getElementById('resultBox').innerHTML="<b>ERROR:</b> Engine gagal dimuat.";
+    }
+  }catch(e){}
+});
+</script>
+
+</body>
+</html>
