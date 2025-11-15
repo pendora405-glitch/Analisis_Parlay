@@ -191,6 +191,929 @@ canvas{
   <div class="section-title">HISTORY</div>
   <div id="historyList"></div>
 </div>
+  <!-- ===========================
+
+      v24 BLOCK 1 — CORE ADDONS
+
+      (Tempel setelah Bagian A)
+
+=========================== -->
+
+<script>
+
+// ===============
+
+// v24 RNG (seeded)
+
+// ===============
+
+if(!window.V24) window.V24 = {};
+
+window.V24._seed = window.V24._seed || (Date.now() & 0xffffffff);
+
+
+
+function v24_seed(s){
+
+  window.V24._seed = (s >>> 0) || (Date.now() & 0xffffffff);
+
+}
+
+
+
+function v24_rand(){
+
+  // LCG generator — deterministic & safe
+
+  window.V24._seed = (1664525 * window.V24._seed + 1013904223) & 0xffffffff;
+
+  return (window.V24._seed >>> 0) / 4294967296;
+
+}
+
+
+
+function v24_randRange(min,max){
+
+  return min + v24_rand() * (max - min);
+
+}
+
+
+
+// ============================
+
+// MEL++ (Meta Engine Layer v24)
+
+// Persistent calibration storage
+
+// ============================
+
+window.MEL_STORE_KEY = "parlay_mel_store_v24";
+
+
+
+function mel_load(){
+
+  try{
+
+    const raw = localStorage.getItem(window.MEL_STORE_KEY);
+
+    if(!raw) return { calibrationFactor:1.0, autoTrain:false, updated:0 };
+
+    const obj = JSON.parse(raw);
+
+    if(!obj || typeof obj !== "object") return { calibrationFactor:1.0, autoTrain:false, updated:0 };
+
+    return obj;
+
+  }catch(e){
+
+    return { calibrationFactor:1.0, autoTrain:false, updated:0 };
+
+  }
+
+}
+
+
+
+function mel_save(obj){
+
+  try{
+
+    obj.updated = Date.now();
+
+    localStorage.setItem(window.MEL_STORE_KEY, JSON.stringify(obj));
+
+    return true;
+
+  }catch(e){
+
+    console.warn("MEL save error", e);
+
+    return false;
+
+  }
+
+}
+
+
+
+// Load / init MEL++ storage
+
+if(!window.MEL) window.MEL = mel_load();
+
+
+
+// ==================================
+
+// v24 Safe Helpers (additional)
+
+// ==================================
+
+function safeGet(obj, key, fallback){
+
+  try{
+
+    if(!obj || !(key in obj)) return fallback;
+
+    const v = obj[key];
+
+    return (v === null || v === undefined) ? fallback : v;
+
+  }catch(e){
+
+    return fallback;
+
+  }
+
+}
+
+
+
+function isValidNumber(x){
+
+  return typeof x === "number" && Number.isFinite(x);
+
+}
+
+</script>
+
+<!-- ===========================
+
+     v24 BLOCK 2 — ENGINE UPGRADE
+
+=========================== -->
+
+<script>
+
+
+
+/* ----------------------------------
+
+   AUTOEXTRACT OFFENSE v24 (improved)
+
+---------------------------------- */
+
+function autoExtractShotLocation_v24(team){
+
+  try{
+
+    const shots = safeNum(team.shots,10);
+
+    const sot   = safeNum(team.sot,3);
+
+    const final3= safeNum(team.final3,4);
+
+    const prog  = safeNum(team.prog,7);
+
+    const build = safeNum(team.build,5);
+
+    const poss  = safeNum(team.poss,50);
+
+    const cross = clamp(safeNum(team.cross,0)/100,0,1);
+
+
+
+    // distance → lower better
+
+    let dist = 15
+
+      - clamp(final3/12,0,4)
+
+      - clamp(prog/16,0,3)
+
+      - clamp((build-5)*0.28,-2.5,2.5)
+
+      + clamp((0.40 - (sot/Math.max(1,shots))) * 10, -3, 4);
+
+
+
+    dist = clamp(dist,7.5,26);
+
+
+
+    // angle → smaller means narrower angle
+
+    let angle = 18
+
+      - clamp(final3/14*10,0,12)
+
+      - clamp(prog/18*8,0,9)
+
+      + clamp((0.38 - sot/Math.max(1,shots)) * 28, -6, 10)
+
+      + clamp((0.22 - cross)*10, -4, 8);
+
+
+
+    angle = clamp(angle,6,45);
+
+
+
+    return {
+
+      avg_shot_dist_auto: roundTo(dist,2),
+
+      avg_shot_angle_auto: roundTo(angle,2)
+
+    };
+
+
+
+  }catch(e){
+
+    return { avg_shot_dist_auto:16, avg_shot_angle_auto:20 };
+
+  }
+
+}
+
+
+
+/* ------------------------------------------
+
+   AUTOEXTRACT DEFENSE v24 (improved version)
+
+------------------------------------------- */
+
+function autoExtractDefensiveShotLocation_v24(team, opp){
+
+  try{
+
+    const oppShots = safeNum(opp.shots,10);
+
+    const oppSOT   = safeNum(opp.sot,3);
+
+    const oppFinal3= safeNum(opp.final3,4);
+
+    const inter    = safeNum(team.inter,5);
+
+
+
+    let dist = 16
+
+      + clamp((oppShots-10)*0.3,-3,4)
+
+      + clamp((0.42 - oppSOT/Math.max(1,oppShots))*16,-5,6)
+
+      - clamp(oppFinal3/10*4,0,5);
+
+
+
+    dist = clamp(dist,8,28);
+
+
+
+    let angle = 22
+
+      - clamp(oppFinal3/10*6,0,10)
+
+      + clamp((0.40 - oppSOT/Math.max(1,oppShots))*32,-6,16)
+
+      + clamp((1 - inter/8)*5,-4,7);
+
+
+
+    angle = clamp(angle,8,48);
+
+
+
+    return {
+
+      avg_shot_dist_conceded_auto: roundTo(dist,2),
+
+      avg_shot_angle_conceded_auto: roundTo(angle,1)
+
+    };
+
+
+
+  }catch(e){
+
+    return { avg_shot_dist_conceded_auto:16, avg_shot_angle_conceded_auto:20 };
+
+  }
+
+}
+
+
+
+/* ---------------------------
+
+   XG+ v4 — Full Quality Model
+
+--------------------------- */
+
+function calcXGplus_v4(team){
+
+  try{
+
+    const shots = Math.max(1, safeNum(team.shots,10));
+
+    const sot   = safeNum(team.sot,3);
+
+    const final3= safeNum(team.final3,4);
+
+    const prog  = safeNum(team.prog,7);
+
+    const build = safeNum(team.build,5);
+
+    const conv  = clamp(safeNum(team.conv,12)/100, 0.02, 0.6);
+
+    const cross = clamp(safeNum(team.cross,0)/100,0,1);
+
+
+
+    // location (from auto extract if user not manually fill)
+
+    const dist  = safeNum(team.avg_shot_dist,   team.avg_shot_dist_auto);
+
+    const angle = safeNum(team.avg_shot_angle,  team.avg_shot_angle_auto);
+
+
+
+    let base = 0.05
+
+      + (sot/shots)*0.20
+
+      + (final3/60)*0.10
+
+      + (prog/130)*0.04;
+
+
+
+    base = clamp(base, 0.015, 0.48);
+
+
+
+    let loc = 1.0;
+
+    if(isValidNumber(dist) && isValidNumber(angle)){
+
+      loc = clamp(
+
+        1 + ((20 - dist)/30)*0.40
+
+          + ((25 - angle)/50)*0.30,
+
+        0.55, 1.95
+
+      );
+
+    }
+
+
+
+    loc *= clamp(1 + cross*0.15, 0.9, 1.25);
+
+
+
+    let perShot = clamp( base * loc * (1 + (build-5)/55), 0.005, 0.70 );
+
+
+
+    // MEL++ calibration factor
+
+    perShot *= safeGet(window.MEL,'calibrationFactor',1.0);
+
+
+
+    const total = clamp(perShot * shots, 0.01, 10.5);
+
+
+
+    return {
+
+      perShot: roundTo(perShot,4),
+
+      total: roundTo(total,4),
+
+      debug: {shots,sot,dist,angle,final3,prog,build,loc}
+
+    };
+
+
+
+  }catch(err){
+
+    console.warn("XG+ v4 error", err);
+
+    return { perShot:0.07, total:0.9, debug:{} };
+
+  }
+
+}
+
+
+
+/* ---------------------------
+
+   MOMENTUM ENGINE v24
+
+--------------------------- */
+
+function simulateMomentum_v24(h,a){
+
+  try{
+
+    const shotDiff = clamp(
+
+      (safeNum(h.shots,10)-safeNum(a.shots,10)) /
+
+      Math.max(1, safeNum(h.shots,10)+safeNum(a.shots,10)),
+
+      -1,1
+
+    );
+
+
+
+    const possDiff = clamp((safeNum(h.poss,50)-safeNum(a.poss,50))/100, -1,1);
+
+
+
+    let m = 1 + (shotDiff*0.22 + possDiff*0.18);
+
+
+
+    // history minor influence
+
+    const recent = (window.HISTORY_DATA||[]).slice(-20);
+
+    if(recent.length>6){
+
+      let hW=0,aW=0;
+
+      recent.forEach(r=>{
+
+        const H = safeNum(r.result?.lambdaH,0);
+
+        const A = safeNum(r.result?.lambdaA,0);
+
+        if(H>A) hW++; else if(A>H) aW++;
+
+      });
+
+      if(hW+aW>0) m *= clamp(1 + (hW-aW)/(hW+aW)*0.06, 0.92,1.10);
+
+    }
+
+
+
+    m = clamp(m, 0.70, 1.35);
+
+
+
+    return { momentum: roundTo(m,3) };
+
+  }catch(e){
+
+    return { momentum:1.0 };
+
+  }
+
+}
+
+
+
+/* -----------------------------------------
+
+   PCS v4 — Monte Carlo (deterministic-capable)
+
+------------------------------------------ */
+
+function pcsSimulateV4(team, opp, iters=900){
+
+  try{
+
+    if(team.avg_shot_dist==null || team.avg_shot_angle==null){
+
+      const auto = autoExtractShotLocation_v24(team);
+
+      team.avg_shot_dist  = auto.avg_shot_dist_auto;
+
+      team.avg_shot_angle = auto.avg_shot_angle_auto;
+
+    }
+
+
+
+    const perShot = calcXGplus_v4(team).perShot;
+
+    const shots   = Math.max(1, safeNum(team.shots,10));
+
+    const final3  = safeNum(team.final3,4);
+
+
+
+    let total=0, sq=0;
+
+    for(let i=0;i<iters;i++){
+
+      let chainLen = 1 + Math.floor(v24_randRange(0, Math.max(2,Math.round((team.prog||7)/5 + (team.build||5)/3))));
+
+      let chain=0;
+
+      let shotQ = perShot*(1 + final3/55);
+
+
+
+      for(let s=0;s<chainLen;s++){
+
+        if(v24_rand() < pressToNum(opp.press)*0.11){
+
+          chain *= 0.55;
+
+          break;
+
+        }
+
+        chain += 0.005 + v24_rand()*0.06;
+
+        shotQ += v24_rand()*0.02 + final3/80;
+
+      }
+
+
+
+      if(v24_rand() < (0.10 + final3/60 + (team.prog||7)/240)){
+
+        const dist = safeNum(team.avg_shot_dist,16);
+
+        const ang  = safeNum(team.avg_shot_angle,20);
+
+
+
+        const loc = clamp(
+
+          1 + ((16-dist)/24)*0.25 + ((22-ang)/50)*0.15,
+
+        0.80, 1.50);
+
+
+
+        const quality = shotQ * loc * clamp(1 + ((team.sot||3)/shots-0.33)*0.8, 0.75,1.4);
+
+
+
+        chain += quality*(0.045 + v24_rand()*0.11) * clamp(shots/12,0.4,3.0);
+
+      }
+
+
+
+      total += chain;
+
+      sq    += chain*chain;
+
+    }
+
+
+
+    const mean = total/iters;
+
+    const xTF  = clamp(mean*(1 + final3/34), 0.01, 7.5);
+
+
+
+    return {
+
+      xTF: roundTo(xTF,4),
+
+      mean: roundTo(mean,4),
+
+      sd: roundTo(Math.sqrt(Math.max(0,sq/iters - mean*mean)),4),
+
+      iterations: iters
+
+    };
+
+
+
+  }catch(err){
+
+    console.warn("PCS v4 error", err);
+
+    return { xTF:0.75, mean:0.6, sd:0.12, iterations:0 };
+
+  }
+
+}
+
+
+
+</script>
+
+<!-- ===========================
+
+   BAGIAN C — WORKER HOOK (PERBAIKAN v24)
+
+   Gunakan ini menggantikan potongan worker yang terpotong
+
+=========================== -->
+
+<script>
+
+// Safe worker initializer — lengkap & robust
+
+(function(){
+
+  // jika sudah ada worker, lepaskan dulu
+
+  if(window.TITAN_WORKER && typeof window.TITAN_WORKER.terminate === 'function'){
+
+    try{ window.TITAN_WORKER.terminate(); }catch(e){ console.warn("terminate old worker failed", e); }
+
+    window.TITAN_WORKER = null;
+
+  }
+
+
+
+  // fungsi untuk inisialisasi worker
+
+  window.enableWorkerFuture = function(){
+
+    try{
+
+      if(window.TITAN_WORKER) {
+
+        console.log("Worker already enabled.");
+
+        return window.TITAN_WORKER;
+
+      }
+
+
+
+      // worker code sebagai string yang valid (tertutup)
+
+      const workerCode = `
+
+        self.onmessage = function(e){
+
+          try{
+
+            const payload = e.data || {};
+
+            // contoh kerja ringan: echo + timestamp + small MC stub
+
+            if(payload.cmd === 'echo'){
+
+              self.postMessage({ok:true, echo: payload.msg || null, time: Date.now()});
+
+              return;
+
+            }
+
+            if(payload.cmd === 'mc_stub'){
+
+              // small deterministic-ish Monte Carlo stub (not heavy)
+
+              let iter = payload.iter || 200;
+
+              let sum = 0;
+
+              for(let i=0;i<iter;i++){
+
+                // simple pseudo-random using Math.random (worker has its own RNG)
+
+                sum += Math.random();
+
+              }
+
+              self.postMessage({ok:true, mc:{iter:iter, avg: sum/iter}, time: Date.now()});
+
+              return;
+
+            }
+
+            // default response
+
+            self.postMessage({ok:true, msg:'worker alive', received:payload, time:Date.now()});
+
+          }catch(err){
+
+            self.postMessage({ok:false, error:String(err)});
+
+          }
+
+        };
+
+        // onerror fallback
+
+        self.onerror = function(e){
+
+          self.postMessage({ok:false, error:'worker error: '+e.message});
+
+        };
+
+      `;
+
+
+
+      // buat blob & worker
+
+      const blob = new Blob([workerCode], { type: 'application/javascript' });
+
+      const url = URL.createObjectURL(blob);
+
+      const w = new Worker(url);
+
+
+
+      // attach default onmessage to log to console (can be overridden)
+
+      w.onmessage = function(evt){
+
+        try{ console.log("TITAN_WORKER msg:", evt.data); }catch(e){ console.log("worker msg err", e); }
+
+      };
+
+      w.onerror = function(evt){ console.warn("TITAN_WORKER error", evt); };
+
+
+
+      // store & return
+
+      window.TITAN_WORKER = w;
+
+      console.log("TITAN_WORKER initialized (safe).");
+
+      return w;
+
+    }catch(e){
+
+      console.warn("enableWorkerFuture failed", e);
+
+      return null;
+
+    }
+
+  };
+
+
+
+  // fungsi untuk mengirim pesan ke worker dengan callback (safely)
+
+  window.titanWorkerPost = function(message, cb, timeoutMs=5000){
+
+    try{
+
+      if(!window.TITAN_WORKER) {
+
+        console.warn("No TITAN_WORKER active. Call enableWorkerFuture() first.");
+
+        if(cb) cb({ok:false, error:'no-worker'});
+
+        return;
+
+      }
+
+      const id = 'wcb_'+Math.floor(Math.random()*1e9);
+
+      function handler(evt){
+
+        try{
+
+          if(cb) cb(evt.data);
+
+        }catch(e){ console.warn("worker callback handler err", e); }
+
+        finally{
+
+          window.TITAN_WORKER.removeEventListener('message', handler);
+
+        }
+
+      }
+
+      window.TITAN_WORKER.addEventListener('message', handler);
+
+      window.TITAN_WORKER.postMessage(message);
+
+      if(timeoutMs>0){
+
+        setTimeout(()=> {
+
+          try{
+
+            window.TITAN_WORKER.removeEventListener('message', handler);
+
+            if(cb) cb({ ok:false, error: 'timeout' });
+
+          }catch(e){}
+
+        }, timeoutMs);
+
+      }
+
+    }catch(e){
+
+      console.warn("titanWorkerPost failed", e);
+
+      if(cb) cb({ ok:false, error: String(e) });
+
+    }
+
+  };
+
+
+
+  // safe disable
+
+  window.disableWorkerFuture = function(){
+
+    try{
+
+      if(window.TITAN_WORKER && typeof window.TITAN_WORKER.terminate === 'function'){
+
+        window.TITAN_WORKER.terminate();
+
+      }
+
+      window.TITAN_WORKER = null;
+
+      console.log("TITAN_WORKER terminated.");
+
+      return true;
+
+    }catch(e){
+
+      console.warn("disableWorkerFuture failed", e);
+
+      return false;
+
+    }
+
+  };
+
+
+
+  // expose a small playground button (non-intrusive) if UI exists
+
+  try{
+
+    const container = document.querySelector('.container');
+
+    if(container && !document.getElementById('titanWorkerPlay')){
+
+      const div = document.createElement('div');
+
+      div.className = 'card';
+
+      div.style.marginTop = '10px';
+
+      div.innerHTML = '<div class="section-title">Worker (safe)</div>' +
+
+                      '<button id="titanWorkerInit" class="small">Init Worker</button>' +
+
+                      '<button id="titanWorkerEcho" class="small" style="margin-left:8px">Echo Test</button>' +
+
+                      '<button id="titanWorkerMC" class="small" style="margin-left:8px">MC Stub</button>' +
+
+                      '<span id="titanWorkerStatus" class="note" style="margin-left:10px"></span>';
+
+      container.appendChild(div);
+
+
+
+      document.getElementById('titanWorkerInit').onclick = function(){
+
+        const w = window.enableWorkerFuture();
+
+        document.getElementById('titanWorkerStatus').textContent = w ? 'Worker ready' : 'Worker failed';
+
+      };
+
+      document.getElementById('titanWorkerEcho').onclick = function(){
+
+        window.titanWorkerPost({cmd:'echo', msg:'hello titan'}, function(resp){ document.getElementById('titanWorkerStatus').textContent = JSON.stringify(resp); });
+
+      };
+
+      document.getElementById('titanWorkerMC').onclick = function(){
+
+        window.titanWorkerPost({cmd:'mc_stub', iter:500}, function(resp){ document.getElementById('titanWorkerStatus').textContent = 'MC:' + (resp && resp.mc ? 'avg='+resp.mc.avg.toFixed(3) : JSON.stringify(resp)); }, 8000);
+
+      };
+
+    }
+
+  }catch(e){
+
+    // ignore UI injection errors
+
+  }
+
+
+
+})(); // IIFE end
+
+</script>
+
+  
 <!-- ===========================
      BAGIAN B — ENGINE UTAMA
 =========================== -->
