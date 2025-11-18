@@ -1286,7 +1286,231 @@ try{
 }
 
 function runWorkerMarketCalc(market){
-  return new Promise((resolve)=>{
+  return new Promis<!-- v25 CLEAN — PART 9/10
+     Advanced History Viewer · Export CSV/JSON · Legend · Small UI tweaks
+-->
+<script>
+/* ===========================
+   HISTORY ADVANCED VIEW v25 (simplified, clean)
+=========================== */
+function renderHistoryAdvanced(){
+  try{
+    const box = document.getElementById("historyList");
+    if(!box) return;
+    box.innerHTML = "";
+
+    const list = window._PARLAY_HISTORY_V25 || [];
+
+    // optional filter by team name
+    let filterVal = (document.getElementById("historyFilter") && document.getElementById("historyFilter").value) || "";
+    filterVal = filterVal.toString().trim().toLowerCase();
+
+    const filtered = filterVal
+      ? list.filter(it => {
+          const hName = (it.h && it.h.name ? it.h.name : "").toLowerCase();
+          const aName = (it.a && it.a.name ? it.a.name : "").toLowerCase();
+          return hName.includes(filterVal) || aName.includes(filterVal);
+        })
+      : list;
+
+    // render last 60 items (if ada)
+    const show = filtered.slice(-60).reverse();
+
+    for(const it of show){
+      const row = document.createElement("div");
+      row.className = "history-item";
+
+      const hName = it.h && it.h.name ? it.h.name : "Home";
+      const aName = it.a && it.a.name ? it.a.name : "Away";
+
+      const probs = it.meta && it.meta.prob3W ? it.meta.prob3W : it.prob || {};
+      const ph = probs.home!=null ? (probs.home*100).toFixed(1) : "-";
+      const pd = probs.draw!=null ? (probs.draw*100).toFixed(1) : "-";
+      const pa = probs.away!=null ? (probs.away*100).toFixed(1) : "-";
+
+      const conf = it.meta && it.meta.confidence!=null ? (it.meta.confidence*100).toFixed(1) : "-";
+      const trap = it.meta && it.meta.trapIndex!=null ? it.meta.trapIndex.toFixed(2) : "-";
+
+      row.innerHTML =
+        `<div><strong>${hName}</strong> vs <strong>${aName}</strong></div>
+         <div class="small-note">
+           H/D/A: ${ph}% / ${pd}% / ${pa}% · Conf: ${conf}% · Trap: ${trap}
+         </div>`;
+
+      box.appendChild(row);
+    }
+  }catch(e){
+    console.error("renderHistoryAdvanced err", e);
+  }
+}
+
+/* ===========================
+   HELPER UNTUK AUTO ENGINE
+=========================== */
+function val(id){
+  const el = document.getElementById(id);
+  return el ? el.value : "";
+}
+function setVal(id,v){
+  const el = document.getElementById(id);
+  if(el) el.value = v;
+}
+function num(id, def=0){
+  const n = parseFloat(val(id));
+  return Number.isFinite(n) ? n : def;
+}
+function op(side){
+  return side === "h" ? "a" : "h";
+}
+
+/* ===========================
+   AUTO ENGINE v25 — FULL
+   (tidak mengubah core v25, hanya bantu isi input)
+=========================== */
+
+/* --- AUTO BUILD-UP --- */
+function autoBuildUp(s){
+  const shots = num(s+"_shots");
+  const poss  = num(s+"_poss");
+  const prog  = num(s+"_prog");
+  const f3    = num(s+"_final3");
+  const press = val(s+"_press").toLowerCase();
+
+  let sc = poss/10 + prog/30 + f3/35;
+  if(press==="high") sc -= 1;
+  if(press==="gegenpress") sc -= 1.2;
+  if(press==="low") sc += 0.5;
+  if(shots>=17) sc -= 0.2;
+
+  sc = clamp(sc,1,10);
+  setVal(s+"_build",Math.round(sc));
+}
+
+/* --- AUTO IMPORTANCE (ringan, netral) --- */
+function autoImportance(s){
+  const name  = val(s+"_name").toLowerCase();
+  const oname = val(op(s)+"_name").toLowerCase();
+  const elo   = num(s+"_elo");
+  const oelo  = num(op(s)+"_elo");
+  const press = val(s+"_press").toLowerCase();
+  const abs   = val(s+"_abs").toLowerCase();
+
+  let im = 1.0;
+
+  // derby / big match indikasi penting
+  if(name && oname && name.slice(0,3)===oname.slice(0,3)) im += 0.12;
+  if(elo>=1750 && oelo>=1750) im += 0.12;
+
+  // mismatch besar biasanya lebih santai
+  if(Math.abs(elo-oelo)>=180) im -= 0.15;
+
+  // high press → serius
+  if(press==="high"||press==="gegenpress") im += 0.08;
+
+  // banyak pemain inti absen → importance turun
+  if(abs.includes("fw")||abs.includes("md")||abs.includes("df")) im -= 0.10;
+
+  im = clamp(im,0.65,1.25);
+
+  // jika tidak ada field _importance di HTML, ini aman (setVal cek elemen dulu)
+  setVal(s+"_importance",im.toFixed(2));
+}
+
+/* --- AUTO ROTATION --- */
+function autoRotation(s){
+  const abs   = val(s+"_abs").toLowerCase();
+  const press = val(s+"_press").toLowerCase();
+  const imp   = num(s+"_importance",1); // default 1 kalau field tidak ada
+
+  let r=0;
+  if(abs.includes("fw")) r++;
+  if(abs.includes("md")) r++;
+  if(abs.includes("df")) r++;
+  if(abs.includes("gk")) r++;
+
+  if(press==="high"||press==="gegenpress") r -= 0.5;
+  if(imp < 0.85) r += 1;
+
+  r = clamp(r,0,5);
+  setVal(s+"_rotation",Math.round(r));
+}
+
+/* --- AUTO PRESS --- */
+function autoPress(s){
+  const poss = num(s+"_poss");
+  const prog = num(s+"_prog");
+
+  let p="medium";
+  if(prog>=28 && poss>=55) p="high";
+  if(prog>=32) p="gegenpress";
+  if(poss<=40) p="low";
+
+  setVal(s+"_press",p);
+}
+
+/* --- AUTO TACTICAL STYLE (jika kamu nanti tambah field _tact) --- */
+function autoTactical(s){
+  const poss  = num(s+"_poss");
+  const build = num(s+"_build");
+  let t="balanced";
+
+  if(build>=8 && poss>=58) t="possession";
+  if(build<=3 && poss<=42) t="direct";
+  if(poss>=60) t="slow-build";
+  if(poss<=38) t="counter";
+
+  setVal(s+"_tact",t); // aman walau tidak ada input
+}
+
+/* --- AUTO DEFENSIVE DIFFICULTY --- */
+function autoDefenseLevel(s){
+  const inter = num(s+"_inter");
+  const press = val(s+"_press").toLowerCase();
+
+  let d=5;
+  if(inter>=12) d+=1;
+  if(press==="high"||press==="gegenpress") d+=0.5;
+  if(press==="low") d-=1;
+
+  d = clamp(d,1,10);
+  setVal(s+"_deflvl",d);
+}
+
+/* --- AUTO PROGRESSION WEIGHT --- */
+function autoProgWeight(s){
+  const prog = num(s+"_prog");
+  let w = clamp(prog/30,0.5,2.0);
+  setVal(s+"_progW",w.toFixed(2));
+}
+
+/* --- AUTO FINAL THIRD WEIGHT --- */
+function autoFinal3(s){
+  const f3 = num(s+"_final3");
+  let w = clamp(f3/30,0.5,2.0);
+  setVal(s+"_f3W",w.toFixed(2));
+}
+
+/* --- AUTO FINISHING QUALITY --- */
+function autoFinish(s){
+  const sots = num(s+"_sot");
+  const sh   = num(s+"_shots");
+  let fq = clamp(sots/Math.max(sh,1),0.1,1);
+  setVal(s+"_finishQ",fq.toFixed(2));
+}
+
+/* --- AUTO MODE (cup/final detection ringan) --- */
+function autoMode(s){
+  const name = val(s+"_name").toLowerCase();
+  let imp = num(s+"_importance",1);
+
+  if(name.includes("cup")||name.includes("final")||name.includes("ucl")){
+    imp += 0.22;
+  }
+
+  imp = clamp(imp,0.6,1.3);
+  setVal(s+"_importance",imp.toFixed(2));
+}
+      </script>e((resolve)=>{
     if(!_v25_worker) return resolve({ error: "no-worker" });
     const to = setTimeout(()=>resolve({ error: "timeout" }), 1500);
     _v25_worker.onmessage = (ev)=>{
@@ -1305,322 +1529,6 @@ window._renderDPF_v25 = window._renderDPF_v25;
 window.runWorkerMarketCalc = runWorkerMarketCalc;
 
 </script>
-    
-<!-- v25 CLEAN — PART 9/10
-     Advanced History Viewer · Export CSV/JSON · Legend · Small UI tweaks
--->
-
-<script>
-/* ===========================
-   HISTORY ADVANCED VIEW v25
-   - render list with quick inspect (show meta)
-   - filter by team name (client-side)
-=========================== */
-function renderHistoryAdvanced(){
-  try{
-    const box = document.getElementById("historyList");
-    if(!box) return;
-    box.innerHTML = "";
-
-    const list = window._PARLAY_HISTORY_V25 || [];
-    // optional simple filter control (non-invasive)
-    let filterVal = (document.getElementById("historyFilter") && document.getElementById("historyFilter").value) || "";
-    filterVal = (filterVal || "").toString().trim().toLowerCase();
-function autoBuildUp(s){
-  const shots = num(s+"_shots");
-  const poss  = num(s+"_poss");
-  const prog  = num(s+"_prog");
-  const f3    = num(s+"_final3");
-  const press = val(s+"_press").toLowerCase();
-
-  let sc = poss/10 + prog/30 + f3/35;
-  if(press==="high") sc -= 1;
-  if(press==="gegenpress") sc -= 1.2;
-  if(press==="low") sc += 0.5;
-  if(shots>=17) sc -= 0.2;
-
-  sc = clamp(sc,1,10);
-  set(s+"_build",Math.round(sc));
-      }
-    function autoImportance(s){
-  const name  = val(s+"_team").toLowerCase();
-  const oname = val(op(s)+"_team").toLowerCase();
-  const elo   = num(s+"_elo");
-  const oelo  = num(op(s)+"_elo");
-  const press = val(s+"_press").toLowerCase();
-  const abs   = val(s+"_abs").toLowerCase();
-
-  let im = 1.0;
-
-  if(name && oname && name.slice(0,3)==oname.slice(0,3)) im += 0.12;
-  if(elo>=1750 && oelo>=1750) im += 0.12;
-  if(Math.abs(elo-oelo)>=180) im -= 0.15;
-  if(press==="high"||press==="gegenpress") im += 0.08;
-  if(abs.includes("fw")||abs.includes("md")||abs.includes("df")) im -= 0.10;
-
-  im = clamp(im,0.65,1.25);
-  set(s+"_importance",im.toFixed(2));
-    }  
-function autoRotation(s){
-  const abs = val(s+"_abs").toLowerCase();
-  const press = val(s+"_press").toLowerCase();
-  const imp = num(s+"_importance");
-
-  let r=0;
-  if(abs.includes("fw")) r++;
-  if(abs.includes("md")) r++;
-  if(abs.includes("df")) r++;
-  if(abs.includes("gk")) r++;
-
-  if(press==="high"||press==="gegenpress") r-=0.5;
-  if(imp<0.85) r+=1;
-
-  r = clamp(r,0,5);
-  set(s+"_rotation",Math.round(r));
-    }
-      function autoPress(s){
-  const poss = num(s+"_poss");
-  const prog = num(s+"_prog");
-
-  let p="medium";
-  if(prog>=28 && poss>=55) p="high";
-  if(prog>=32) p="gegenpress";
-  if(poss<=40) p="low";
-
-  set(s+"_press",p);
-    }
-     function autoTactical(s){
-  const poss = num(s+"_poss");
-  const build= num(s+"_build");
-  let t="balanced";
-
-  if(build>=8 && poss>=58) t="possession";
-  if(build<=3 && poss<=42) t="direct";
-  if(poss>=60) t="slow-build";
-  if(poss<=38) t="counter";
-
-  set(s+"_tact",t);
-    }
-      function autoDefenseLevel(s){
-  const inter=num(s+"_inter");
-  const press=val(s+"_press").toLowerCase();
-
-  let d=5;
-  if(inter>=12) d+=1;
-  if(press==="high"||press==="gegenpress") d+=0.5;
-  if(press==="low") d-=1;
-
-  d=clamp(d,1,10);
-  set(s+"_deflvl",d);
-    }
-      function autoProgWeight(s){
-  const prog=num(s+"_prog");
-  let w = clamp(prog/30,0.5,2.0);
-  set(s+"_progW",w.toFixed(2));
-    }
-    function autoFinal3(s){
-  const f3=num(s+"_final3");
-  let w = clamp(f3/30,0.5,2.0);
-  set(s+"_f3W",w.toFixed(2));
-          }  
-      function autoFinish(s){
-  const sots=num(s+"_sot");
-  const sh=num(s+"_shots");
-  let fq = clamp(sots/Math.max(sh,1),0.1,1);
-  set(s+"_finishQ",fq.toFixed(2));
-}
-
-function autoMode(s){
-  const name=val(s+"_team").toLowerCase();
-  let imp=num(s+"_importance");
-
-  if(name.includes("cup")||name.includes("final")||name.includes("ucl"))
-    imp+=0.22;
-
-  set(s+"_importance",clamp(imp,0.6,1.3).toFixed(2));
-    }
-    for(const item of list){
-      try{
-        const hname = (item.home.name || "").toString();
-        const aname = (item.away.name || "").toString();
-        if(filterVal){
-          if(hname.toLowerCase().indexOf(filterVal) === -1 && aname.toLowerCase().indexOf(filterVal) === -1) continue;
-        }
-        const div = document.createElement("div");
-        div.className = "history-item";
-        div.style.display = "flex";
-        div.style.flexDirection = "column";
-        div.style.gap = "6px";
-
-        const top = document.createElement("div");
-        top.innerHTML = `<div style="font-weight:700">${hname || 'Home'} vs ${aname || 'Away'}</div>
-                         <div class="small-note">λH: ${item.final.H} | λA: ${item.final.A} — Conf: ${Math.round((item.final.confidence||0)*100)}%</div>
-                         <div class="small-note">${item.time}</div>`;
-
-        const btnRow = document.createElement("div");
-        btnRow.style.display = "flex";
-        btnRow.style.gap = "8px";
-
-        const inspectBtn = document.createElement("button");
-        inspectBtn.textContent = "Inspect";
-        inspectBtn.style.padding = "6px 8px";
-        inspectBtn.style.fontSize = "13px";
-        inspectBtn.onclick = ()=>{ showInspectModal(item); };
-
-        const copyBtn = document.createElement("button");
-        copyBtn.textContent = "Copy JSON";
-        copyBtn.style.padding = "6px 8px";
-        copyBtn.style.fontSize = "13px";
-        copyBtn.onclick = ()=>{ navigator.clipboard && navigator.clipboard.writeText(JSON.stringify(item,null,2)); alert("Copied JSON to clipboard"); };
-
-        btnRow.appendChild(inspectBtn);
-        btnRow.appendChild(copyBtn);
-
-        div.appendChild(top);
-        div.appendChild(btnRow);
-
-        box.appendChild(div);
-      }catch(e){ console.warn("history render item failed", e); }
-    }
-  }catch(e){
-    console.warn("renderHistoryAdvanced error", e);
-  }
-}
-
-/* ===========================
-   Inspect modal (light, DOM-only)
-=========================== */
-function showInspectModal(item){
-  try{
-    // reusable modal container
-    let modal = document.getElementById("v25_inspect_modal");
-    if(!modal){
-      modal = document.createElement("div");
-      modal.id = "v25_inspect_modal";
-      modal.style.position = "fixed";
-      modal.style.left = "8px";
-      modal.style.right = "8px";
-      modal.style.top = "8px";
-      modal.style.bottom = "8px";
-      modal.style.background = "rgba(6,8,12,0.95)";
-      modal.style.color = "#e7eefc";
-      modal.style.padding = "14px";
-      modal.style.zIndex = 99999;
-      modal.style.overflow = "auto";
-      modal.style.border = "1px solid rgba(255,255,255,0.04)";
-      modal.style.borderRadius = "8px";
-
-      const close = document.createElement("button");
-      close.textContent = "Close";
-      close.style.position = "absolute";
-      close.style.right = "12px";
-      close.style.top = "12px";
-      close.onclick = ()=>{ modal.remove(); };
-
-      modal.appendChild(close);
-      document.body.appendChild(modal);
-    }else{
-      modal.innerHTML = "";
-      const close = document.createElement("button");
-      close.textContent = "Close";
-      close.style.position = "absolute";
-      close.style.right = "12px";
-      close.style.top = "12px";
-      close.onclick = ()=>{ modal.remove(); };
-      modal.appendChild(close);
-    }
-
-    const pre = document.createElement("pre");
-    pre.style.whiteSpace = "pre-wrap";
-    pre.style.fontSize = "12px";
-    pre.style.lineHeight = "1.3";
-    pre.textContent = JSON.stringify(item, null, 2);
-    modal.appendChild(pre);
-  }catch(e){ console.warn("inspect modal failed", e); }
-}
-
-/* ===========================
-   EXPORT CSV utility (safe)
-   - flattens history and creates CSV
-=========================== */
-function exportHistoryCSV(){
-  try{
-    const list = window._PARLAY_HISTORY_V25 || [];
-    if(!list.length){
-      alert("No history to export.");
-      return;
-    }
-    // build rows: time, home, away, lambdaH, lambdaA, conf, varMult, market (if any)
-    const rows = [["time","home","away","lambdaH","lambdaA","confidence","varMultiplier","market"]];
-    for(const it of list){
-      const row = [
-        it.time || "",
-        (it.home && it.home.name) || "",
-        (it.away && it.away.name) || "",
-        (it.final && it.final.H) || "",
-        (it.final && it.final.A) || "",
-        (it.final && it.final.confidence) || "",
-        (it.final && it.final.varMultiplier) || "",
-        JSON.stringify(it.market || "")
-      ];
-      rows.push(row.map(r=> `"${(r+"").replace(/"/g,'""')}"` ).join(","));
-    }
-    const csv = rows.map(r=> Array.isArray(r)? r.join(","): r).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "parlay_history_v25.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  }catch(e){ alert("Export CSV failed: " + e); }
-}
-
-/* ===========================
-   Simple legend renderer under canvases
-   - non-invasive small text
-=========================== */
-function renderLegends(){
-  try{
-    const container = document.getElementById("resultBox");
-    if(!container) return;
-    const lg = document.getElementById("v25_legend");
-    if(lg) return; // only once
-    const el = document.createElement("div");
-    el.id = "v25_legend";
-    el.style.marginTop = "8px";
-    el.className = "small-note";
-    el.innerHTML = "Legend: <b style='color:#6cb4ff'>Home</b> cluster — <b style='color:#ff9f9f'>Away</b> cluster. DPF shows defensive fragility (warmer = fragile).";
-    container.appendChild(el);
-  }catch(e){ console.warn("renderLegends fail", e); }
-}
-
-/* ===========================
-   Hook an optional history filter input (non-invasive)
-   If UI has an element with id 'historyFilter', wire events
-=========================== */
-window.addEventListener("DOMContentLoaded", ()=>{
-  try{
-    const hf = document.getElementById("historyFilter");
-    if(hf){
-      hf.oninput = ()=> { renderHistoryAdvanced(); };
-    }
-    // initial render
-    renderHistoryAdvanced();
-    renderLegends();
-  }catch(e){}
-});
-
-/* ===========================
-   Expose functions
-=========================== */
-window.renderHistoryAdvanced = renderHistoryAdvanced;
-window.exportHistoryCSV = exportHistoryCSV;
-window.showInspectModal = showInspectModal;
-window.renderLegends = renderLegends;
-
-</script>
-    
   
 <!-- v25 CLEAN — PART 10/10
      Final safety checks · wrappers · compatibility · close HTML
