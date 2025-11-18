@@ -1529,7 +1529,166 @@ window._renderDPF_v25 = window._renderDPF_v25;
 window.runWorkerMarketCalc = runWorkerMarketCalc;
 
 </script>
-  
+  <script>
+function val(id){const el=document.getElementById(id);return el?el.value:"";}
+function setVal(id,v){const el=document.getElementById(id);if(el)el.value=v;}
+function num(id,d=0){const n=parseFloat(val(id));return Number.isFinite(n)?n:d;}
+function op(s){return s==="h"?"a":"h";}
+
+/* ============================
+   AUTO BUILD-UP
+============================ */
+function autoBuildUp(s){
+  const shots=num(s+"_shots");
+  const poss=num(s+"_poss");
+  const prog=num(s+"_prog");
+  const f3=num(s+"_final3");
+  const press=val(s+"_press").toLowerCase();
+
+  let sc=poss/10 + prog/30 + f3/38;
+  if(press==="high") sc-=1;
+  if(press==="gegenpress") sc-=1.2;
+  if(press==="low") sc+=0.5;
+  if(shots>=17) sc-=0.2;
+
+  sc=clamp(sc,1,10);
+  setVal(s+"_build",Math.round(sc));
+}
+
+/* ============================
+   AUTO IMPORTANCE
+============================ */
+function autoImportance(s){
+  const name=val(s+"_name").toLowerCase();
+  const oname=val(op(s)+"_name").toLowerCase();
+  const elo=num(s+"_elo");
+  const oelo=num(op(s)+"_elo");
+  const press=val(s+"_press").toLowerCase();
+  const abs=val(s+"_abs").toLowerCase();
+
+  let im=1.0;
+  if(name && oname && name.slice(0,3)===oname.slice(0,3)) im+=0.12;
+  if(elo>=1750 && oelo>=1750) im+=0.12;
+  if(Math.abs(elo-oelo)>=180) im-=0.15;
+  if(press==="high"||press==="gegenpress") im+=0.08;
+  if(abs.includes("fw")||abs.includes("md")||abs.includes("df")) im-=0.10;
+
+  im=clamp(im,0.65,1.25);
+  setVal(s+"_importance",im.toFixed(2));
+}
+
+/* ============================
+   AUTO ROTATION
+============================ */
+function autoRotation(s){
+  const abs=val(s+"_abs").toLowerCase();
+  const press=val(s+"_press").toLowerCase();
+  const imp=num(s+"_importance",1);
+
+  let r=0;
+  if(abs.includes("fw")) r++;
+  if(abs.includes("md")) r++;
+  if(abs.includes("df")) r++;
+  if(abs.includes("gk")) r++;
+
+  if(press==="high"||press==="gegenpress") r-=0.5;
+  if(imp<0.85) r+=1;
+
+  r=clamp(r,0,5);
+  setVal(s+"_rotation",Math.round(r));
+}
+
+/* ============================
+   AUTO PRESS
+============================ */
+function autoPress(s){
+  const poss=num(s+"_poss");
+  const prog=num(s+"_prog");
+
+  let p="medium";
+  if(prog>=28 && poss>=55) p="high";
+  if(prog>=32) p="gegenpress";
+  if(poss<=40) p="low";
+
+  setVal(s+"_press",p);
+}
+
+/* ============================
+   AUTO TACTICAL STYLE
+============================ */
+function autoTactical(s){
+  const poss=num(s+"_poss");
+  const build=num(s+"_build");
+
+  let t="balanced";
+  if(build>=8 && poss>=58) t="possession";
+  if(build<=3 && poss<=42) t="direct";
+  if(poss>=60) t="slow-build";
+  if(poss<=38) t="counter";
+
+  setVal(s+"_tact",t);
+}
+
+/* ============================
+   AUTO DEFENSE LEVEL
+============================ */
+function autoDefenseLevel(s){
+  const inter=num(s+"_inter");
+  const press=val(s+"_press").toLowerCase();
+
+  let d=5;
+  if(inter>=12) d++;
+  if(press==="high"||press==="gegenpress") d+=0.5;
+  if(press==="low") d--;
+
+  d=clamp(d,1,10);
+  setVal(s+"_deflvl",d);
+}
+
+/* ============================
+   AUTO PROGRESSION WEIGHT
+============================ */
+function autoProgWeight(s){
+  const prog=num(s+"_prog");
+  const w=clamp(prog/30,0.5,2.0);
+  setVal(s+"_progW",w.toFixed(2));
+}
+
+/* ============================
+   AUTO FINAL THIRD WEIGHT
+============================ */
+function autoFinal3(s){
+  const f3=num(s+"_final3");
+  const w=clamp(f3/30,0.5,2.0);
+  setVal(s+"_f3W",w.toFixed(2));
+}
+
+/* ============================
+   AUTO FINISHING QUALITY
+============================ */
+function autoFinish(s){
+  const sot=num(s+"_sot");
+  const sh=num(s+"_shots");
+  const fq=clamp(sot/Math.max(sh,1),0.1,1);
+  setVal(s+"_finishQ",fq.toFixed(2));
+}
+
+/* ============================
+   AUTO MODE (Cup/Final/UCL)
+============================ */
+function autoMode(s){
+  const name=val(s+"_name").toLowerCase();
+  let imp=num(s+"_importance",1);
+
+  if(name.includes("cup")||name.includes("final")||name.includes("ucl")){
+    imp+=0.22;
+  }
+
+  imp=clamp(imp,0.6,1.3);
+  setVal(s+"_importance",imp.toFixed(2));
+}
+    </script>
+    
 <!-- v25 CLEAN — PART 10/10
      Final safety checks · wrappers · compatibility · close HTML
 -->
