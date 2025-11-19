@@ -1,0 +1,1534 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>Parlay Titan v27 ΩΩ (Omega++)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <style>
+    body{
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:#020617;
+      color:#e5e7eb;
+      margin:0;
+      padding:0;
+    }
+    .container{
+      max-width:1150px;
+      margin:0 auto;
+      padding:16px;
+    }
+    h1,h2,h3,h4{margin:0 0 6px 0;font-weight:600;}
+    h1{font-size:20px;}
+    h2{font-size:16px;margin-top:16px;}
+    .grid{display:flex;flex-wrap:wrap;gap:12px;}
+    .col{
+      flex:1 1 320px;
+      background:#020617;
+      border-radius:10px;
+      padding:10px;
+      border:1px solid #1f2937;
+    }
+    input,select,textarea{
+      width:100%;
+      box-sizing:border-box;
+      margin-bottom:6px;
+      padding:6px 8px;
+      border-radius:6px;
+      border:1px solid #1f2937;
+      background:#020617;
+      color:#e5e7eb;
+      font-size:12px;
+    }
+    textarea{min-height:52px;resize:vertical;}
+    label{
+      font-size:11px;
+      opacity:0.8;
+      display:block;
+      margin-top:2px;
+    }
+    .btn{
+      display:inline-block;
+      padding:8px 12px;
+      border-radius:6px;
+      border:none;
+      cursor:pointer;
+      font-size:12px;
+      background:#6366f1;
+      color:#fff;
+      margin:4px 4px 4px 0;
+    }
+    .btn.secondary{background:#111827;border:1px solid #374151;}
+    .btn:disabled{opacity:0.5;cursor:default;}
+    .section-title{
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.06em;
+      opacity:0.7;
+      margin-bottom:4px;
+    }
+    .small-note{font-size:10px;opacity:0.8;}
+    .muted{opacity:0.7;}
+    .result-box{
+      background:#020617;
+      border-radius:10px;
+      padding:10px;
+      border:1px solid #1f2937;
+      margin-top:12px;
+      font-size:12px;
+    }
+    .result-row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:4px;
+    }
+    .pill{
+      display:inline-block;
+      padding:2px 6px;
+      border-radius:999px;
+      border:1px solid #374151;
+      font-size:10px;
+      margin-right:4px;
+      margin-bottom:2px;
+    }
+    .divider{border-top:1px dashed #1f2937;margin:8px 0;}
+    .auto-block{margin:4px 0 8px 0;}
+    .auto-btn{
+      margin:2px;
+      padding:4px 8px;
+      font-size:10px;
+      background:#075985;
+      color:#e5e7eb;
+      border:none;
+      border-radius:4px;
+      cursor:pointer;
+    }
+    .auto-btn:hover{background:#0e7490;}
+    @media (max-width:700px){
+      .result-row{flex-direction:column;}
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Parlay Titan v27 ΩΩ (Omega++)</h1>
+  <div class="small-note muted">
+    XG+ v6 · PCS v6 Ω · Tactical DNA v3 · Defensive Grid v4 · ICM v27 · Form Engine v27 · Momentum/Tempo/Transition/PressTrap ·
+    H2H · HDP Insight · BTTS · HT · Cards · Corners · Scoreline Matrix · Style Predictor · OU netral (tanpa condong).
+  </div>
+
+  <!-- ================= UI INPUT ================= -->
+  <h2>Data Pertandingan</h2>
+  <div class="grid">
+    <div class="col">
+      <div class="section-title">HOME</div>
+      <input id="h_name" placeholder="Nama Tim Home">
+      <input id="h_shots" placeholder="Shots per game">
+      <input id="h_sot" placeholder="Shots on target per game">
+      <input id="h_prog" placeholder="Progressive passes / carries">
+      <input id="h_final3" placeholder="Final third entries">
+      <input id="h_poss" placeholder="Possession %">
+      <input id="h_xg" placeholder="xG per game (jika ada)">
+      <input id="h_gc" placeholder="Goals conceded per game">
+      <input id="h_shotsC" placeholder="Shots conceded per game">
+      <input id="h_elo" placeholder="ELO Rating">
+      <input id="h_build" placeholder="Build quality (1–10)">
+      <input id="h_rest" placeholder="Rest days">
+      <input id="h_rotation" placeholder="Rotation level (0–10)">
+      <input id="h_press" placeholder="Press style (low/medium/high/gegenpress)">
+      <input id="h_inter" placeholder="Interceptions per game">
+      <textarea id="h_abs" placeholder="Absensi (GK:1; DF:1; MD:0; FW:2)"></textarea>
+
+      <label>Form terakhir (Attack) – 5–10 pertandingan (mis: 2.1,1.8,3.0,...)</label>
+      <textarea id="h_form_att" placeholder=""></textarea>
+      <label>Form terakhir (Defense – gol kebobolan per match)</label>
+      <textarea id="h_form_def" placeholder=""></textarea>
+
+      <div class="auto-block">
+        <button class="auto-btn" onclick="autoBuildUp('h')">AUTO BUILD</button>
+        <button class="auto-btn" onclick="autoDefense('h')">AUTO DEF</button>
+        <button class="auto-btn" onclick="autoImportance('h')">AUTO IMPORTANCE</button>
+        <button class="auto-btn" onclick="autoRotation('h')">AUTO ROTATION</button>
+        <button class="auto-btn" onclick="autoPress('h')">AUTO PRESS</button>
+        <button class="auto-btn" onclick="autoFinish('h')">AUTO FINISH Q</button>
+      </div>
+
+      <label>Importance weight</label>
+      <input id="h_imp" placeholder="1.00 (boleh dikosongkan)">
+      <label>Finishing quality (0.1–1.0)</label>
+      <input id="h_finishQ" placeholder="0.10–1.00 (boleh auto)">
+    </div>
+
+    <div class="col">
+      <div class="section-title">AWAY</div>
+      <input id="a_name" placeholder="Nama Tim Away">
+      <input id="a_shots" placeholder="Shots per game">
+      <input id="a_sot" placeholder="Shots on target per game">
+      <input id="a_prog" placeholder="Progressive passes / carries">
+      <input id="a_final3" placeholder="Final third entries">
+      <input id="a_poss" placeholder="Possession %">
+      <input id="a_xg" placeholder="xG per game (jika ada)">
+      <input id="a_gc" placeholder="Goals conceded per game">
+      <input id="a_shotsC" placeholder="Shots conceded per game">
+      <input id="a_elo" placeholder="ELO Rating">
+      <input id="a_build" placeholder="Build quality (1–10)">
+      <input id="a_rest" placeholder="Rest days">
+      <input id="a_rotation" placeholder="Rotation level (0–10)">
+      <input id="a_press" placeholder="Press style (low/medium/high/gegenpress)">
+      <input id="a_inter" placeholder="Interceptions per game">
+      <textarea id="a_abs" placeholder="Absensi (GK:1; DF:1; MD:0; FW:2)"></textarea>
+
+      <label>Form terakhir (Attack)</label>
+      <textarea id="a_form_att" placeholder=""></textarea>
+      <label>Form terakhir (Defense)</label>
+      <textarea id="a_form_def" placeholder=""></textarea>
+
+      <div class="auto-block">
+        <button class="auto-btn" onclick="autoBuildUp('a')">AUTO BUILD</button>
+        <button class="auto-btn" onclick="autoDefense('a')">AUTO DEF</button>
+        <button class="auto-btn" onclick="autoImportance('a')">AUTO IMPORTANCE</button>
+        <button class="auto-btn" onclick="autoRotation('a')">AUTO ROTATION</button>
+        <button class="auto-btn" onclick="autoPress('a')">AUTO PRESS</button>
+        <button class="auto-btn" onclick="autoFinish('a')">AUTO FINISH Q</button>
+      </div>
+
+      <label>Importance weight</label>
+      <input id="a_imp" placeholder="1.00 (boleh dikosongkan)">
+      <label>Finishing quality (0.1–1.0)</label>
+      <input id="a_finishQ" placeholder="0.10–1.00 (boleh auto)">
+    </div>
+
+    <div class="col">
+      <div class="section-title">Konteks Laga</div>
+      <select id="comp_mode">
+        <option value="">Tipe Kompetisi</option>
+        <option value="league">Liga</option>
+        <option value="cup">Cup / Knockout</option>
+        <option value="international">Antar Negara</option>
+        <option value="friendly">Friendly</option>
+      </select>
+      <select id="match_type">
+        <option value="">Tipe Laga</option>
+        <option value="normal">Normal</option>
+        <option value="derby">Derby</option>
+        <option value="title">Title Race</option>
+        <option value="relegation">Relegation Battle</option>
+        <option value="final">Final</option>
+      </select>
+      <select id="comp_detail">
+        <option value="">Detail Liga/Cup</option>
+        <option value="league_early">Liga (Awal Musim)</option>
+        <option value="league_mid">Liga (Pertengahan)</option>
+        <option value="league_late">Liga (Akhir Musim)</option>
+        <option value="cup_r1">Cup R1–R3</option>
+        <option value="cup_quarter">Cup Quarter-final</option>
+        <option value="cup_semi">Cup Semi-final</option>
+        <option value="cup_final">Cup Final</option>
+        <option value="two_leg_first">2 Leg – Leg 1</option>
+        <option value="two_leg_second">2 Leg – Leg 2</option>
+      </select>
+      <select id="weather">
+        <option value="">Cuaca</option>
+        <option value="normal">Normal</option>
+        <option value="rain">Hujan</option>
+        <option value="snow">Salju</option>
+        <option value="hot">Panas</option>
+      </select>
+
+      <label>Faktor Venue (opsional)</label>
+      <select id="venue_factor">
+        <option value="">Venue normal</option>
+        <option value="fortress">Home Fortress (kandang sangat kuat)</option>
+        <option value="tough_away">Away sulit (perjalanan jauh / altitude)</option>
+        <option value="neutral">Neutral venue</option>
+      </select>
+
+      <label>H2H (opsional)</label>
+      <textarea id="h2h_data" placeholder="Format bebas: baris per match
+Home X–Y Away
+..."></textarea>
+      <label>Jumlah pertandingan H2H terakhir dipakai (3–10)</label>
+      <input id="h2h_count" placeholder="Misal: 5">
+
+      <div class="divider"></div>
+      <div class="section-title">Pasar (tidak menggeser OU)</div>
+      <input id="odds_home" placeholder="Odds 1">
+      <input id="odds_draw" placeholder="Odds X">
+      <input id="odds_away" placeholder="Odds 2">
+      <input id="line_ou" placeholder="Line Over/Under (mis: 2.5)">
+      <input id="odds_over" placeholder="Odds Over (opsional)">
+      <input id="odds_under" placeholder="Odds Under (opsional)">
+
+      <label>Asian Handicap (HDP)</label>
+      <input id="hdp_line" placeholder="HDP line (mis: -0.25)">
+      <input id="hdp_home" placeholder="Odds HDP Home">
+      <input id="hdp_away" placeholder="Odds HDP Away">
+
+      <div class="small-note muted">
+        H2H, form & odds hanya sebagai insight (konfirmasi / deteksi trap), <b>tidak memaksa hasil condong Over/Under</b>.
+      </div>
+
+      <div class="divider"></div>
+      <button class="btn" onclick="analyzeMatch_v27Omega()">ANALYZE v27 ΩΩ</button>
+      <button class="btn secondary" onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+
+  <!-- ================= HASIL ================= -->
+  <h2>Hasil Analisis v27 ΩΩ</h2>
+  <div id="result_box" class="result-box">
+    <div class="small-note muted">Isi data lalu klik <b>ANALYZE v27 ΩΩ</b>.</div>
+  </div>
+</div>
+
+<script>
+/* ========= CORE HELPER ========= */
+function safeNum(v, def=0){
+  const n = Number(v);
+  return Number.isFinite(n) ? n : def;
+}
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+function roundTo(x,p=3){
+  const k = Math.pow(10,p);
+  return Math.round((x||0)*k)/k;
+}
+function poisson(k,lambda){
+  k = k|0;
+  if(lambda<=0) return (k===0)?1:0;
+  if(k<0) return 0;
+  let p = Math.exp(-lambda);
+  for(let i=0;i<k;i++) p *= lambda/(i+1);
+  return p;
+}
+function prob3W(lambdaH,lambdaA){
+  let pH=0,pD=0,pA=0;
+  const maxG = 10;
+  for(let gh=0;gh<=maxG;gh++){
+    const ph=poisson(gh,lambdaH);
+    for(let ga=0;ga<=maxG;ga++){
+      const pa=poisson(ga,lambdaA);
+      const j=ph*pa;
+      if(gh>ga) pH+=j;
+      else if(gh===ga) pD+=j;
+      else pA+=j;
+    }
+  }
+  const s=pH+pD+pA || 1;
+  return {H:pH/s,D:pD/s,A:pA/s};
+}
+
+/* ========= FORM / INPUT HELPERS ========= */
+function val(id){const el=document.getElementById(id);return el?el.value:"";}
+function setVal(id,v){const el=document.getElementById(id);if(el)el.value=v;}
+function num(id,def=0){return safeNum(val(id),def);}
+function op(s){return s==="h"?"a":"h";}
+
+/* AUTO BUILD QUALITY */
+function autoBuildUp(s){
+  const shots=num(s+"_shots");
+  const prog =num(s+"_prog");
+  const f3   =num(s+"_final3");
+  const poss =num(s+"_poss");
+  let score=0;
+  score+=shots/3;
+  score+=prog/25;
+  score+=f3/30;
+  score+=(poss-50)/10;
+  score=clamp(score,1,10);
+  setVal(s+"_build",Math.round(score));
+}
+
+/* AUTO DEFENSIVE DIFFICULTY */
+function autoDefense(s){
+  const gc   = num(s+"_gc");
+  const shC  = num(s+"_shotsC");
+  const inter= num(s+"_inter");
+  let d=6;
+  d-=gc*0.5;
+  d-=shC*0.2;
+  d+=inter*0.15;
+  d=clamp(d,1,10);
+  setVal(s+"_deflvl",Math.round(d));
+}
+
+/* AUTO IMPORTANCE */
+function autoImportance(s){
+  const comp = val("comp_mode");
+  const mtype= val("match_type");
+  const name = val(s+"_name").toLowerCase();
+  const abs  = val(s+"_abs").toLowerCase();
+  let imp=1.0;
+  if(comp==="cup" || comp==="international") imp+=0.10;
+  if(mtype==="derby") imp+=0.06;
+  if(mtype==="title" || mtype==="final") imp+=0.14;
+  if(mtype==="relegation") imp+=0.10;
+  if(name.includes("u19") || name.includes("u21") || comp==="friendly") imp-=0.10;
+  if(abs.includes("fw") || abs.includes("md") || abs.includes("df")) imp-=0.05;
+  imp=clamp(imp,0.75,1.3);
+  setVal(s+"_imp",roundTo(imp,2));
+}
+
+/* AUTO ROTATION */
+function autoRotation(s){
+  const abs = val(s+"_abs").toLowerCase();
+  const rest= num(s+"_rest",3);
+  let r=0;
+  if(abs.includes("fw")) r++;
+  if(abs.includes("md")) r++;
+  if(abs.includes("df")) r++;
+  if(abs.includes("gk")) r+=0.5;
+  if(rest<=2) r+=1.5;
+  r=clamp(r,0,10);
+  setVal(s+"_rotation",roundTo(r,1));
+}
+
+/* AUTO PRESS STYLE */
+function autoPress(s){
+  const poss=num(s+"_poss");
+  const prog=num(s+"_prog");
+  let p="medium";
+  if(prog>=30 && poss>=55) p="high";
+  if(prog>=34) p="gegenpress";
+  if(poss<=42) p="low";
+  setVal(s+"_press",p);
+}
+
+/* AUTO FINISHING QUALITY */
+function autoFinish(s){
+  const sh = num(s+"_shots");
+  const so = num(s+"_sot");
+  let fq = 0.3;
+  if(sh>0) fq = clamp(so/Math.max(sh,1),0.1,1.0);
+  setVal(s+"_finishQ",roundTo(fq,2));
+}
+
+/* PARSE ABSENSI */
+function parseAbs(str){
+  const out={GK:0,DF:0,MD:0,FW:0};
+  if(!str) return out;
+  const parts=str.split(";");
+  for(const p of parts){
+    const seg=p.split(":");
+    if(seg.length!==2) continue;
+    const key=seg[0].trim().toUpperCase();
+    const valN=safeNum(seg[1],0);
+    if(out.hasOwnProperty(key)) out[key]=valN;
+  }
+  return out;
+}
+
+/* FORM ENGINE v27 */
+function parseFormList(str){
+  if(!str) return [];
+  return str.split(",").map(x=>safeNum(x.trim(),NaN)).filter(x=>Number.isFinite(x));
+}
+function formEngine_v27(attStr,defStr){
+  const attList=parseFormList(attStr);
+  const defList=parseFormList(defStr);
+  const nA=attList.length, nD=defList.length;
+  let avgAtt=0, avgDef=0, trendAtt=0, trendDef=0, stab=1;
+
+  if(nA>0){
+    avgAtt=attList.reduce((a,b)=>a+b,0)/nA;
+    if(nA>=3){
+      const last=attList[nA-1], first=attList[0];
+      trendAtt = clamp((last-first)/Math.max(first+0.5,1),-0.8,0.8);
+    }
+  }
+  if(nD>0){
+    avgDef=defList.reduce((a,b)=>a+b,0)/nD;
+    if(nD>=3){
+      const last=defList[nD-1], first=defList[0];
+      trendDef = clamp((first-last)/Math.max(first+0.5,1),-0.8,0.8); // turun kebobolan = positif
+    }
+  }
+  const totalN=nA+nD;
+  if(totalN>0){
+    let varSum=0, all=attList.concat(defList);
+    const mean=all.reduce((a,b)=>a+b,0)/totalN;
+    for(const v of all) varSum+=(v-mean)*(v-mean);
+    const variance=varSum/Math.max(totalN-1,1);
+    stab = clamp(1/(1+variance/2),0,1);
+  }
+
+  return {
+    avgAtt,avgDef,trendAtt,trendDef,stability:stab
+  };
+}
+
+/* XG+ v6 Ω */
+function xg6Omega(team,opp){
+  const shots=safeNum(team.shots,0);
+  const sot  =safeNum(team.sot,0);
+  const poss =safeNum(team.poss,50);
+  const prog =safeNum(team.prog,0);
+  const f3   =safeNum(team.final3,0);
+  const xgIn =safeNum(team.xg,0);
+
+  let baseXg = shots*0.08 + sot*0.05;
+  baseXg += prog*0.015 + f3*0.02;
+  baseXg *= clamp(0.8 + (poss-50)*0.006,0.7,1.3);
+  if(xgIn>0) baseXg = (baseXg*0.4 + xgIn*0.6);
+  baseXg = clamp(baseXg,0.1,3.5);
+
+  const loc   = clamp((f3+prog/2)/20,0.3,2.0);
+  const chain = clamp((prog+shots)/15,0.3,2.0);
+  const finQ  = safeNum(team.finishQ,0.4);
+  return {
+    xg: roundTo(baseXg*clamp(0.8+finQ*0.4,0.7,1.4),3),
+    loc,chain,finQ
+  };
+}
+
+/* PCS v6 Ω */
+function pcs_v6_omega(h,a){
+  const hX=xg6Omega(h,a);
+  const aX=xg6Omega(a,h);
+  const baseH=hX.xg;
+  const baseA=aX.xg;
+  const defH=clamp(a.defLvl||5,1,10);
+  const defA=clamp(h.defLvl||5,1,10);
+  const lambdaH=clamp(baseH*(11-defH)/8,0.1,4.5);
+  const lambdaA=clamp(baseA*(11-defA)/8,0.1,4.5);
+  return {H:roundTo(lambdaH,3),A:roundTo(lambdaA,3),meta:{hX,aX}};
+}
+
+/* ICM v27 (sedikit lebih halus) */
+function icm_v27(absStr){
+  const p=parseAbs(absStr);
+  let atkMul=1, defMul=1;
+  atkMul-=p.FW*0.065 + p.MD*0.028;
+  defMul-=p.DF*0.048 + p.GK*0.075;
+  atkMul=clamp(atkMul,0.72,1.05);
+  defMul=clamp(defMul,0.72,1.05);
+  return {atkMul,defMul};
+}
+
+/* MOMENTUM / TEMPO / TRANSITION / PRESSTRAP */
+function momentumScore(team){
+  const shots = safeNum(team.shots,0);
+  const sot   = safeNum(team.sot,0);
+  const prog  = safeNum(team.prog,0);
+  const f3    = safeNum(team.final3,0);
+  const poss  = safeNum(team.poss,50);
+  let m=0;
+  m+=shots*0.5;
+  m+=sot*0.8;
+  m+=prog*0.15;
+  m+=f3*0.25;
+  m+=(poss-50)*0.3;
+  return roundTo(clamp(m/10,0,10),2);
+}
+function tempoRating(team){
+  const poss=safeNum(team.poss,50);
+  const prog=safeNum(team.prog,0);
+  let t=(prog/4)+(100-poss)/3;
+  return roundTo(clamp(t/10,0,10),2);
+}
+function transitionThreat(team,opp){
+  const prog=safeNum(team.prog,0);
+  const inter=safeNum(opp.inter,0);
+  let s = prog*0.18 + inter*0.18;
+  return roundTo(clamp(s/5,0,10),2);
+}
+function pressTrapRisk(team){
+  const build = safeNum(team.build,5);
+  const press = (team.press||"medium").toLowerCase();
+  let p=5;
+  if(build<=3)p+=2;
+  if(build>=8)p-=1;
+  if(press==="high"||press==="gegenpress")p+=1;
+  if(press==="low")p-=1;
+  return roundTo(clamp(p,0,10),2);
+}
+
+/* RELIABILITY & CONVERGENCE */
+function reliabilityScore(h,a){
+  function scoreTeam(t){
+    let s=0;
+    if(t.shots>0 && t.sot>=0) s+=1.5;
+    if(t.poss>0) s+=1;
+    if(t.prog>0) s+=1;
+    if(t.final3>0) s+=1;
+    if(t.xg>0) s+=1.5;
+    if(t.gc>=0 && t.shotsC>=0) s+=1;
+    if(t.elo>0) s+=1;
+    return clamp(s/7,0,1);
+  }
+  const rH=scoreTeam(h);
+  const rA=scoreTeam(a);
+  return {H:rH,A:rA,global:(rH+rA)/2};
+}
+function convergenceController(lambdaH,lambdaA,rel,stabAvg){
+  const target=1.3;
+  const baseWeight=clamp(1-rel.global,0,0.7);
+  const stabilityBoost=clamp(1-stabAvg,0,0.4);
+  const weight=clamp(baseWeight+stabilityBoost,0,0.85);
+  return {
+    H:lambdaH*(1-weight)+target*weight,
+    A:lambdaA*(1-weight)+target*weight
+  };
+}
+
+/* RISK ENGINE (var & weather & match pressure) */
+function riskEngine(lambdaH,lambdaA,ctx){
+  const baseVar=clamp(lambdaH+lambdaA,0.2,8);
+  let varMult=1.0;
+  if(ctx.importance>1.05)varMult*=0.95;
+  if(ctx.matchType==="friendly")varMult*=0.9;
+  let weatherMult=1.0;
+  if(ctx.weather==="rain"||ctx.weather==="snow")weatherMult*=0.95;
+  if(ctx.weather==="hot")weatherMult*=0.97;
+  return {
+    varMult:roundTo(clamp(varMult,0.8,1.1),3),
+    lambdaMult:roundTo(clamp(weatherMult,0.9,1.05),3),
+    baseVar:roundTo(baseVar,3)
+  };
+}
+
+/* BUILD TEAM OBJECT */
+
+function buildTeam(prefix){
+
+  return {
+
+    side:prefix,
+
+    name: val(prefix+"_name")|| (prefix==="h"?"Home":"Away"),
+
+    shots: num(prefix+"_shots"),
+
+    sot:   num(prefix+"_sot"),
+
+    prog:  num(prefix+"_prog"),
+
+    final3:num(prefix+"_final3"),
+
+    poss:  num(prefix+"_poss",50),
+
+    xg:    num(prefix+"_xg"),
+
+    gc:    num(prefix+"_gc"),
+
+    shotsC:num(prefix+"_shotsC"),
+
+    elo:   num(prefix+"_elo",1500),
+
+    build: num(prefix+"_build",5),
+
+    rest:  num(prefix+"_rest",3),
+
+    rotation:num(prefix+"_rotation",0),
+
+    press: val(prefix+"_press")||"medium",
+
+    inter: num(prefix+"_inter"),
+
+    absRaw:val(prefix+"_abs"),
+
+    abs:   parseAbs(val(prefix+"_abs")),
+
+    imp:   num(prefix+"_imp",1),
+
+    finishQ:num(prefix+"_finishQ",0.4),
+
+    formAtt: val(prefix+"_form_att"),
+
+    formDef: val(prefix+"_form_def")
+
+  };
+
+}
+
+
+
+/* MARKET, H2H, HDP READER */
+
+function readMarket(){
+
+  const oh=num("odds_home",0);
+
+  const od=num("odds_draw",0);
+
+  const oa=num("odds_away",0);
+
+  const lineOU=num("line_ou",0);
+
+  const oo=num("odds_over",0);
+
+  const ou=num("odds_under",0);
+
+  const have1x2=(oh>0 && od>0 && oa>0);
+
+  const haveOU=(lineOU>0 && oo>0 && ou>0);
+
+  let prob=null,ouInfo=null;
+
+  if(have1x2){
+
+    const invH=1/oh, invD=1/od, invA=1/oa;
+
+    const sum=invH+invD+invA;
+
+    prob={H:invH/sum,D:invD/sum,A:invA/sum,margin:sum-1};
+
+  }
+
+  if(haveOU){
+
+    const invO=1/oo, invU=1/ou;
+
+    const sum=invO+invU;
+
+    ouInfo={line:lineOU,over:invO/sum,under:invU/sum,margin:sum-1};
+
+  }
+
+  return {prob,ouInfo};
+
+}
+
+function readH2H(){
+
+  const raw=val("h2h_data").trim();
+
+  if(!raw) return null;
+
+  const lines=raw.split("\n").map(x=>x.trim()).filter(x=>x);
+
+  const useN=clamp(num("h2h_count",lines.length),1,lines.length);
+
+  let gfH=0,gfA=0,gaH=0,gaA=0,count=0;
+
+  for(let i=0;i<useN;i++){
+
+    const L=lines[i];
+
+    const m=L.match(/(\d+)\s*[-–]\s*(\d+)/);
+
+    if(!m) continue;
+
+    const g1=parseInt(m[1]);
+
+    const g2=parseInt(m[2]);
+
+    gfH+=g1; gaH+=g2;
+
+    gfA+=g2; gaA+=g1;
+
+    count++;
+
+  }
+
+  if(count===0) return null;
+
+  return {
+
+    played:count,
+
+    avgH:gfH/count,
+
+    avgA:gfA/count,
+
+    concedeH:gaH/count,
+
+    concedeA:gaA/count
+
+  };
+
+}
+
+function readHDP(){
+
+  const line=safeNum(val("hdp_line"),0);
+
+  const oh=safeNum(val("hdp_home"),0);
+
+  const oa=safeNum(val("hdp_away"),0);
+
+  if(!line || !oh || !oa) return null;
+
+  const invH=1/oh, invA=1/oa;
+
+  const sum=invH+invA;
+
+  return {
+
+    line,
+
+    probH:invH/sum,
+
+    probA:invA/sum
+
+  };
+
+}
+
+
+
+/* BTTS & HT & CARDS & CORNERS & SCORELINES & STYLE */
+
+function computeBTTS(lambdaH,lambdaA){
+
+  const p0H=Math.exp(-lambdaH);
+
+  const p0A=Math.exp(-lambdaA);
+
+  const p00=Math.exp(-(lambdaH+lambdaA));
+
+  const yes=1 - p0H - p0A + p00;
+
+  const no =1 - yes;
+
+  return {yes:clamp(yes,0,1),no:clamp(no,0,1)};
+
+}
+
+function computeHT(lambdaH,lambdaA){
+
+  const factor=0.45;
+
+  const lh=lambdaH*factor;
+
+  const la=lambdaA*factor;
+
+  const p3ht=prob3W(lh,la);
+
+  const line=1.0;
+
+  let pOver=0,pUnder=0;
+
+  const maxG=6;
+
+  for(let gh=0;gh<=maxG;gh++){
+
+    const ph=poisson(gh,lh);
+
+    for(let ga=0;ga<=maxG;ga++){
+
+      const pa=poisson(ga,la);
+
+      const j=ph*pa;
+
+      if(gh+ga>line)pOver+=j; else pUnder+=j;
+
+    }
+
+  }
+
+  const s=pOver+pUnder || 1;
+
+  return {lambdaH:lh,lambdaA:la,p3:p3ht,over:pOver/s,under:pUnder/s,line};
+
+}
+
+function computeCards(tempoAvg,transitionAvg,comp,matchType){
+
+  let base=3.4;
+
+  base += (tempoAvg-5)*0.2;
+
+  base += (transitionAvg-5)*0.2;
+
+  if(matchType==="derby"||matchType==="relegation"||matchType==="title") base+=0.6;
+
+  if(comp==="cup"||comp==="international") base+=0.2;
+
+  base=clamp(base,2.0,7.5);
+
+  return {
+
+    total:roundTo(base,2),
+
+    home:roundTo(base*0.52,2),
+
+    away:roundTo(base*0.48,2)
+
+  };
+
+}
+
+function computeCorners(h,a){
+
+  function cTeam(t){
+
+    let c=t.shots*0.35 + t.prog*0.15 + t.final3*0.25;
+
+    return clamp(c/3,1,10);
+
+  }
+
+  const ch=cTeam(h);
+
+  const ca=cTeam(a);
+
+  return {
+
+    home:roundTo(ch,2),
+
+    away:roundTo(ca,2),
+
+    total:roundTo(ch+ca,2)
+
+  };
+
+}
+
+function computeScorelines(lambdaH,lambdaA,maxG=5){
+
+  const arr=[];
+
+  for(let gh=0;gh<=maxG;gh++){
+
+    for(let ga=0;ga<=maxG;ga++){
+
+      const p=poisson(gh,lambdaH)*poisson(ga,lambdaA);
+
+      arr.push({gh,ga,p});
+
+    }
+
+  }
+
+  arr.sort((x,y)=>y.p-x.p);
+
+  return arr.slice(0,5).map(o=>({
+
+    score:`${o.gh}-${o.ga}`,
+
+    prob:o.p
+
+  }));
+
+}
+
+function stylePredict(tempoAvg,transitionAvg,pressAvg){
+
+  if(tempoAvg<=4 && transitionAvg<=4) return "Slow & Tactical";
+
+  if(tempoAvg>=7 && transitionAvg>=7) return "High Tempo & Transition";
+
+  if(pressAvg>=7) return "High Press Battle";
+
+  if(transitionAvg>=6) return "Swing / End-to-end";
+
+  return "Balanced";
+
+}
+
+
+
+/* MAIN ENGINE v27 ΩΩ */
+
+function analyzeMatch_v27Omega(){
+
+  const h=buildTeam("h");
+
+  const a=buildTeam("a");
+
+
+
+  h.defLvl = safeNum(h.defLvl,11 - clamp((h.gc*1.3 + h.shotsC*0.3 - a.shots*0.2),0,10));
+
+  a.defLvl = safeNum(a.defLvl,11 - clamp((a.gc*1.3 + a.shotsC*0.3 - h.shots*0.2),0,10));
+
+
+
+  const comp    = val("comp_mode")||"league";
+
+  const mtype   = val("match_type")||"normal";
+
+  const compDet = val("comp_detail")||"";
+
+  const weather = val("weather")||"normal";
+
+  const venue   = val("venue_factor")||"";
+
+
+
+  const formH = formEngine_v27(h.formAtt,h.formDef);
+
+  const formA = formEngine_v27(a.formAtt,a.formDef);
+
+
+
+  const pcs=pcs_v6_omega(h,a);
+
+  let lambdaH=pcs.H;
+
+  let lambdaA=pcs.A;
+
+
+
+  const icmH=icm_v27(h.absRaw);
+
+  const icmA=icm_v27(a.absRaw);
+
+  lambdaH *= icmH.atkMul/icmA.defMul;
+
+  lambdaA *= icmA.atkMul/icmH.defMul;
+
+
+
+  const impH=clamp(h.imp||1,0.7,1.4);
+
+  const impA=clamp(a.imp||1,0.7,1.4);
+
+  let globalImp=(impH+impA)/2;
+
+
+
+  let homeAdv=1.03;
+
+  if(comp==="international") homeAdv=1.02;
+
+  if(comp==="friendly") homeAdv=1.0;
+
+  if(venue==="fortress") homeAdv*=1.03;
+
+  if(venue==="tough_away") homeAdv*=1.02;
+
+  if(venue==="neutral") homeAdv=1.0;
+
+  lambdaH *= homeAdv;
+
+
+
+  const momH=momentumScore(h);
+
+  const momA=momentumScore(a);
+
+  const tH=tempoRating(h);
+
+  const tA=tempoRating(a);
+
+  const trH=transitionThreat(h,a);
+
+  const trA=transitionThreat(a,h);
+
+  const trapH=pressTrapRisk(h);
+
+  const trapA=pressTrapRisk(a);
+
+
+
+  const momDiff=clamp((momH-momA)/20,-0.18,0.18);
+
+  lambdaH *= (1+momDiff);
+
+  lambdaA *= (1-momDiff);
+
+
+
+  const h2h=readH2H();
+
+  if(h2h){
+
+    const h2hDiff=clamp((h2h.avgH-h2h.avgA)/10,-0.12,0.12);
+
+    lambdaH *= (1+h2hDiff);
+
+    lambdaA *= (1-h2hDiff);
+
+  }
+
+
+
+  if(compDet){
+
+    if(compDet==="league_early"){lambdaH*=0.98;lambdaA*=0.98;}
+
+    if(compDet==="league_mid"){lambdaH*=1.00;}
+
+    if(compDet==="league_late"){lambdaH*=1.05;lambdaA*=1.05;}
+
+    if(compDet==="cup_final"){lambdaH*=0.96;lambdaA*=0.96;}
+
+    if(compDet==="two_leg_first"){lambdaH*=0.92;lambdaA*=0.92;}
+
+    if(compDet==="two_leg_second"){lambdaH*=1.06;lambdaA*=1.06;}
+
+  }
+
+
+
+  const rel=reliabilityScore(h,a);
+
+  const stabAvg=(formH.stability+formA.stability)/2;
+
+  const conv=convergenceController(lambdaH,lambdaA,rel,stabAvg);
+
+  lambdaH=conv.H;
+
+  lambdaA=conv.A;
+
+
+
+  const risk=riskEngine(lambdaH,lambdaA,{importance:globalImp,matchType:comp,weather});
+
+  lambdaH*=risk.lambdaMult;
+
+  lambdaA*=risk.lambdaMult;
+
+
+
+  lambdaH=clamp(lambdaH,0.05,5.5);
+
+  lambdaA=clamp(lambdaA,0.05,5.5);
+
+
+
+  const p3=prob3W(lambdaH,lambdaA);
+
+  const lineOU=num("line_ou",2.5);
+
+  let pOver=0,pUnder=0;
+
+  const maxG=10;
+
+  for(let gh=0;gh<=maxG;gh++){
+
+    const ph=poisson(gh,lambdaH);
+
+    for(let ga=0;ga<=maxG;ga++){
+
+      const pa=poisson(ga,lambdaA);
+
+      const j=ph*pa;
+
+      if(gh+ga>lineOU)pOver+=j; else pUnder+=j;
+
+    }
+
+  }
+
+  const sOU=pOver+pUnder||1;
+
+  pOver/=sOU; pUnder/=sOU;
+
+
+
+  const market=readMarket();
+
+  const hdp=readHDP();
+
+
+
+  const tempoAvg=(tH+tA)/2;
+
+  const transAvg=(trH+trA)/2;
+
+  const pressAvg=(trapH+trapA)/2;
+
+
+
+  const btts = computeBTTS(lambdaH,lambdaA);
+
+  const ht   = computeHT(lambdaH,lambdaA);
+
+  const cards= computeCards(tempoAvg,transAvg,comp,mtype);
+
+  const corners=computeCorners(h,a);
+
+  const scoreTop=computeScorelines(lambdaH,lambdaA,5);
+
+  const style = stylePredict(tempoAvg,transAvg,pressAvg);
+
+
+
+  renderResult_v27Omega({
+
+    lambdaH,lambdaA,
+
+    p3,
+
+    pOver,pUnder,lineOU,
+
+    h,a,
+
+    momentum:{H:momH,A:momA},
+
+    tempo:{H:tH,A:tA},
+
+    transition:{H:trH,A:trA},
+
+    pressTrap:{H:trapH,A:trapA},
+
+    reliability:rel,
+
+    risk,
+
+    importance:{H:impH,A:impA,global:globalImp},
+
+    market,
+
+    h2h,
+
+    hdp,
+
+    btts,
+
+    ht,
+
+    cards,
+
+    corners,
+
+    scoreTop,
+
+    style,
+
+    form:{H:formH,A:formA}
+
+  });
+
+}
+
+
+
+/* RENDER v27 ΩΩ */
+
+function renderResult_v27Omega(res){
+
+  const box=document.getElementById("result_box");
+
+  if(!box)return;
+
+  const hName=res.h.name||"Home";
+
+  const aName=res.a.name||"Away";
+
+
+
+  const ph=Math.round(res.p3.H*100);
+
+  const pd=Math.round(res.p3.D*100);
+
+  const pa=Math.round(res.p3.A*100);
+
+  const pov=Math.round(res.pOver*100);
+
+  const pun=Math.round(res.pUnder*100);
+
+  const relPct=Math.round(res.reliability.global*100);
+
+
+
+  const pBTTSy=Math.round(res.btts.yes*100);
+
+  const pBTTSn=Math.round(res.btts.no*100);
+
+
+
+  const pHT1=Math.round(res.ht.p3.H*100);
+
+  const pHTX=Math.round(res.ht.p3.D*100);
+
+  const pHT2=Math.round(res.ht.p3.A*100);
+
+  const pHTov=Math.round(res.ht.over*100);
+
+  const pHTun=Math.round(res.ht.under*100);
+
+
+
+  const trapAvg=(res.pressTrap.H+res.pressTrap.A)/2;
+
+  const tempoAvg=(res.tempo.H+res.tempo.A)/2;
+
+  const transAvg=(res.transition.H+res.transition.A)/2;
+
+
+
+  const trapNote = trapAvg>=8 ? "High press-trap risk"
+
+                    : trapAvg>=6 ? "Moderate press-trap risk"
+
+                    : "Press-trap wajar";
+
+
+
+  const riskNote = res.risk.baseVar>3.2
+
+        ? "Laga cenderung variatif (bisa swing)."
+
+        : "Laga cenderung lebih terkendali.";
+
+
+
+  const momText = res.momentum.H>res.momentum.A
+
+        ? `${hName} sedikit unggul momentum.`
+
+        : res.momentum.A>res.momentum.H
+
+          ? `${aName} sedikit unggul momentum.`
+
+          : "Momentum relatif seimbang.";
+
+
+
+  const styleText = res.style;
+
+
+
+  const h2hHtml = (()=> {
+
+    if(!res.h2h) return "<span class='muted'>H2H: tidak diisi / belum ada pertemuan.</span>";
+
+    return `H2H ${res.h2h.played} laga · Gol Home: ${roundTo(res.h2h.avgH,2)} · Gol Away: ${roundTo(res.h2h.avgA,2)}`;
+
+  })();
+
+
+
+  const cardsHtml = `Cards total (EX): ${res.cards.total} ≈ Home ${res.cards.home} · Away ${res.cards.away}`;
+
+  const cornersHtml = `Corners (EX): total ${res.corners.total} ≈ Home ${res.corners.home} · Away ${res.corners.away}`;
+
+
+
+  const scoreHtml = res.scoreTop.map(s=>`${s.score} (${Math.round(s.prob*100)}%)`).join(" · ");
+
+
+
+  const formHtml = `
+
+    Form Attack: ${hName} avg ${roundTo(res.form.H.avgAtt,2)} (trend ${roundTo(res.form.H.trendAtt,2)}) ·
+
+                  ${aName} avg ${roundTo(res.form.A.avgAtt,2)} (trend ${roundTo(res.form.A.trendAtt,2)})<br>
+
+    Form Defense: ${hName} avg kebobolan ${roundTo(res.form.H.avgDef,2)} ·
+
+                  ${aName} avg kebobolan ${roundTo(res.form.A.avgDef,2)}<br>
+
+    Stability Index: ${roundTo(res.form.H.stability,2)} / ${roundTo(res.form.A.stability,2)}
+
+  `;
+
+
+
+  const html = `
+
+    <div class="result-row">
+
+      <div>
+
+        <strong>${hName}</strong> vs <strong>${aName}</strong><br>
+
+        <span class="pill">v27 ΩΩ</span>
+
+        <span class="pill">Reliability: ${relPct}%</span>
+
+        <span class="pill">λ: ${roundTo(res.lambdaH,2)} – ${roundTo(res.lambdaA,2)}</span>
+
+      </div>
+
+      <div>
+
+        <div><b>1X2 (murni statistik):</b></div>
+
+        <div>1 : ${ph}% · X : ${pd}% · 2 : ${pa}%</div>
+
+        <div><b>OU ${res.lineOU||2.5} (netral dari λ):</b> Over ${pov}% · Under ${pun}%</div>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="divider"></div>
+
+
+
+    <div class="result-row">
+
+      <div>
+
+        <div class="section-title">BTTS & HT</div>
+
+        <div class="small-note">
+
+          BTTS Yes: ${pBTTSy}% · No: ${pBTTSn}%<br>
+
+          HT 1X2: 1 ${pHT1}% · X ${pHTX}% · 2 ${pHT2}%<br>
+
+          HT OU ${res.ht.line}: Over ${pHTov}% · Under ${pHTun}%<br>
+
+        </div>
+
+      </div>
+
+      <div>
+
+        <div class="section-title">Cards & Corners (indikatif)</div>
+
+        <div class="small-note">
+
+          ${cardsHtml}<br>
+
+          ${cornersHtml}
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="divider"></div>
+
+
+
+    <div class="result-row">
+
+      <div>
+
+        <div class="section-title">Advanced Profile</div>
+
+        <div class="small-note">
+
+          Momentum: ${hName} ${res.momentum.H} · ${aName} ${res.momentum.A}<br>
+
+          Tempo: ${hName} ${res.tempo.H} · ${aName} ${res.tempo.A}<br>
+
+          Transition threat: ${hName} ${res.transition.H} · ${aName} ${res.transition.A}<br>
+
+          Press-trap risk: ${hName} ${res.pressTrap.H} · ${aName} ${res.pressTrap.A}<br>
+
+          Prediksi gaya laga: <b>${styleText}</b>
+
+        </div>
+
+      </div>
+
+      <div>
+
+        <div class="section-title">Konteks, Form & Risiko</div>
+
+        <div class="small-note">
+
+          Importance (avg): ${roundTo(res.importance.global,2)} · Var base: ${res.risk.baseVar}<br>
+
+          Risk engine λ-mult: ${res.risk.lambdaMult} · var-mult: ${res.risk.varMult}<br>
+
+          ${riskNote}<br>
+
+          ${trapNote}<br>
+
+          ${momText}<br>
+
+          ${h2hHtml}<br>
+
+          ${formHtml}
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="divider"></div>
+
+
+
+    <div class="section-title">Scoreline Matrix (Top)</div>
+
+    <div class="small-note">
+
+      ${scoreHtml}
+
+    </div>
+
+
+
+    ${renderMarketInsight(res.market,res.hdp)}
+
+  `;
+
+  box.innerHTML=html;
+
+}
+
+
+
+function renderMarketInsight(mkt,hdp){
+
+  if(!mkt && !hdp) return "";
+
+  let out = `<div class="divider"></div>
+
+    <div class="section-title">Market Insight (informasi saja)</div>
+
+    <div class="small-note">`;
+
+  if(mkt && mkt.prob){
+
+    const pH=Math.round(mkt.prob.H*100);
+
+    const pD=Math.round(mkt.prob.D*100);
+
+    const pA=Math.round(mkt.prob.A*100);
+
+    out += `1X2 Book: 1 ${pH}% · X ${pD}% · 2 ${pA}% (margin ≈ ${roundTo(mkt.prob.margin*100,2)}%)<br>`;
+
+  }
+
+  if(mkt && mkt.ouInfo){
+
+    out += `OU Book ${mkt.ouInfo.line}: Over ${Math.round(mkt.ouInfo.over*100)}% · Under ${Math.round(mkt.ouInfo.under*100)}% (margin ≈ ${roundTo(mkt.ouInfo.margin*100,2)}%)<br>`;
+
+  }
+
+  if(hdp){
+
+    out += `HDP ${hdp.line}: Home ~${Math.round(hdp.probH*100)}% · Away ~${Math.round(hdp.probA*100)}%<br>`;
+
+    const diff=hdp.probH - 0.5;
+
+    if(Math.abs(diff)<0.03) out += `Line HDP tampak relatif seimbang.<br>`;
+
+    else if(diff>0) out += `HDP sedikit condong ke sisi Home (menurut odds).<br>`;
+
+    else out += `HDP sedikit condong ke sisi Away (menurut odds).<br>`;
+
+  }
+
+  out += `Gunakan sebagai konfirmasi / deteksi trap, bukan penentu utama.`;
+
+  out += `</div>`;
+
+  return out;
+
+}
+
+
+
+/* CLEAR */
+
+function clearAll(){
+
+  const els=document.querySelectorAll("input,textarea");
+
+  els.forEach(el=>{
+
+    if(el.type==="button")return;
+
+    el.value="";
+
+  });
+
+  const box=document.getElementById("result_box");
+
+  if(box) box.innerHTML='<div class="small-note muted">Input dikosongkan.</div>';
+
+}
+
+</script>
+</body>
+</html>
