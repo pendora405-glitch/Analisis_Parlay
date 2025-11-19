@@ -958,6 +958,89 @@ try{
 }catch(e){ console.warn("finalize_v25 attach failed", e); }
 
 </script>
+    /* ===========================
+   v25+ ADVANCED ENGINES INTEGRATION
+=========================== */
+
+// MOMENTUM
+const momentumHome = momentum_v25({
+  prog: h.prog,
+  final3: h.final3,
+  sot: h.sot,
+  shots: h.shots,
+  press: h.press,
+  form: h.form || 0
+});
+const momentumAway = momentum_v25({
+  prog: a.prog,
+  final3: a.final3,
+  sot: a.sot,
+  shots: a.shots,
+  press: a.press,
+  form: a.form || 0
+});
+
+// TEMPO
+const tempoHome = tempo_v25({
+  poss: h.poss,
+  build: h.build,
+  shots: h.shots,
+  prog: h.prog
+});
+const tempoAway = tempo_v25({
+  poss: a.poss,
+  build: a.build,
+  shots: a.shots,
+  prog: a.prog
+});
+
+// TRANSITION ENGINE
+const transHome = transition_v25({
+  inter: h.inter,
+  prog: h.prog,
+  shots: h.shots
+});
+const transAway = transition_v25({
+  inter: a.inter,
+  prog: a.prog,
+  shots: a.shots
+});
+
+// PRESS TRAP ENGINE
+const pressTrapHome = pressTrap_v25({
+  build: h.build,
+  passAcc: h.passAcc || 85,
+  press: h.press
+});
+const pressTrapAway = pressTrap_v25({
+  build: a.build,
+  passAcc: a.passAcc || 85,
+  press: a.press
+});
+
+/* ===========================
+   MERGE KE DALAM RESULT TANPA
+   MENGACAUKAN MESIN UTAMA
+=========================== */
+
+result.advanced = {
+  momentum: {
+    home: momentumHome,
+    away: momentumAway
+  },
+  tempo: {
+    home: tempoHome,
+    away: tempoAway
+  },
+  transition: {
+    home: transHome,
+    away: transAway
+  },
+  pressTrap: {
+    home: pressTrapHome,
+    away: pressTrapAway
+  }
+};
 <!-- v25 CLEAN — PART 7/10
      analyzeMatch_v25, UI hooks, render, history + export
 -->
