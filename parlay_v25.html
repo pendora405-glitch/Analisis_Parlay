@@ -1750,27 +1750,7 @@ function autoFinal3(s){
    AUTO FINISHING QUALITY
 ============================ */
 function autoFinish(s){
-  const sot=num(s+"_sot");
-  const sh=num(s+"_shots");
-  const fq=clamp(sot/Math.max(sh,1),0.1,1);
-  setVal(s+"_finishQ",fq.toFixed(2));
-}
 
-/* ============================
-   AUTO MODE (Cup/Final/UCL)
-============================ */
-function autoMode(s){
-  const name=val(s+"_name").toLowerCase();
-  let imp=num(s+"_importance",1);
-
-  if(name.includes("cup")||name.includes("final")||name.includes("ucl")){
-    imp+=0.22;
-  }
-
-  imp=clamp(imp,0.6,1.3);
-  setVal(s+"_importance",imp.toFixed(2));
-}
-    </script>
     
 <!-- v25 CLEAN — PART 10/10
      Final safety checks · wrappers · compatibility · close HTML
