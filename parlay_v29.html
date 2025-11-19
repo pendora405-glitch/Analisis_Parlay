@@ -1,0 +1,1177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Parlay TITAN v29 Hybrid Neural Fusion</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #111;
+        color: #eee;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        width: 90%;
+        max-width: 1200px;
+        margin: auto;
+        padding: 20px;
+    }
+
+    h1 {
+        text-align: center;
+        color: #00eaff;
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+
+    h2, h3 {
+        color: #00ffd0;
+        margin-bottom: 6px;
+        margin-top: 25px;
+    }
+    .box {
+        background: #1b1b1b;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        border: 1px solid #2c2c2c;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 8px;
+        margin: 6px 0 12px 0;
+        background: #222;
+        color: #fff;
+        border: 1px solid #444;
+        border-radius: 4px;
+    }
+
+    textarea {
+        height: 90px;
+        resize: vertical;
+    }
+
+    button {
+        width: 100%;
+        padding: 10px;
+        font-size: 15px;
+        margin-top: 6px;
+        margin-bottom: 12px;
+        background: #0077ff;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    button:hover { background: #005fcc; }
+
+    .auto-btn {
+        background: #00c896;
+    }
+    .auto-btn:hover {
+        background: #00a076;
+    }
+
+    #result {
+        white-space: pre-wrap;
+        background: #000;
+        padding: 18px;
+        border-radius: 8px;
+        color: #0affc6;
+        font-size: 15px;
+        border: 1px solid #333;
+    }
+
+    .section-title {
+        color: #00eaff;
+        font-size: 20px;
+        margin-top: 30px;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+</style>
+
+</head>
+<body>
+<div class="yg yg u">
+<h1>Parlay TITAN v29 — Hybrid Neural Fusion Engine</h1>
+<!-- ========================= -->
+<!--       INPUT HOME          -->
+<!-- ========================= -->
+
+<div class="box">
+<h2>HOME TEAM — Statistik & Parameter</h2>
+
+<label>Nama Tim Home</label>
+<input id="h_name">
+
+<label>Shots per Game</label>
+<input id="h_shots">
+
+<label>Shots on Target (SOT)</label>
+<input id="h_sot">
+
+<label>Progressive Passes / Carries</label>
+<input id="h_prog">
+
+<label>Final Third Entries</label>
+<input id="h_f3">
+
+<label>Possession %</label>
+<input id="h_poss">
+
+<label>xG (Expected Goals)</label>
+<input id="h_xg">
+
+<label>Goals Conceded per Game</label>
+<input id="h_gc">
+
+<label>Shots Conceded</label>
+<input id="h_shc">
+
+<label>ELO Rating</label>
+<input id="h_elo">
+
+<label>Interceptions</label>
+<input id="h_int">
+
+<label>Rest Days</label>
+<input id="h_rest">
+
+<label>Absensi Pemain (GK:?, DF:?, MD:?, FW:?)</label>
+<input id="h_abs">
+
+<!-- AUTO CALC BUTTONS HOME -->
+
+<button class="auto-btn" onclick="autoBuildUp('h')">AUTO BUILD-UP</button>
+<button class="auto-btn" onclick="autoDefense('h')">AUTO DEFENSE</button>
+<button class="auto-btn" onclick="autoImportance('h')">AUTO IMPORTANCE</button>
+<button class="auto-btn" onclick="autoRotation('h')">AUTO ROTATION</button>
+<button class="auto-btn" onclick="autoPress('h')">AUTO PRESS STYLE</button>
+<button class="auto-btn" onclick="autoFinish('h')">AUTO FINISH QUALITY</button>
+
+<!-- Hidden fields for auto engines -->
+<input type="hidden" id="h_build">
+<input type="hidden" id="h_deflvl">
+<input type="hidden" id="h_imp">
+<input type="hidden" id="h_rot">
+<input type="hidden" id="h_press">
+<input type="hidden" id="h_finish">
+
+</div>
+<!-- ========================= -->
+<!--       INPUT AWAY          -->
+<!-- ========================= -->
+
+<div class="box">
+<h2>AWAY TEAM — Statistik & Parameter</h2>
+
+<label>Nama Tim Away</label>
+<input id="a_name">
+
+<label>Shots per Game</label>
+<input id="a_shots">
+
+<label>Shots on Target (SOT)</label>
+<input id="a_sot">
+
+<label>Progressive Passes / Carries</label>
+<input id="a_prog">
+
+<label>Final Third Entries</label>
+<input id="a_f3">
+
+<label>Possession %</label>
+<input id="a_poss">
+
+<label>xG (Expected Goals)</label>
+<input id="a_xg">
+
+<label>Goals Conceded per Game</label>
+<input id="a_gc">
+
+<label>Shots Conceded</label>
+<input id="a_shc">
+
+<label>ELO Rating</label>
+<input id="a_elo">
+
+<label>Interceptions</label>
+<input id="a_int">
+
+<label>Rest Days</label>
+<input id="a_rest">
+
+<label>Absensi Pemain (GK:?, DF:?, MD:?, FW:?)</label>
+<input id="a_abs">
+
+<!-- AUTO CALC BUTTONS AWAY -->
+
+<button class="auto-btn" onclick="autoBuildUp('a')">AUTO BUILD-UP</button>
+<button class="auto-btn" onclick="autoDefense('a')">AUTO DEFENSE</button>
+<button class="auto-btn" onclick="autoImportance('a')">AUTO IMPORTANCE</button>
+<button class="auto-btn" onclick="autoRotation('a')">AUTO ROTATION</button>
+<button class="auto-btn" onclick="autoPress('a')">AUTO PRESS STYLE</button>
+<button class="auto-btn" onclick="autoFinish('a')">AUTO FINISH QUALITY</button>
+
+<!-- Hidden fields for auto engines -->
+<input type="hidden" id="a_build">
+<input type="hidden" id="a_deflvl">
+<input type="hidden" id="a_imp">
+<input type="hidden" id="a_rot">
+<input type="hidden" id="a_press">
+<input type="hidden" id="a_finish">
+
+</div>
+<!-- =============================== -->
+<!--       MATCH CONTEXT PANEL       -->
+<!-- =============================== -->
+
+<div class="box">
+<h2>Konteks Pertandingan (Match Context)</h2>
+
+<label>Jenis Kompetisi</label>
+<select id="comp_type">
+    <option value="">Pilih Kompetisi</option>
+    <option value="league">Liga</option>
+    <option value="cup">Cup / Knockout</option>
+    <option value="ucl">Champions League / UCL</option>
+    <option value="uel">Europa League</option>
+    <option value="intl">Pertandingan Antar Negara</option>
+    <option value="friendly">Friendly Match</option>
+</select>
+
+<label>Detail Mode Kompetisi</label>
+<select id="comp_detail">
+    <option value="">Detail Mode</option>
+    <option value="league_early">Liga (Awal Musim)</option>
+    <option value="league_mid">Liga (Pertengahan Musim)</option>
+    <option value="league_late">Liga (Akhir Musim / Title Race)</option>
+    <option value="cup_r1">Cup R1–R3</option>
+    <option value="cup_quarter">Cup Quarter-final</option>
+    <option value="cup_semi">Cup Semi-final</option>
+    <option value="cup_final">Cup Final</option>
+    <option value="two_leg_first">Knockout 2 Leg – Leg 1</option>
+    <option value="two_leg_second">Knockout 2 Leg – Leg 2</option>
+    <option value="derby">Derby / Big Rivalry</option>
+    <option value="relegation">Relegation Battle</option>
+</select>
+
+<label>Cuaca Pertandingan</label>
+<select id="weather">
+    <option value="">Normal</option>
+    <option value="rain">Hujan</option>
+    <option value="heavy_rain">Hujan Deras</option>
+    <option value="hot">Panas</option>
+    <option value="cold">Dingin</option>
+</select>
+
+</div>
+<!-- =============================== -->
+<!--          H2H & MARKET           -->
+<!-- =============================== -->
+
+<div class="box">
+<h2>H2H (Head-to-Head)</h2>
+
+<textarea id="h2h_data" placeholder="Contoh format:
+TeamA 2–1 TeamB
+TeamA 0–0 TeamB
+TeamB 1–2 TeamA
+
+Atau kosong jika belum pernah bertemu."></textarea>
+
+<label>Jumlah pertandingan terakhir dipakai (3–10)</label>
+<input id="h2h_count" placeholder="misal: 5">
+</div>
+
+
+<!-- =============================== -->
+<!--           MARKET ODDS           -->
+<!-- =============================== -->
+
+<div class="box">
+<h2>Market Odds (Tidak mempengaruhi model, hanya insight)</h2>
+
+<h3>1X2 Odds</h3>
+<label>Home</label>
+<input id="m_home">
+<label>Draw</label>
+<input id="m_draw">
+<label>Away</label>
+<input id="m_away">
+
+<h3>Over / Under</h3>
+<label>Line OU</label>
+<input id="m_ou_line" placeholder="misal: 2.5">
+<label>Odds Over</label>
+<input id="m_over">
+<label>Odds Under</label>
+<input id="m_under">
+
+<h3>HDP (Asian Handicap)</h3>
+<label>HDP Line</label>
+<input id="m_hdp_line" placeholder="-0.25">
+<label>Odds Home</label>
+<input id="m_hdp_home">
+<label>Odds Away</label>
+<input id="m_hdp_away">
+</div>
+
+
+<!-- =============================== -->
+<!--      TOMBOL UTAMA ENGINE        -->
+<!-- =============================== -->
+
+<div class="box">
+<button onclick="analyze_v29()">🔥 ANALYZE v29 HYBRID NEURAL</button>
+<button onclick="clearAll()">CLEAR INPUT</button>
+</div>
+
+<!-- =============================== -->
+<!--        OUTPUT / HASIL           -->
+<!-- =============================== -->
+
+<div class="box">
+<h2>Hasil Analisis</h2>
+<pre id="result">Hasil akan muncul di sini…</pre>
+</div>
+<!-- =============================== -->
+<!--        HELPER FUNCTIONS         -->
+<!-- =============================== -->
+
+<script>
+
+function val(id){
+    const el = document.getElementById(id);
+    return el ? el.value : "";
+}
+
+function setVal(id,v){
+    const el = document.getElementById(id);
+    if(el) el.value = v;
+}
+
+function safeNum(x, d=0){
+    const n = parseFloat(x);
+    return Number.isFinite(n) ? n : d;
+}
+
+function clamp(n, a, b){
+    return Math.min(Math.max(n, a), b);
+}
+
+function poisson(l, k){
+    return Math.exp(-l) * Math.pow(l, k) / factorial(k);
+}
+
+function factorial(n){
+    if(n < 0) return 1;
+    if(n === 0) return 1;
+    let r = 1;
+    for(let i=1; i<=n; i++) r *= i;
+    return r;
+}
+
+function prob3W(lH, lA){
+    let max = 10;
+    let pH=0, pD=0, pA=0;
+
+    for(let i=0;i<=max;i++){
+        for(let j=0;j<=max;j++){
+            const p = poisson(lH,i) * poisson(lA,j);
+            if(i > j) pH += p;
+            else if(i === j) pD += p;
+            else pA += p;
+        }
+    }
+    return {home:pH, draw:pD, away:pA};
+}
+
+function op(s){ return (s==="h" ? "a" : "h"); }
+
+function parseAbs(str){
+    if(!str) return {GK:0, DF:0, MD:0, FW:0};
+    const out = {GK:0, DF:0, MD:0, FW:0};
+    str = str.replace(/ /g,"").toUpperCase();
+
+    ["GK","DF","MD","FW"].forEach(pos=>{
+        const m = str.match(new RegExp(pos+"\\:(\\d+)"));
+        if(m) out[pos] = safeNum(m[1],0);
+    });
+
+    return out;
+}
+
+</script>
+<!-- ========================================== -->
+<!--        AUTO ENGINE (BUILD / DEF / ETC)     -->
+<!-- ========================================== -->
+
+<script>
+
+function autoBuildUp(s){
+    const prog = safeNum(val(s+"_prog"));
+    const f3   = safeNum(val(s+"_f3"));
+    const poss = safeNum(val(s+"_poss"));
+
+    const score =
+        (prog*0.35) +
+        (f3*0.40) +
+        (poss*0.25);
+
+    const build = clamp(score/10, 2, 10);
+    setVal(s+"_build", build.toFixed(2));
+}
+
+
+function autoDefense(s){
+    const gc  = safeNum(val(s+"_gc"));
+    const shc = safeNum(val(s+"_shc"));
+    const intc = safeNum(val(s+"_int"));
+
+    const base = 11 - (gc*1.22 + shc*0.18 - intc*0.30);
+    const deflvl = clamp(base, 2, 10);
+
+    setVal(s+"_deflvl", deflvl.toFixed(2));
+}
+
+
+function autoImportance(s){
+    const elo  = safeNum(val(s+"_elo"));
+    const rest = safeNum(val(s+"_rest"));
+
+    let imp =
+        (elo/300) +
+        (rest*0.10);
+
+    imp = clamp(imp, 1, 10);
+
+    setVal(s+"_imp", imp.toFixed(2));
+}
+
+
+function autoRotation(s){
+    const rest = safeNum(val(s+"_rest"));
+    const abs  = parseAbs(val(s+"_abs"));
+
+    let rot =
+        (rest*0.18) -
+        (abs.DF*0.15) -
+        (abs.MD*0.10) -
+        (abs.FW*0.12);
+
+    rot = clamp(rot + 5, 1, 10);
+
+    setVal(s+"_rot", rot.toFixed(2));
+}
+
+
+function autoPress(s){
+    const poss = safeNum(val(s+"_poss"));
+    const intc = safeNum(val(s+"_int"));
+
+    const raw =
+        (poss*0.05) +
+        (intc*0.22);
+
+    const press = clamp(raw, 1, 10);
+
+    setVal(s+"_press", press.toFixed(2));
+}
+
+
+function autoFinish(s){
+    const sot  = safeNum(val(s+"_sot"));
+    const xg   = safeNum(val(s+"_xg"));
+    const shots= safeNum(val(s+"_shots"));
+
+    let fin =
+        (sot*0.25) +
+        (xg*0.55) +
+        (shots*0.06);
+
+    fin = clamp(fin/2, 1, 10);
+
+    setVal(s+"_finish", fin.toFixed(2));
+}
+
+</script>
+<!-- ========================================== -->
+<!--      FORM ENGINE v29 + FUSION MODELS       -->
+<!-- ========================================== -->
+
+<script>
+
+function formEngine_v29(team){
+    const shots  = safeNum(team.shots);
+    const xg     = safeNum(team.xg);
+    const f3     = safeNum(team.f3);
+    const poss   = safeNum(team.poss);
+    const intc   = safeNum(team.intc);
+    const prog   = safeNum(team.prog);
+    const rot    = safeNum(team.rot);
+    const finish = safeNum(team.finish);
+
+    let atk =
+        (shots*0.12) +
+        (xg*1.8) +
+        (f3*0.06) +
+        (prog*0.04) +
+        (finish*0.22);
+
+    let def =
+        (intc*0.22) +
+        ((100-poss)*0.03) +
+        (team.deflvl*0.35) -
+        (team.gc*1.2) -
+        (team.shc*0.12);
+
+    atk = clamp(atk/3, 1, 10);
+    def = clamp(def/2.8, 1, 10);
+
+    return {atk, def};
+}
+
+
+
+function xg7Fusion(t, opp){
+    const base =
+        t.shots*0.082 +
+        t.sot*0.22   +
+        t.finish*0.35 +
+        t.build*0.16  +
+        opp.gc*0.22   -
+        opp.deflvl*0.12;
+
+    const fusion =
+        base +
+        (t.form.atk*0.28) -
+        (opp.form.def*0.18);
+
+    return clamp(fusion, 0.2, 5.0);
+}
+
+
+
+function pcs_v7Fusion(lH, lA){
+    let max=10;
+    let outH=0, outA=0;
+
+    for(let i=0;i<=max;i++){
+        for(let j=0;j<=max;j++){
+            const p = poisson(lH,i)*poisson(lA,j);
+            if(i>j) outH+=p;
+            else if(i<j) outA+=p;
+        }
+    }
+
+    return {
+        h: clamp(outH,0.01,0.99),
+        a: clamp(outA,0.01,0.99)
+    };
+}
+
+
+
+function ICM_v29(abs){
+    let penalty = 0;
+
+    penalty += abs.GK * 0.60;
+    penalty += abs.DF * 0.50;
+    penalty += abs.MD * 0.35;
+    penalty += abs.FW * 0.45;
+
+    return clamp(1 - penalty/10, 0.70, 1.0);
+}
+
+</script>
+<!-- ======================================================= -->
+<!--   MOMENTUM / TEMPO / TRANSITION / PRESS / CHAOS v29     -->
+<!-- ======================================================= -->
+
+<script>
+
+function momentum_v29(t){
+    const f = t.form.atk;
+    const r = t.rot;
+    const p = t.press;
+
+    let raw =
+        f*0.40 +
+        r*0.25 +
+        p*0.20 +
+        (t.finish*0.15);
+
+    return clamp(raw/2, 1, 10);
+}
+
+
+
+function tempo_v29(t){
+    let temp =
+        (t.poss*0.05) +
+        (t.prog*0.06) +
+        (t.f3*0.04) +
+        (t.form.def*0.12);
+
+    return clamp(temp/3, 1, 10);
+}
+
+
+
+function transition_v29(t, opp){
+    let raw =
+        (t.prog*0.12) +
+        (t.f3*0.08) +
+        (t.shots*0.03) -
+        (opp.deflvl*0.10);
+
+    return clamp(raw/2, 1, 10);
+}
+
+
+
+function pressTrap_v29(t, opp){
+    let trap =
+        (t.press*0.28) -
+        (opp.build*0.15) +
+        (t.intc*0.12);
+
+    return clamp(trap, 1, 10);
+}
+
+
+
+function setPieceStrength_v29(t){
+    let sp =
+        (t.f3*0.04) +
+        (t.intc*0.05) +
+        (t.shots*0.04) +
+        (t.finish*0.18);
+
+    return clamp(sp/2.2, 1, 10);
+}
+
+
+
+function squadDepth_v29(t){
+    let base =
+        (t.rot*0.40) +
+        (t.form.def*0.22) +
+        (t.form.atk*0.22) -
+        (t.abs.GK*0.5) -
+        (t.abs.DF*0.3) -
+        (t.abs.MD*0.2) -
+        (t.abs.FW*0.35);
+
+    return clamp(base, 1, 10);
+}
+
+
+
+function chaosIndex_v29(t, opp){
+    let raw =
+        Math.abs(t.mom - opp.mom)*0.3 +
+        Math.abs(t.tempo - opp.tempo)*0.25 +
+        Math.abs(t.transition - opp.transition)*0.25 +
+        Math.abs(t.pressTrap - opp.pressTrap)*0.20;
+
+    return clamp(raw, 1, 10);
+}
+
+
+
+function neuralPattern_v29(t, opp){
+    const base =
+        (t.form.atk - opp.form.def) * 0.35 +
+        (t.mom - opp.mom) * 0.25 +
+        (t.tempo - opp.tempo) * 0.15 +
+        (t.transition - opp.transition) * 0.10 +
+        (t.pressTrap - opp.pressTrap) * 0.15;
+
+    return clamp(base/2, -1.5, 1.5);
+}
+
+</script>
+<!-- ======================================================= -->
+<!--     CONTEXT / RELIABILITY / DCP / STYLE MATRIX v29       -->
+<!-- ======================================================= -->
+
+<script>
+
+function contextEngine_v4(ctx){
+    let mod = 1.0;
+
+    switch(ctx.comp){
+        case "league":
+            if(ctx.detail==="league_late") mod = 1.06;
+            else if(ctx.detail==="league_early") mod = 0.97;
+            break;
+
+        case "cup":
+            if(ctx.detail==="cup_final") mod = 0.95;
+            else if(ctx.detail==="cup_semi") mod = 0.98;
+            else mod = 1.00;
+            break;
+
+        case "intl":
+            mod = 1.04;
+            break;
+    }
+
+    if(ctx.detail==="derby")       mod *= 1.10;
+    if(ctx.detail==="relegation") mod *= 1.08;
+
+    switch(ctx.weather){
+        case "rain":       mod *= 0.97; break;
+        case "heavy_rain": mod *= 0.94; break;
+        case "hot":        mod *= 0.96; break;
+        case "cold":       mod *= 0.98; break;
+    }
+
+    return clamp(mod, 0.85, 1.15);
+}
+
+
+
+function reliability_v29(t, opp){
+    let rel =
+        (t.form.atk*0.16) +
+        (t.form.def*0.18) +
+        (t.depth*0.22) -
+        (opp.mom*0.08) +
+        (t.build*0.12) +
+        (t.finish*0.18);
+
+    return clamp(rel/4, 1, 10);
+}
+
+
+
+function convergence_v29(base, neural){
+    let blend = base + neural*0.35;
+    return clamp(blend, 0.2, 5.5);
+}
+
+
+
+function riskEngine_v29(t, opp, chaos){
+    let risk =
+        chaos*0.5 +
+        Math.abs(t.mom - opp.mom)*0.28 +
+        Math.abs(t.depth - opp.depth)*0.22;
+
+    return clamp(risk, 1, 10);
+}
+
+
+
+function collapseProb_v29(t){
+    let dcp =
+        (11 - t.deflvl)*0.30 +
+        (t.chaos*0.12) +
+        (t.risk*0.25) -
+        (t.depth*0.20);
+
+    return clamp(dcp, 1, 10);
+}
+
+
+
+function NCG_v29(rel, chaos){
+    let score = rel*0.7 - chaos*0.3;
+
+    if(score >= 7.5) return "A+";
+    if(score >= 6.5) return "A";
+    if(score >= 5.5) return "B";
+    if(score >= 4.0) return "C";
+    if(score >= 3.0) return "D";
+    return "E";
+}
+
+
+
+function styleMatrix_v29(t, opp){
+    const tempoGap = t.tempo - opp.tempo;
+    const pressGap = t.pressTrap - opp.pressTrap;
+    const transGap = t.transition - opp.transition;
+
+    if(tempoGap > 2 && transGap > 1.5) return "End-to-End (High Tempo)";
+    if(pressGap > 2) return "Pressing War";
+    if(tempoGap < -1.5) return "Slow Tactical";
+    if(transGap > 2) return "Direct Fast Break";
+    if(Math.abs(pressGap) < 1 && Math.abs(tempoGap) < 1) return "Compact & Controlled";
+    if(opp.chaos > 7) return "Chaos Match";
+    return "Balanced Mixed Style";
+}
+
+</script>
+<!-- ======================================================= -->
+<!--      TEAM BUILDER + MARKET + BTTS + HT + SCORELINES     -->
+<!-- ======================================================= -->
+
+<script>
+
+function buildTeam(prefix){
+    const abs = parseAbs(val(prefix+"_abs"));
+
+    let t = {
+        name: val(prefix+"_name"),
+        shots: safeNum(val(prefix+"_shots")),
+        sot: safeNum(val(prefix+"_sot")),
+        prog: safeNum(val(prefix+"_prog")),
+        f3: safeNum(val(prefix+"_f3")),
+        poss: safeNum(val(prefix+"_poss")),
+        xg: safeNum(val(prefix+"_xg")),
+        gc: safeNum(val(prefix+"_gc")),
+        shc: safeNum(val(prefix+"_shc")),
+        elo: safeNum(val(prefix+"_elo")),
+        intc: safeNum(val(prefix+"_int")),
+        rest: safeNum(val(prefix+"_rest")),
+        abs: abs,
+        build: safeNum(val(prefix+"_build")),
+        deflvl: safeNum(val(prefix+"_deflvl")),
+        imp: safeNum(val(prefix+"_imp")),
+        rot: safeNum(val(prefix+"_rot")),
+        press: safeNum(val(prefix+"_press")),
+        finish: safeNum(val(prefix+"_finish"))
+    };
+
+    t.form = formEngine_v29(t);
+    return t;
+}
+
+
+
+function readMarket(){
+    const home = safeNum(val("m_home"));
+    const draw = safeNum(val("m_draw"));
+    const away = safeNum(val("m_away"));
+
+    let invH = home>0 ? 1/home : 0;
+    let invD = draw>0 ? 1/draw : 0;
+    let invA = away>0 ? 1/away : 0;
+    let sum = invH+invD+invA;
+
+    return {
+        home: sum>0 ? invH/sum : 0,
+        draw: sum>0 ? invD/sum : 0,
+        away: sum>0 ? invA/sum : 0,
+        ouLine: safeNum(val("m_ou_line")),
+        over: safeNum(val("m_over")),
+        under: safeNum(val("m_under")),
+        hdpLine: safeNum(val("m_hdp_line")),
+        hdpHome: safeNum(val("m_hdp_home")),
+        hdpAway: safeNum(val("m_hdp_away"))
+    };
+}
+
+
+
+function readH2H(){
+    const raw = val("h2h_data").trim();
+    if(!raw) return null;
+
+    const lines = raw.split("\n").map(x=>x.trim()).filter(x=>x);
+    const useN = clamp(safeNum(val("h2h_count"), lines.length), 1, lines.length);
+
+    let gfH=0,gfA=0,count=0;
+
+    for(let i=0;i<useN;i++){
+        const L = lines[i];
+        const m = L.match(/(\d+)\s*[–-]\s*(\d+)/);
+        if(!m) continue;
+        const h=parseInt(m[1]), a=parseInt(m[2]);
+        gfH+=h; gfA+=a; count++;
+    }
+
+    if(count===0) return null;
+    return {played:count, atk: gfH/count, def: gfA/count};
+}
+
+
+
+function readHDP(){
+    const line = safeNum(val("m_hdp_line"));
+    const oh   = safeNum(val("m_hdp_home"));
+    const oa   = safeNum(val("m_hdp_away"));
+    if(!line || !oh || !oa) return null;
+
+    const invH=1/oh, invA=1/oa, s=invH+invA;
+
+    return {
+        line,
+        probH: invH/s,
+        probA: invA/s
+    };
+}
+
+
+
+function BTTS_v29(lH, lA){
+    let yes=0, no=0;
+    for(let i=0;i<=10;i++){
+        for(let j=0;j<=10;j++){
+            const p = poisson(lH,i)*poisson(lA,j);
+            if(i>0 && j>0) yes+=p;
+            else no+=p;
+        }
+    }
+    return {yes, no};
+}
+
+
+
+function HT_v29(lH, lA){
+    const hth = lH*0.42;
+    const hta = lA*0.42;
+    return prob3W(hth, hta);
+}
+
+
+
+function cards_v29(t, opp){
+    let base =
+        (t.press*0.25) +
+        (opp.press*0.15) +
+        (t.tempo*0.12) +
+        (opp.tempo*0.10);
+
+    return clamp(base/2, 1, 10);
+}
+
+
+
+function corners_v29(t){
+    let c =
+        (t.shots*0.12) +
+        (t.sot*0.18) +
+        (t.prog*0.10) +
+        (t.f3*0.08);
+
+    return clamp(c/2.5, 1, 15);
+}
+
+
+
+function scorelineMatrix_v29(lH, lA){
+    let arr=[];
+    for(let i=0;i<=5;i++){
+        for(let j=0;j<=5;j++){
+            const p = poisson(lH,i)*poisson(lA,j);
+            arr.push({h:i, a:j, p});
+        }
+    }
+    arr.sort((x,y)=>y.p-x.p);
+    return arr.slice(0,6);
+}
+
+</script>
+<!-- =============================================== -->
+<!--              ENGINE UTAMA v29                   -->
+<!-- =============================================== -->
+
+<script>
+
+function analyze_v29(){
+    const H = buildTeam("h");
+    const A = buildTeam("a");
+
+    const ctx = {
+        comp: val("comp_type"),
+        detail: val("comp_detail"),
+        weather: val("weather")
+    };
+
+    const market = readMarket();
+    const h2h = readH2H();
+    const hdp = readHDP();
+
+    // ==== FORM INIT ====
+    H.form = formEngine_v29(H);
+    A.form = formEngine_v29(A);
+
+    // ==== ABS IMPACT ====
+    const icmH = ICM_v29(H.abs);
+    const icmA = ICM_v29(A.abs);
+
+    // ==== FUSION-xG ====
+    let xH = xg7Fusion(H, A) * icmH;
+    let xA = xg7Fusion(A, H) * icmA;
+
+    // ==== PCS adjustment ====
+    const pcs = pcs_v7Fusion(xH, xA);
+
+    // ==== MOMENTUM & TEMPO & TRANSITION ====
+    H.mom = momentum_v29(H);
+    A.mom = momentum_v29(A);
+
+    H.tempo = tempo_v29(H);
+    A.tempo = tempo_v29(A);
+
+    H.transition = transition_v29(H,A);
+    A.transition = transition_v29(A,H);
+
+    H.pressTrap = pressTrap_v29(H,A);
+    A.pressTrap = pressTrap_v29(A,H);
+
+    // ==== SET PIECE ====
+    H.sp = setPieceStrength_v29(H);
+    A.sp = setPieceStrength_v29(A);
+
+    // ==== DEPTH ====
+    H.depth = squadDepth_v29(H);
+    A.depth = squadDepth_v29(A);
+
+    // ==== CHAOS ====
+    H.chaos = chaosIndex_v29(H,A);
+    A.chaos = chaosIndex_v29(A,H);
+
+    // ==== NEURAL PATTERN ====
+    const neuralH = neuralPattern_v29(H,A);
+    const neuralA = -neuralH;
+
+    // ==== BASE λ BEFORE NEURAL ====
+    const baseH = clamp(xH + pcs.h*0.22, 0.2, 5);
+    const baseA = clamp(xA + pcs.a*0.22, 0.2, 5);
+
+    // ==== APPLY NEURAL ====
+    let λH = convergence_v29(baseH, neuralH);
+    let λA = convergence_v29(baseA, neuralA);
+
+    // ==== CONTEXT ====
+    const mod = contextEngine_v4(ctx);
+    λH *= mod;
+    λA *= mod;
+
+    // ==== H2H MODIFIER ====
+    if(h2h){
+        λH *= (1 + clamp((h2h.atk - h2h.def)/12, -0.10, 0.10));
+        λA *= (1 - clamp((h2h.atk - h2h.def)/12, -0.10, 0.10));
+    }
+
+    // ==== BTTS / CORNERS / CARDS / SCORELINE ====
+    const btts = BTTS_v29(λH, λA);
+    const ht   = HT_v29(λH, λA);
+    const cardsH = cards_v29(H, A);
+    const cardsA = cards_v29(A, H);
+    const cornersH = corners_v29(H);
+    const cornersA = corners_v29(A);
+    const scorelines = scorelineMatrix_v29(λH, λA);
+
+    // ==== RISK ====
+    H.risk = riskEngine_v29(H,A,H.chaos);
+    A.risk = riskEngine_v29(A,H,A.chaos);
+
+    // ==== COLLAPSE ====
+    H.collapse = collapseProb_v29(H);
+    A.collapse = collapseProb_v29(A);
+
+    // ==== RELIABILITY ====
+    const relH = reliability_v29(H,A);
+    const relA = reliability_v29(A,H);
+
+    // ==== CONFIDENCE GRADE ====
+    const ncgH = NCG_v29(relH, H.chaos);
+    const ncgA = NCG_v29(relA, A.chaos);
+
+    // ==== 1X2 PROB ====
+    const p3 = prob3W(λH, λA);
+
+    // ==== RENDER ====
+    renderResult_v29({
+        H,A,λH,λA,
+        p3,btts,ht,
+        cardsH,cardsA,
+        cornersH,cornersA,
+        scorelines,market,
+        relH,relA,
+        ncgH,ncgA
+    });
+}
+
+
+
+function renderResult_v29(R){
+    let out = "";
+
+    out += `EXPECTED GOALS (Fusion-X)\n`;
+    out += `Home λ: ${R.λH.toFixed(3)}  |  Away λ: ${R.λA.toFixed(3)}\n\n`;
+
+    out += `=== 1X2 PROBABILITY ===\n`;
+    out += `Home: ${(R.p3.home*100).toFixed(1)}%\n`;
+    out += `Draw: ${(R.p3.draw*100).toFixed(1)}%\n`;
+    out += `Away: ${(R.p3.away*100).toFixed(1)}%\n\n`;
+
+    out += `=== BTTS ===\n`;
+    out += `YES: ${(R.btts.yes*100).toFixed(1)}%  |  NO: ${(R.btts.no*100).toFixed(1)}%\n\n`;
+
+    out += `=== HT 1X2 ===\n`;
+    out += `HT Home: ${(R.ht.home*100).toFixed(1)}%\n`;
+    out += `HT Draw: ${(R.ht.draw*100).toFixed(1)}%\n`;
+    out += `HT Away: ${(R.ht.away*100).toFixed(1)}%\n\n`;
+
+    out += `=== CARDS (Relative Intensity) ===\n`;
+    out += `Home: ${R.cardsH.toFixed(1)}  |  Away: ${R.cardsA.toFixed(1)}\n\n`;
+
+    out += `=== CORNERS (Relative) ===\n`;
+    out += `Home: ${R.cornersH.toFixed(1)}  |  Away: ${R.cornersA.toFixed(1)}\n\n`;
+
+    out += `=== TOP SCORELINES ===\n`;
+    R.scorelines.forEach(s=>{
+        out += `${s.h}-${s.a} : ${(s.p*100).toFixed(2)}%\n`;
+    });
+    out += `\n`;
+
+    out += `=== RELIABILITY / NCG ===\n`;
+    out += `Home: ${R.relH.toFixed(1)} ( ${R.ncgH} )\n`;
+    out += `Away: ${R.relA.toFixed(1)} ( ${R.ncgA} )\n\n`;
+
+    out += renderMarketInsight(R);
+
+    document.getElementById("result").textContent = out;
+}
+
+
+
+function renderMarketInsight(R){
+    const M = R.market;
+    let out = "";
+
+    if(M.home && M.draw && M.away){
+        out += `=== MARKET 1X2 (Insight Only) ===\n`;
+        out += `Home: ${(M.home*100).toFixed(1)}% | Draw: ${(M.draw*100).toFixed(1)}% | Away: ${(M.away*100).toFixed(1)}%\n\n`;
+    }
+
+    if(M.ouLine){
+        out += `OU Line: ${M.ouLine}  (Over: ${M.over}, Under: ${M.under})\n\n`;
+    }
+
+    if(M.hdpLine){
+        out += `HDP Line: ${M.hdpLine} (H:${M.hdpHome}  A:${M.hdpAway})\n`;
+    }
+
+    return out;
+}
+
+
+
+function clearAll(){
+    const ids = document.querySelectorAll("input, textarea, select");
+    ids.forEach(el=>{ el.value = ""; });
+    document.getElementById("result").textContent = "Hasil akan muncul di sini…";
+}
+
+</script>
+
+</div>
+</body>
+</html>
