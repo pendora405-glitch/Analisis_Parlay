@@ -1,0 +1,1459 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>Parlay TITAN v33 — Ultimate Neutral Engine</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <style>
+    body{
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:#020617;
+      color:#e5e7eb;
+      margin:0;
+      padding:0;
+    }
+    .container{
+      max-width:1150px;
+      margin:0 auto;
+      padding:16px;
+    }
+    h1{
+      font-size:22px;
+      margin:0 0 6px 0;
+      font-weight:600;
+      text-align:center;
+    }
+    h2{
+      font-size:16px;
+      margin:0 0 8px 0;
+      font-weight:600;
+    }
+    h3{
+      font-size:13px;
+      margin:10px 0 4px 0;
+      font-weight:600;
+    }
+    .box{
+      background:#020617;
+      border-radius:10px;
+      padding:12px;
+      border:1px solid #1f2937;
+      margin-bottom:12px;
+    }
+    label{
+      display:block;
+      font-size:11px;
+      opacity:0.8;
+      margin:4px 0 2px 0;
+    }
+    input,select,textarea{
+      width:100%;
+      box-sizing:border-box;
+      margin-bottom:6px;
+      padding:6px 8px;
+      border-radius:6px;
+      border:1px solid #1f2937;
+      background:#020617;
+      color:#e5e7eb;
+      font-size:12px;
+    }
+    textarea{min-height:60px;resize:vertical;}
+    button{
+      width:100%;
+      padding:8px 10px;
+      border-radius:6px;
+      border:none;
+      cursor:pointer;
+      font-size:13px;
+      margin:4px 0;
+    }
+    .btn-main{background:#6366f1;color:#fff;}
+    .btn-clear{background:#111827;color:#e5e7eb;border:1px solid #374151;}
+    .auto-btn{
+      background:#0ea5e9;
+      color:#e5e7eb;
+      font-size:11px;
+      width:auto;
+      display:inline-block;
+      padding:5px 8px;
+      margin:2px 2px 4px 0;
+    }
+    .small-note{font-size:11px;opacity:0.8;}
+    #result{
+      white-space:pre-wrap;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:12px;
+      background:#000;
+      color:#e5e7eb;
+      border-radius:8px;
+      padding:10px;
+      border:1px solid #1f2937;
+      min-height:80px;
+    }
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+  <h1>Parlay TITAN v33 — Ultimate Neutral Engine</h1>
+
+  <div class="small-note">
+    v33 = v32 + Dynamic Momentum 15' (DM15) · Variance Model (VAR-X) · Game-State Engine · High-Pressure Fail Risk ·
+    Tactical Neutralizer · xG Real-World Correction. Tetap netral, tidak memaksa Over/Under atau memihak tim mana pun.
+  </div>
+<!-- ============================= -->
+  <!--        PART 2 — HOME TEAM    -->
+  <!-- ============================= -->
+
+  <div class="box">
+    <h2>HOME TEAM — Statistik Utama v33</h2>
+
+    <label>Nama Tim</label>
+    <input id="h_name" placeholder="Home">
+
+    <label>Shots Per Game</label>
+    <input id="h_shots">
+
+    <label>Shots on Target</label>
+    <input id="h_sot">
+
+    <label>xG (Expected Goals)</label>
+    <input id="h_xg">
+
+    <label>Progression (sepertiga tengah ke depan)</label>
+    <input id="h_prog">
+
+    <label>Final Third Entry</label>
+    <input id="h_f3">
+
+    <label>Possession (%)</label>
+    <input id="h_poss" placeholder="50">
+
+    <label>Goals Conceded</label>
+    <input id="h_gc">
+
+    <label>Shots Conceded</label>
+    <input id="h_shc">
+
+    <label>Interception</label>
+    <input id="h_int">
+
+    <label>REST (Hari Istirahat)</label>
+    <input id="h_rest" placeholder="3">
+
+    <label>Absensi Pemain (GK:1; DF:2; MD:1; FW:0)</label>
+    <textarea id="h_abs" placeholder="GK:0; DF:0; MD:0; FW:0"></textarea>
+
+    <h3>Auto Engine v33</h3>
+
+    <button class="auto-btn" onclick="autoBuildUp('h')">Auto Build-Up</button>
+    <input id="h_build" placeholder="Build-Up Auto">
+
+    <button class="auto-btn" onclick="autoDefense('h')">Auto Defense</button>
+    <input id="h_deflvl" placeholder="Defense Level Auto">
+
+    <button class="auto-btn" onclick="autoImportance('h')">Auto Importance</button>
+    <input id="h_imp" placeholder="Importance Auto">
+
+    <button class="auto-btn" onclick="autoRotation('h')">Auto Rotation</button>
+    <input id="h_rot" placeholder="Rotation Auto">
+
+    <button class="auto-btn" onclick="autoPress('h')">Auto Pressing</button>
+    <input id="h_press" placeholder="Press Auto">
+
+    <button class="auto-btn" onclick="autoFinish('h')">Auto Finishing</button>
+    <input id="h_finish" placeholder="Finishing Auto">
+
+    <div class="small-note">
+      Semua nilai AUTO dijamin anti-NaN dan disesuaikan dengan engine v33.
+    </div>
+  </div>
+<!-- ============================= -->
+  <!--        PART 3 — AWAY TEAM    -->
+  <!-- ============================= -->
+
+  <div class="box">
+    <h2>AWAY TEAM — Statistik Utama v33</h2>
+
+    <label>Nama Tim</label>
+    <input id="a_name" placeholder="Away">
+
+    <label>Shots Per Game</label>
+    <input id="a_shots">
+
+    <label>Shots on Target</label>
+    <input id="a_sot">
+
+    <label>xG (Expected Goals)</label>
+    <input id="a_xg">
+
+    <label>Progression (sepertiga tengah ke depan)</label>
+    <input id="a_prog">
+
+    <label>Final Third Entry</label>
+    <input id="a_f3">
+
+    <label>Possession (%)</label>
+    <input id="a_poss" placeholder="50">
+
+    <label>Goals Conceded</label>
+    <input id="a_gc">
+
+    <label>Shots Conceded</label>
+    <input id="a_shc">
+
+    <label>Interception</label>
+    <input id="a_int">
+
+    <label>REST (Hari Istirahat)</label>
+    <input id="a_rest" placeholder="3">
+
+    <label>Absensi Pemain (GK:1; DF:2; MD:1; FW:0)</label>
+    <textarea id="a_abs" placeholder="GK:0; DF:0; MD:0; FW:0"></textarea>
+
+    <h3>Auto Engine v33</h3>
+
+    <button class="auto-btn" onclick="autoBuildUp('a')">Auto Build-Up</button>
+    <input id="a_build" placeholder="Build-Up Auto">
+
+    <button class="auto-btn" onclick="autoDefense('a')">Auto Defense</button>
+    <input id="a_deflvl" placeholder="Defense Level Auto">
+
+    <button class="auto-btn" onclick="autoImportance('a')">Auto Importance</button>
+    <input id="a_imp" placeholder="Importance Auto">
+
+    <button class="auto-btn" onclick="autoRotation('a')">Auto Rotation</button>
+    <input id="a_rot" placeholder="Rotation Auto">
+
+    <button class="auto-btn" onclick="autoPress('a')">Auto Pressing</button>
+    <input id="a_press" placeholder="Press Auto">
+
+    <button class="auto-btn" onclick="autoFinish('a')">Auto Finishing</button>
+    <input id="a_finish" placeholder="Finishing Auto">
+
+    <div class="small-note">
+      Struktur Away identik dengan Home supaya perbandingan engine v33 simetris dan netral.
+    </div>
+  </div>
+<!-- ============================= -->
+  <!--      PART 4 — MATCH CONTEXT   -->
+  <!-- ============================= -->
+
+  <div class="box">
+    <h2>Konteks Pertandingan v33</h2>
+
+    <label>Kompetisi</label>
+    <select id="comp_type">
+      <option value="">Pilih…</option>
+      <option value="league">League</option>
+      <option value="league_early">League (Early Season)</option>
+      <option value="league_late">League (Late Season)</option>
+      <option value="cup">Cup</option>
+      <option value="cup_semi">Cup Semifinal</option>
+      <option value="cup_final">Cup Final</option>
+      <option value="intl">International (Tim Negara)</option>
+      <option value="friendly">Friendly</option>
+      <option value="derby">Derby</option>
+      <option value="relegation">Relegation Battle</option>
+    </select>
+
+    <label>Weather / Cuaca</label>
+    <select id="weather">
+      <option value="">Normal</option>
+      <option value="rain">Rain</option>
+      <option value="heavy_rain">Heavy Rain</option>
+      <option value="hot">Hot</option>
+      <option value="cold">Cold</option>
+    </select>
+
+    <h3>Mode Analisis v33</h3>
+    <select id="mode_profile">
+      <option value="balanced">Balanced (Default)</option>
+      <option value="safe">Safe / Conservative (pakai λ-Low)</option>
+      <option value="aggressive">Aggressive (λ-base + λ-high)</option>
+    </select>
+
+    <div class="small-note">
+      v33 Mode Engine:
+      <br>• Safe → hasil paling konservatif, anti risiko.
+      <br>• Balanced → original dan paling stabil.
+      <br>• Aggressive → membaca peluang ekstrem, tetap netral.
+    </div>
+  </div>
+<!-- ============================= -->
+  <!--      PART 5 — H2H & MARKET    -->
+  <!-- ============================= -->
+
+  <div class="box">
+    <h2>H2H v33 (Opsional)</h2>
+
+    <label>Riwayat H2H (Format: 2-1, 0-0, 1-2 ...)</label>
+    <textarea id="h2h_data" placeholder="Kosongkan jika kedua tim belum pernah bertemu"></textarea>
+
+    <label>Jumlah H2H yang dipakai (3–10)</label>
+    <input id="h2h_count" placeholder="5">
+
+    <div class="small-note">
+      Jika H2H dikosongkan → modul H2H v33 otomatis non-aktif.
+      <br>Pada v33, H2H hanya memberi pengaruh kecil (maks ±10%).
+    </div>
+  </div>
+
+
+  <!-- ============================= -->
+  <!--      MARKET INSIGHT PANEL    -->
+  <!-- ============================= -->
+
+  <div class="box">
+    <h2>Market Insight (Tidak mempengaruhi prediksi)</h2>
+
+    <h3>1X2 Odds (Home · Draw · Away)</h3>
+    <label>Home</label>
+    <input id="m_home">
+
+    <label>Draw</label>
+    <input id="m_draw">
+
+    <label>Away</label>
+    <input id="m_away">
+
+    <h3>Over / Under</h3>
+    <label>OU Line (misal 2.5)</label>
+    <input id="m_ou_line">
+
+    <label>Odds Over</label>
+    <input id="m_over">
+
+    <label>Odds Under</label>
+    <input id="m_under">
+
+    <h3>Asian Handicap (HDP)</h3>
+    <label>HDP Line (misal -0.25)</label>
+    <input id="m_hdp_line">
+
+    <label>Odds HDP Home</label>
+    <input id="m_hdp_home">
+
+    <label>Odds HDP Away</label>
+    <input id="m_hdp_away">
+
+    <div class="small-note">
+      Market (1X2 / OU / HDP) adalah insight saja.
+      <br>TIDAK menggeser λ, tidak mempengaruhi 1X2, tidak memaksa Over/Under.
+      <br>Ini menjaga v33 tetap 100% netral.
+    </div>
+  </div>
+<!-- ============================= -->
+  <!--    PART 6 — ACTION & RESULT   -->
+  <!-- ============================= -->
+
+  <div class="box">
+    <button class="btn-main" onclick="analyze_v33()">ANALYZE v33</button>
+    <button class="btn-clear" onclick="clearAll()">CLEAR</button>
+  </div>
+
+  <div class="box">
+    <h2>Hasil Analisis v33</h2>
+    <div id="result">Hasil akan muncul di sini…</div>
+  </div>
+<!-- =============================================== -->
+<!--        PART 7 — HELPER CORE & BASE MATH v33     -->
+<!-- =============================================== -->
+
+<script>
+function val(id){
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : "";
+}
+
+function setVal(id, v){
+  const el = document.getElementById(id);
+  if(el) el.value = v;
+}
+
+function safeNum(v){
+  v = (v ?? "").toString().trim();
+  if(v === "" || isNaN(parseFloat(v))) return 0;
+  return parseFloat(v);
+}
+
+function clamp(x, min, max){
+  return Math.min(Math.max(x, min), max);
+}
+
+function parseAbs(str){
+  // format: GK:1; DF:2; MD:1; FW:0
+  let res = {GK:0, DF:0, MD:0, FW:0};
+  if(!str) return res;
+
+  str.split(";").forEach(part=>{
+    const m = part.split(":");
+    if(m.length === 2){
+      const key = m[0].trim().toUpperCase();
+      const val = safeNum(m[1]);
+      if(res[key] !== undefined){
+        res[key] = val;
+      }
+    }
+  });
+
+  return res;
+}
+
+/* =========== MATEMATIKA DASAR POISSON v33 =========== */
+
+function factorial(n){
+  n = Math.floor(n);
+  if(n <= 1) return 1;
+  let r = 1;
+  for(let i=2; i<=n; i++) r *= i;
+  return r;
+}
+
+function poisson(lambda, k){
+  if(lambda <= 0) lambda = 0.0001;
+  return Math.pow(lambda, k) * Math.exp(-lambda) / factorial(k);
+}
+
+function prob3W(lH, lA){
+  let pH=0, pD=0, pA=0;
+  for(let i=0;i<=10;i++){
+    for(let j=0;j<=10;j++){
+      const p = poisson(lH,i) * poisson(lA,j);
+      if(i>j) pH += p;
+      else if(i===j) pD += p;
+      else pA += p;
+    }
+  }
+  return {home:pH, draw:pD, away:pA};
+}
+</script>
+<!-- =============================================== -->
+<!--      PART 8 — AUTO ENGINE + FORM v33            -->
+<!-- =============================================== -->
+
+<script>
+/* ================= AUTO ENGINE v33 ================= */
+
+function autoBuildUp(side){
+  const prog = safeNum(val(side+"_prog"));
+  const f3   = safeNum(val(side+"_f3"));
+  const poss = safeNum(val(side+"_poss"));
+
+  const raw  = prog*0.35 + f3*0.40 + poss*0.25;
+  const res  = clamp(raw/10, 2, 10);
+
+  setVal(side+"_build", res.toFixed(2));
+}
+
+function autoDefense(side){
+  const gc   = safeNum(val(side+"_gc"));
+  const shc  = safeNum(val(side+"_shc"));
+  const intc = safeNum(val(side+"_int"));
+
+  const raw =
+      (11 - gc*1.25) +
+      (11 - shc*0.12) +
+      (intc*0.20);
+
+  const res = clamp(raw/2, 2, 10);
+  setVal(side+"_deflvl", res.toFixed(2));
+}
+
+function autoImportance(side){
+  const elo  = safeNum(val(side+"_elo")); // jika tidak ada, 0 → fallback di buildTeam
+  const rest = safeNum(val(side+"_rest"));
+
+  let imp = (elo/320) + (rest*0.10);
+  imp = clamp(imp, 1, 10);
+
+  setVal(side+"_imp", imp.toFixed(2));
+}
+
+function autoRotation(side){
+  const rest = safeNum(val(side+"_rest"));
+  const abs  = parseAbs(val(side+"_abs"));
+
+  let rot =
+      (rest*0.18)
+      - abs.DF*0.15
+      - abs.MD*0.10
+      - abs.FW*0.12;
+
+  rot = clamp(rot + 5, 1, 10);
+  setVal(side+"_rot", rot.toFixed(2));
+}
+
+function autoPress(side){
+  const poss = safeNum(val(side+"_poss"));
+  const intc = safeNum(val(side+"_int"));
+
+  const press = clamp((poss*0.05) + (intc*0.22), 1, 10);
+  setVal(side+"_press", press.toFixed(2));
+}
+
+function autoFinish(side){
+  const sot   = safeNum(val(side+"_sot"));
+  const xg    = safeNum(val(side+"_xg"));
+  const shots = safeNum(val(side+"_shots"));
+
+  let fin = (sot*0.25) + (xg*0.55) + (shots*0.06);
+  fin = clamp(fin/2, 1, 10);
+
+  setVal(side+"_finish", fin.toFixed(2));
+}
+
+
+/* ================= FORM ENGINE v33 ================= */
+/*
+  Attack v33:
+    - shots, sot, prog, f3
+    - xG (berat tinggi)
+    - finishing
+    - press (untuk tempo)
+  Defense v33:
+    - deflvl auto
+    - interceptions
+    - shots conceded
+    - goals conceded
+    - rotation (stamina / compactness)
+*/
+
+function formEngine_v33(t){
+  const atkRaw =
+      (t.shots*0.10) +
+      (t.sot*0.32)   +
+      (t.prog*0.06)  +
+      (t.f3*0.08)    +
+      (t.poss*0.04)  +
+      (t.xg*0.45)    +
+      (t.finish*0.28) +
+      (t.press*0.10);
+
+  const defRaw =
+      (11 - t.gc)*0.32 +
+      (11 - t.shc*0.10) +
+      (t.intc*0.18)     +
+      (t.deflvl*0.40)   +
+      (t.rot*0.08);
+
+  const atk = clamp(atkRaw/4.8, 1, 10);
+  const def = clamp(defRaw/4.8, 1, 10);
+
+  return { atk, def };
+}
+</script>
+<!-- =============================================== -->
+<!--      PART 9 — TACTICAL PHASE ENGINE v33 (1/2)   -->
+<!-- =============================================== -->
+
+<script>
+/* ===========================================
+   xTHREAT v33 — Ancaman Aktual
+   Menggabungkan: SOT, xG, Final-third, Progresi
+=========================================== */
+function xThreat_v33(t){
+  const raw =
+      (t.sot * 0.45) +
+      (t.f3  * 0.22) +
+      (t.prog* 0.14) +
+      (t.xg  * 0.70);
+
+  return clamp(raw/4.2, 1, 10);
+}
+
+/* ===========================================
+   FIELD TILT v33 — Dominasi Area Lawan
+   1–10, mengukur porsi permainan di sepertiga lawan
+=========================================== */
+function fieldTilt_v33(t, opp){
+  const own  = t.f3 + t.shots;
+  const other= opp.f3 + opp.shots;
+  const total= own + other;
+
+  if(total <= 0) return 5; // netral
+
+  const ratio = (own / total) * 10;
+  return clamp(ratio, 1, 10);
+}
+
+/* ===========================================
+   DEFENSIVE PHASE v33
+   Seberapa kuat fase bertahan tim
+=========================================== */
+function phaseDefensive_v33(t){
+  const raw =
+      (t.form.def * 0.42) +
+      ((11 - t.gc)  * 0.20) +
+      ((11 - t.shc) * 0.10) +
+      (t.intc       * 0.18) +
+      (t.rot        * 0.10);
+
+  return clamp(raw/3.6, 1, 10);
+}
+
+/* ===========================================
+   MIDDLE PHASE v33
+   Build-up, kontrol tempo, dan koneksi antar lini
+=========================================== */
+function phaseMiddle_v33(t){
+  const raw =
+      (t.build * 0.40) +
+      (t.prog  * 0.14) +
+      (t.poss  * 0.05) +
+      (t.f3    * 0.12) +
+      (t.press * 0.10) +
+      (t.imp   * 0.12);
+
+  return clamp(raw/4.3, 1, 10);
+}
+
+/* ===========================================
+   ATTACKING PHASE v33
+   Kekuatan serangan akhir & penyelesaian
+=========================================== */
+function phaseAttack_v33(t){
+  const raw =
+      (t.form.atk * 0.45) +
+      (t.xg       * 0.40) +
+      (t.finish   * 0.22) +
+      (t.sot      * 0.10) +
+      (t.shots    * 0.04);
+
+  return clamp(raw/3.9, 1, 10);
+}
+
+/* ===========================================
+   TRANSITION PRESSURE v33
+   Kemampuan menekan saat transisi
+=========================================== */
+function transitionPressure_v33(t){
+  const raw =
+      (t.press * 0.40) +
+      (t.intc  * 0.25) +
+      (t.rot   * 0.15);
+
+  return clamp(raw/2.2, 1, 10);
+}
+</script>
+<!-- ================================================== -->
+<!--      PART 10 — TACTICAL ENGINE v33 (2/2)           -->
+<!-- ================================================== -->
+
+<script>
+/* ==================================================
+   OVERLOAD INDEX v33 — Half-space & flank overload
+================================================== */
+function overloadIndex_v33(t){
+  const raw =
+      (t.prog   * 0.18) +
+      (t.f3     * 0.28) +
+      (t.poss    * 0.10) +
+      (t.form.atk * 0.34) +
+      (t.build  * 0.12);
+
+  return clamp(raw/3.4, 1, 10);
+}
+
+/* ==================================================
+   ANTI-PRESS RESISTANCE v33
+   Kemampuan keluar dari tekanan tinggi
+================================================== */
+function antiPress_v33(t){
+  const raw =
+      (t.build * 0.40) +
+      (t.rot   * 0.20) +
+      (t.intc  * 0.12) +
+      ((11 - t.shc) * 0.22);
+
+  return clamp(raw/2.9, 1, 10);
+}
+
+/* ==================================================
+   MOMENTUM SHIFT v33
+   Kemampuan mengubah momentum pertandingan
+================================================== */
+function momentumShift_v33(t){
+  const raw =
+      (t.finish * 0.32) +
+      (t.form.atk * 0.28) +
+      (t.press  * 0.14) +
+      (t.imp    * 0.12) +
+      (t.rot    * 0.10);
+
+  return clamp(raw/3.1, 1, 10);
+}
+
+/* ==================================================
+   TEMPO CONFLICT v33
+   Semakin tinggi → pertandingan semakin liar / chaos
+================================================== */
+function tempoConflict_v33(t, opp){
+  const atkDiff = Math.abs(t.form.atk - opp.form.atk);
+  const pressDiff= Math.abs(t.press - opp.press);
+  const rotDiff  = Math.abs(t.rot - opp.rot);
+
+  const raw = atkDiff*0.40 + pressDiff*0.35 + rotDiff*0.25;
+
+  return clamp(raw*1.4, 1, 10);
+}
+
+/* ==================================================
+   BOX CONTROL v33
+   Dominasinya terhadap kotak penalti lawan
+================================================== */
+function boxControl_v33(t){
+  const raw =
+      (t.sot   * 0.40) +
+      (t.f3    * 0.26) +
+      (t.finish* 0.22) +
+      (t.xg    * 0.35);
+
+  return clamp(raw/3.8, 1, 10);
+}
+
+/* ==================================================
+   TACTICAL EQUALITY SCORE (TES v33)
+   Semakin tinggi → laga semakin seimbang
+================================================== */
+function tacticalEquality_v33(h, a){
+  const diff =
+      Math.abs(h.defPhase - a.defPhase) +
+      Math.abs(h.midPhase - a.midPhase) +
+      Math.abs(h.atkPhase - a.atkPhase) +
+      Math.abs(h.xthreat  - a.xthreat)  +
+      Math.abs(h.fTilt    - a.fTilt);
+
+  const maxDiff = 50;
+  const eq = 10 - (diff / maxDiff) * 10;
+
+  return clamp(eq, 1, 10);
+}
+</script>
+<!-- ================================================== -->
+<!--      PART 11 — CORE ENGINE v33                     -->
+<!--      DM15 · VAR-X · Fusion-xG · Risk · Etc        -->
+<!-- ================================================== -->
+
+<script>
+/* ===================== TEAM BUILDER v33 ===================== */
+
+function buildTeam(prefix){
+  const abs = parseAbs(val(prefix+"_abs"));
+
+  let t = {
+    name   : val(prefix+"_name") || (prefix === "h" ? "Home" : "Away"),
+    shots  : safeNum(val(prefix+"_shots")),
+    sot    : safeNum(val(prefix+"_sot")),
+    prog   : safeNum(val(prefix+"_prog")),
+    f3     : safeNum(val(prefix+"_f3")),
+    poss   : safeNum(val(prefix+"_poss")) || 50,
+    xg     : safeNum(val(prefix+"_xg")),
+    gc     : safeNum(val(prefix+"_gc")),
+    shc    : safeNum(val(prefix+"_shc")),
+    intc   : safeNum(val(prefix+"_int")),
+    rest   : safeNum(val(prefix+"_rest")) || 3,
+    abs    : abs,
+    build  : safeNum(val(prefix+"_build")),
+    deflvl : safeNum(val(prefix+"_deflvl")),
+    imp    : safeNum(val(prefix+"_imp")),
+    rot    : safeNum(val(prefix+"_rot")),
+    press  : safeNum(val(prefix+"_press")),
+    finish : safeNum(val(prefix+"_finish")),
+    elo    : 0 // optional, tidak wajib
+  };
+
+  // fallback jika AUTO belum ditekan
+  if(!t.build){
+    const score = t.prog*0.35 + t.f3*0.40 + t.poss*0.25;
+    t.build = clamp(score/10, 2, 10);
+  }
+  if(!t.deflvl){
+    const raw = (11 - t.gc*1.25) + (11 - t.shc*0.12) + (t.intc*0.20);
+    t.deflvl = clamp(raw/2, 2, 10);
+  }
+  if(!t.imp){
+    t.imp = clamp((t.rest*0.30) + 4.5, 1, 10);
+  }
+  if(!t.rot){
+    let rot = (t.rest*0.18) - abs.DF*0.15 - abs.MD*0.10 - abs.FW*0.12;
+    t.rot = clamp(rot+5, 1, 10);
+  }
+  if(!t.press){
+    t.press = clamp((t.poss*0.05)+(t.intc*0.22), 1, 10);
+  }
+  if(!t.finish){
+    let fin = (t.sot*0.25)+(t.xg*0.55)+(t.shots*0.06);
+    t.finish = clamp(fin/2, 1, 10);
+  }
+
+  // form
+  t.form = formEngine_v33(t);
+
+  return t;
+}
+
+/* ===================== MARKET & H2H READER ===================== */
+
+function readMarket(){
+  const home = safeNum(val("m_home"));
+  const draw = safeNum(val("m_draw"));
+  const away = safeNum(val("m_away"));
+
+  let invH = home>0?1/home:0;
+  let invD = draw>0?1/draw:0;
+  let invA = away>0?1/away:0;
+  let sum  = invH+invD+invA;
+
+  return {
+    home   : sum>0 ? invH/sum : 0,
+    draw   : sum>0 ? invD/sum : 0,
+    away   : sum>0 ? invA/sum : 0,
+    ouLine : safeNum(val("m_ou_line")),
+    over   : safeNum(val("m_over")),
+    under  : safeNum(val("m_under")),
+    hdpLine: safeNum(val("m_hdp_line")),
+    hdpHome: safeNum(val("m_hdp_home")),
+    hdpAway: safeNum(val("m_hdp_away"))
+  };
+}
+
+function readH2H(){
+  const raw = val("h2h_data");
+  if(!raw) return null;
+
+  const lines = raw.split("\n").map(x=>x.trim()).filter(x=>x);
+  if(!lines.length) return null;
+
+  const useN = clamp(safeNum(val("h2h_count")) || lines.length, 1, lines.length);
+  let gfH=0, gfA=0, count=0;
+
+  for(let i=0;i<useN;i++){
+    const L = lines[i];
+    const m = L.match(/(\d+)\s*[-–]\s*(\d+)/);
+    if(!m) continue;
+    const h = parseInt(m[1],10);
+    const a = parseInt(m[2],10);
+    gfH += h;
+    gfA += a;
+    count++;
+  }
+
+  if(count === 0) return null;
+
+  return {
+    played: count,
+    atk   : gfH/count,
+    def   : gfA/count
+  };
+}
+
+function readHDP(){
+  const line = safeNum(val("m_hdp_line"));
+  const oh   = safeNum(val("m_hdp_home"));
+  const oa   = safeNum(val("m_hdp_away"));
+  if(!line || !oh || !oa) return null;
+
+  const invH = 1/oh, invA = 1/oa, s = invH+invA;
+  return {
+    line,
+    probH: invH/s,
+    probA: invA/s
+  };
+}
+
+function getModeProfile(){
+  const el = document.getElementById("mode_profile");
+  if(!el) return "balanced";
+  return el.value || "balanced";
+}
+
+/* ===================== DM15 — Dynamic Momentum v33 ===================== */
+/*
+  Menghasilkan 6 segment momentum:
+  0–15, 15–30, 30–45, 45–60, 60–75, 75–90
+*/
+
+function dm15_v33(t, opp){
+  // base dari phase + press + rot + momentumShift
+  const baseMom =
+      (t.form.atk * 0.25) +
+      (t.form.def * 0.15) +
+      (t.press     * 0.15) +
+      (t.rot       * 0.10) +
+      (t.finish    * 0.15) +
+      (t.imp       * 0.10) +
+      (t.mShift    * 0.10);
+
+  const midAdj  = (t.midPhase - opp.midPhase) * 0.6;
+  const lateAdj = (t.rot - opp.rot) * 0.6;
+
+  const m0_15  = clamp(baseMom/4.0, 1, 10);
+  const m15_30 = clamp((baseMom + midAdj*0.4)/4.0, 1, 10);
+  const m30_45 = clamp((baseMom + midAdj*0.7)/4.0, 1, 10);
+  const m45_60 = clamp((baseMom + lateAdj*0.2)/4.0, 1, 10);
+  const m60_75 = clamp((baseMom + lateAdj*0.6)/4.0, 1, 10);
+  const m75_90 = clamp((baseMom + lateAdj*0.9)/4.0, 1, 10);
+
+  return [m0_15, m15_30, m30_45, m45_60, m60_75, m75_90];
+}
+
+/* ===================== ICM & FUSION-xG v33 ===================== */
+
+function ICM_v33(abs){
+  let penalty = 0;
+  penalty += abs.GK*0.60;
+  penalty += abs.DF*0.50;
+  penalty += abs.MD*0.35;
+  penalty += abs.FW*0.45;
+  return clamp(1 - penalty/10, 0.70, 1.0);
+}
+
+function fusionXG_v33(t, opp){
+  const xt   = t.xthreat;
+  const box  = t.boxCtrl;
+  const mid  = t.midPhase;
+  const atkP = t.atkPhase;
+  const trans= t.transPress;
+  const ap   = t.antiPress;
+
+  const raw =
+      (t.xg    * 0.55) +
+      (t.form.atk * 0.28) +
+      (xt      * 0.35) +
+      (box     * 0.30) +
+      (mid     * 0.18) +
+      (atkP    * 0.30) +
+      (trans   * 0.18) +
+      (ap      * 0.12) -
+      (opp.defPhase * 0.22);
+
+  return clamp(raw/4.2, 0.2, 5.0);
+}
+
+/* ===================== CONTEXT ENGINE v33 ===================== */
+
+function contextEngine_v33(ctx){
+  let mod = 1.0;
+
+  switch(ctx.comp){
+    case "league":
+      mod = 1.00; break;
+    case "league_early":
+      mod = 0.97; break;
+    case "league_late":
+      mod = 1.06; break;
+    case "cup":
+      mod = 0.99; break;
+    case "cup_semi":
+      mod = 0.97; break;
+    case "cup_final":
+      mod = 0.95; break;
+    case "intl":
+      mod = 1.04; break;
+    case "friendly":
+      mod = 0.95; break;
+    case "derby":
+      mod = 1.08; break;
+    case "relegation":
+      mod = 1.05; break;
+  }
+
+  switch(ctx.weather){
+    case "rain":       mod *= 0.97; break;
+    case "heavy_rain": mod *= 0.94; break;
+    case "hot":        mod *= 0.96; break;
+    case "cold":       mod *= 0.98; break;
+  }
+
+  return clamp(mod, 0.85, 1.15);
+}
+
+/* ===================== RELIABILITY & RISK v33 ===================== */
+
+function reliability_v33(t, opp){
+  let raw =
+      (t.form.atk     * 0.16) +
+      (t.form.def     * 0.16) +
+      (t.defPhase     * 0.14) +
+      (t.midPhase     * 0.10) +
+      (t.atkPhase     * 0.10) +
+      (t.boxCtrl      * 0.12) +
+      (t.xthreat      * 0.12) +
+      (t.fTilt        * 0.08) +
+      (t.imp          * 0.08) -
+      (opp.tempoConf  * 0.06);
+
+  return clamp(raw/4.0, 1, 10);
+}
+
+function varianceModel_v33(lambdaBase, chaos, tempoConf){
+  // chaos & tempoConf 1–10
+  const vol = clamp((chaos*0.6 + tempoConf*0.4)/2.5, 0.8, 1.8);
+
+  const high = clamp(lambdaBase * (1 + (vol-1)*0.6), 0.05, 6.0);
+  const low  = clamp(lambdaBase * (1 - (vol-1)*0.6), 0.05, 6.0);
+
+  return {
+    low,
+    base: lambdaBase,
+    high
+  };
+}
+
+function riskEngine_v33(t, opp, chaos, tempoConf){
+  let raw =
+      (chaos       * 0.45) +
+      (tempoConf   * 0.30) +
+      (t.mShift    * 0.10) -
+      (t.defPhase  * 0.15) -
+      (t.boxCtrl   * 0.10);
+
+  return clamp(raw/1.6, 1, 10);
+}
+
+function collapseProb_v33(t){
+  let raw =
+      (11 - t.deflvl)  * 0.26 +
+      (11 - t.form.def)* 0.18 +
+      (11 - t.boxCtrl) * 0.16 +
+      (t.risk          * 0.18) +
+      (t.tempoConf     * 0.10);
+
+  return clamp(raw/1.6, 1, 10);
+}
+
+function NCG_v33(rel, chaos){
+  let score = rel*0.7 - chaos*0.3;
+  if(score>=7.8) return "A+";
+  if(score>=6.8) return "A";
+  if(score>=5.8) return "B";
+  if(score>=4.5) return "C";
+  if(score>=3.5) return "D";
+  return "E";
+}
+
+/* ===================== STYLE & GAME STATE v33 ===================== */
+
+function styleMatrix_v33(H, A){
+  const tiltGap   = H.fTilt - A.fTilt;
+  const tesGap    = Math.abs(H.tes - A.tes);
+  const overloadGap = H.overload - A.overload;
+  const tempoGap  = H.tempoConf - A.tempoConf;
+
+  if(Math.abs(tiltGap) > 2.5 && Math.abs(overloadGap) > 2)
+    return "High-Pressure Territory Battle";
+
+  if(tiltGap > 2)
+    return "Home Territory Dominance";
+
+  if(tiltGap < -2)
+    return "Away Territory Dominance";
+
+  if(overloadGap > 2)
+    return "Home Overload-Oriented Attack";
+
+  if(overloadGap < -2)
+    return "Away Overload-Oriented Attack";
+
+  if(tesGap <= 1.5)
+    return "Tactical Equality Battle";
+
+  if(Math.abs(tempoGap) > 3)
+    return "Tempo Clash Match";
+
+  return "Mixed Tactical Matchup";
+}
+
+function gameStateProfile_v33(t){
+  // hanya deskripsi, tidak mempengaruhi λ
+  if(t.defPhase >= t.atkPhase+1 && t.fTilt <=5)
+    return "Cenderung Compact / Low Block";
+
+  if(t.atkPhase >= t.defPhase+1 && t.fTilt >=6)
+    return "Cenderung Dominan & Proaktif";
+
+  if(t.overload >=7 && t.boxCtrl >=7)
+    return "High-Pressure & Overload Friendly";
+
+  if(t.antiPress >=7 && t.press <=5)
+    return "Control-Based, Anti-Press Build-Up";
+
+  return "Balanced & Adaptive";
+}
+
+/* ===================== BTTS / OU / HT / CARDS / CORNERS / SCORELINE ===================== */
+
+function BTTS_v33(lH, lA){
+  let yes=0,no=0;
+  for(let i=0;i<=10;i++){
+    for(let j=0;j<=10;j++){
+      const p = poisson(lH,i)*poisson(lA,j);
+      if(i>0 && j>0) yes+=p; else no+=p;
+    }
+  }
+  return {yes,no};
+}
+
+function HT_v33(lH, lA){
+  const hth = lH*0.42;
+  const hta = lA*0.42;
+  return prob3W(hth, hta);
+}
+
+function cards_v33(t, opp){
+  let raw =
+      (t.press   * 0.22) +
+      (opp.press * 0.18) +
+      (t.overload* 0.14) +
+      (t.tempoConf*0.16) +
+      (opp.tempoConf*0.10);
+
+  return clamp(raw/2.0, 1, 10);
+}
+
+function corners_v33(t){
+  let c =
+      t.shots*0.12 +
+      t.sot*0.18 +
+      t.prog*0.10 +
+      t.f3*0.08;
+
+  return clamp(c/2.5, 1, 15);
+}
+
+function scorelineMatrix_v33(lH, lA){
+  let arr=[];
+  for(let i=0;i<=6;i++){
+    for(let j=0;j<=6;j++){
+      const p = poisson(lH,i)*poisson(lA,j);
+      arr.push({h:i, a:j, p});
+    }
+  }
+  arr.sort((x,y)=>y.p-x.p);
+  return arr.slice(0,8);
+}
+
+function ouProb_v33(lH, lA, line){
+  const max=10;
+  let pOver=0, pUnder=0;
+  for(let i=0;i<=max;i++){
+    for(let j=0;j<=max;j++){
+      const p = poisson(lH,i)*poisson(lA,j);
+      if(i+j>line) pOver+=p; else pUnder+=p;
+    }
+  }
+  const s = pOver+pUnder || 1;
+  return {over:pOver/s, under:pUnder/s};
+}
+</script>
+<!-- ================================================== -->
+<!--      PART 12 — MAIN ANALYSIS + OUTPUT v33          -->
+<!-- ================================================== -->
+
+<script>
+function analyze_v33(){
+  const H = buildTeam("h");
+  const A = buildTeam("a");
+
+  const ctx = {
+    comp   : val("comp_type"),
+    weather: val("weather")
+  };
+  const modeProfile = getModeProfile();
+  const market      = readMarket();
+  const h2h         = readH2H();
+  const hdp         = readHDP();
+
+  /* ---------- Phase & Tactical Core ---------- */
+
+  // Form sudah ada di H.form, A.form
+
+  // xThreat
+  H.xthreat = xThreat_v33(H);
+  A.xthreat = xThreat_v33(A);
+
+  // Field Tilt
+  H.fTilt = fieldTilt_v33(H, A);
+  A.fTilt = fieldTilt_v33(A, H);
+
+  // Phases
+  H.defPhase = phaseDefensive_v33(H);
+  H.midPhase = phaseMiddle_v33(H);
+  H.atkPhase = phaseAttack_v33(H);
+
+  A.defPhase = phaseDefensive_v33(A);
+  A.midPhase = phaseMiddle_v33(A);
+  A.atkPhase = phaseAttack_v33(A);
+
+  // Transition
+  H.transPress = transitionPressure_v33(H);
+  A.transPress = transitionPressure_v33(A);
+
+  // Overload & Anti-Press
+  H.overload  = overloadIndex_v33(H);
+  A.overload  = overloadIndex_v33(A);
+
+  H.antiPress = antiPress_v33(H);
+  A.antiPress = antiPress_v33(A);
+
+  // Momentum Shift
+  H.mShift = momentumShift_v33(H);
+  A.mShift = momentumShift_v33(A);
+
+  // Tempo Conflict
+  const tempoConf = tempoConflict_v33(H, A);
+  H.tempoConf = tempoConf;
+  A.tempoConf = tempoConf;
+
+  // Box Control
+  H.boxCtrl = boxControl_v33(H);
+  A.boxCtrl = boxControl_v33(A);
+
+  // TES
+  H.tes = tacticalEquality_v33(H, A);
+  A.tes = H.tes;
+
+  // DM15 (Dynamic Momentum per 15')
+  H.dm15 = dm15_v33(H, A);
+  A.dm15 = dm15_v33(A, H);
+
+  /* ---------- Chaos & ICM & Fusion-xG ---------- */
+
+  const chaosH = clamp(
+    (tempoConf*0.5 +
+     Math.abs(H.fTilt - A.fTilt)*0.25 +
+     Math.abs(H.overload - A.overload)*0.25) / 2.0,
+    1, 10
+  );
+  const chaosA = chaosH; // simetris, chaos situasi laga
+
+  const icmH = ICM_v33(H.abs);
+  const icmA = ICM_v33(A.abs);
+
+  const baseXH = fusionXG_v33(H, A) * icmH;
+  const baseXA = fusionXG_v33(A, H) * icmA;
+
+  // Context
+  const ctxMod = contextEngine_v33(ctx);
+
+  let λH_base = clamp(baseXH * ctxMod, 0.05, 5.5);
+  let λA_base = clamp(baseXA * ctxMod, 0.05, 5.5);
+
+  // H2H kecil (maks ±10%)
+  if(h2h){
+    const mod = clamp((h2h.atk - h2h.def)/12, -0.10, 0.10);
+    λH_base *= (1 + mod);
+    λA_base *= (1 - mod);
+  }
+
+  λH_base = clamp(λH_base, 0.05, 5.5);
+  λA_base = clamp(λA_base, 0.05, 5.5);
+
+  // Variance Model (λ-low / base / high)
+  const varH = varianceModel_v33(λH_base, chaosH, tempoConf);
+  const varA = varianceModel_v33(λA_base, chaosA, tempoConf);
+
+  let λH = varH.base;
+  let λA = varA.base;
+
+  if(modeProfile === "safe"){
+    λH = varH.low;
+    λA = varA.low;
+  } else if(modeProfile === "aggressive"){
+    λH = clamp(varH.high*0.65 + varH.base*0.35, 0.05, 6.0);
+    λA = clamp(varA.high*0.65 + varA.base*0.35, 0.05, 6.0);
+  }
+
+  λH = clamp(λH, 0.05, 6.0);
+  λA = clamp(λA, 0.05, 6.0);
+
+  /* ---------- Probabilitas Dasar ---------- */
+
+  const p3   = prob3W(λH, λA);
+  const lineOU = market.ouLine || 2.5;
+  const ouRes  = ouProb_v33(λH, λA, lineOU);
+  const btts   = BTTS_v33(λH, λA);
+  const ht     = HT_v33(λH, λA);
+  const cardsH = cards_v33(H, A);
+  const cardsA = cards_v33(A, H);
+  const cornersH = corners_v33(H);
+  const cornersA = corners_v33(A);
+  const scorelines = scorelineMatrix_v33(λH, λA);
+
+  /* ---------- Reliability, Risk, Collapse, NCG ---------- */
+
+  const relH = reliability_v33(H, A);
+  const relA = reliability_v33(A, H);
+
+  H.risk = riskEngine_v33(H, A, chaosH, tempoConf);
+  A.risk = riskEngine_v33(A, H, chaosA, tempoConf);
+
+  H.collapse = collapseProb_v33(H);
+  A.collapse = collapseProb_v33(A);
+
+  const ncgH = NCG_v33(relH, chaosH);
+  const ncgA = NCG_v33(relA, chaosA);
+
+  const style = styleMatrix_v33(H, A);
+  const gameH = gameStateProfile_v33(H);
+  const gameA = gameStateProfile_v33(A);
+
+  /* ---------- Kirim ke renderer ---------- */
+
+  renderResult_v33({
+    H, A,
+    λH, λA,
+    varH, varA,
+    p3,
+    btts,
+    ht,
+    cardsH, cardsA,
+    cornersH, cornersA,
+    scorelines,
+    market,
+    h2h,
+    lineOU,
+    ouRes,
+    relH, relA,
+    ncgH, ncgA,
+    style,
+    hdp,
+    modeProfile,
+    tempoConf,
+    chaosH, chaosA,
+    gameH, gameA
+  });
+}
+
+/* ============== RENDER OUTPUT v33 ================= */
+
+function renderResult_v33(R){
+  const H = R.H, A = R.A;
+  let out = "";
+
+  out += `MATCH: ${H.name} vs ${A.name}\n`;
+  out += `============================================\n\n`;
+
+  out += `Mode Analisis v33: ${
+    R.modeProfile === "safe"
+      ? "SAFE / CONSERVATIVE (λ-Low dipakai)"
+      : (R.modeProfile === "aggressive"
+          ? "AGGRESSIVE (λ-Base + λ-High)"
+          : "BALANCED (λ-Base Standard)")
+  }\n\n`;
+
+  out += `EXPECTED GOALS v33 (Fusion-xG + Variance)\n`;
+  out += `λ Home: ${R.λH.toFixed(3)}  (Range: ${R.varH.low.toFixed(2)} – ${R.varH.high.toFixed(2)})\n`;
+  out += `λ Away: ${R.λA.toFixed(3)}  (Range: ${R.varA.low.toFixed(2)} – ${R.varA.high.toFixed(2)})\n\n`;
+
+  out += `=== 1X2 (murni dari λ, netral) ===\n`;
+  out += `Home : ${(R.p3.home*100).toFixed(1)}%\n`;
+  out += `Draw : ${(R.p3.draw*100).toFixed(1)}%\n`;
+  out += `Away : ${(R.p3.away*100).toFixed(1)}%\n\n`;
+
+  out += `=== Over / Under v33 (netral) ===\n`;
+  out += `Line OU : ${R.lineOU}\n`;
+  out += `Over     : ${(R.ouRes.over*100).toFixed(1)}%\n`;
+  out += `Under    : ${(R.ouRes.under*100).toFixed(1)}%\n\n`;
+
+  out += `=== BTTS ===\n`;
+  out += `YES : ${(R.btts.yes*100).toFixed(1)}%\n`;
+  out += `NO  : ${(R.btts.no*100).toFixed(1)}%\n\n`;
+
+  out += `=== HT 1X2 (45') ===\n`;
+  out += `HT Home : ${(R.ht.home*100).toFixed(1)}%\n`;
+  out += `HT Draw : ${(R.ht.draw*100).toFixed(1)}%\n`;
+  out += `HT Away : ${(R.ht.away*100).toFixed(1)}%\n\n`;
+
+  out += `=== Tactical Phase v33 (1–10) ===\n`;
+  out += `Def Phase : Home ${H.defPhase.toFixed(1)} | Away ${A.defPhase.toFixed(1)}\n`;
+  out += `Mid Phase : Home ${H.midPhase.toFixed(1)} | Away ${A.midPhase.toFixed(1)}\n`;
+  out += `Atk Phase : Home ${H.atkPhase.toFixed(1)} | Away ${A.atkPhase.toFixed(1)}\n\n`;
+
+  out += `=== xThreat & Field Tilt v33 ===\n`;
+  out += `xThreat   : Home ${H.xthreat.toFixed(2)} | Away ${A.xthreat.toFixed(2)}\n`;
+  out += `FieldTilt : Home ${H.fTilt.toFixed(1)} /10 | Away ${A.fTilt.toFixed(1)} /10\n`;
+  out += `BoxCtrl   : Home ${H.boxCtrl.toFixed(1)} | Away ${A.boxCtrl.toFixed(1)}\n\n`;
+
+  out += `=== Overload / Anti-Press / Momentum / Tempo ===\n`;
+  out += `Overload   : Home ${H.overload.toFixed(1)} | Away ${A.overload.toFixed(1)}\n`;
+  out += `Anti-Press : Home ${H.antiPress.toFixed(1)} | Away ${A.antiPress.toFixed(1)}\n`;
+  out += `Momentum   : Home ${H.mShift.toFixed(1)} | Away ${A.mShift.toFixed(1)}\n`;
+  out += `TempoConflict : ${R.tempoConf.toFixed(1)} /10 (semakin tinggi → laga makin liar)\n\n`;
+
+  out += `=== DM15 (Dynamic Momentum per 15') ===\n`;
+  out += `Home  0–15 : ${H.dm15[0].toFixed(1)} | 15–30 : ${H.dm15[1].toFixed(1)} | 30–45 : ${H.dm15[2].toFixed(1)}\n`;
+  out += `Home 45–60 : ${H.dm15[3].toFixed(1)} | 60–75 : ${H.dm15[4].toFixed(1)} | 75–90 : ${H.dm15[5].toFixed(1)}\n`;
+  out += `Away  0–15 : ${A.dm15[0].toFixed(1)} | 15–30 : ${A.dm15[1].toFixed(1)} | 30–45 : ${A.dm15[2].toFixed(1)}\n`;
+  out += `Away 45–60 : ${A.dm15[3].toFixed(1)} | 60–75 : ${A.dm15[4].toFixed(1)} | 75–90 : ${A.dm15[5].toFixed(1)}\n\n`;
+
+  out += `=== Cards & Corners (indikatif) ===\n`;
+  out += `Cards Intensity : Home ${R.cardsH.toFixed(1)} | Away ${R.cardsA.toFixed(1)}  (1–10)\n`;
+  out += `Corners (relatif): Home ${R.cornersH.toFixed(1)} | Away ${R.cornersA.toFixed(1)}\n\n`;
+
+  out += `=== Top Scorelines v33 ===\n`;
+  R.scorelines.forEach(s=>{
+    out += `${s.h}-${s.a} : ${(s.p*100).toFixed(2)}%\n`;
+  });
+  out += `\n`;
+
+  out += `=== Tactical Equality & Style ===\n`;
+  out += `TES (Tactical Equality Score): ${H.tes.toFixed(1)} /10\n`;
+  out += `Style v33: ${R.style}\n\n`;
+
+  out += `=== Reliability & NCG (Neural Confidence Grade) ===\n`;
+  out += `Home: ${R.relH.toFixed(1)}  ( ${R.ncgH} )\n`;
+  out += `Away: ${R.relA.toFixed(1)}  ( ${R.ncgA} )\n`;
+  out += `Chaos Index (laga): Home ${R.chaosH.toFixed(1)} | Away ${R.chaosA.toFixed(1)}\n\n`;
+
+  out += `=== Defensive Collapse Risk (1–10) ===\n`;
+  out += `Home: ${H.collapse.toFixed(1)}\n`;
+  out += `Away: ${A.collapse.toFixed(1)}\n\n`;
+
+  out += `=== Game-State Profile v33 ===\n`;
+  out += `Home: ${R.gameH}\n`;
+  out += `Away: ${R.gameA}\n\n`;
+
+  if(R.h2h){
+    out += `=== H2H (ringkas) ===\n`;
+    out += `Dipakai ${R.h2h.played} laga · Avg gol Home: ${R.h2h.atk.toFixed(2)} · Avg gol Away: ${R.h2h.def.toFixed(2)}\n\n`;
+  } else {
+    out += `H2H: tidak diisi / diabaikan.\n\n`;
+  }
+
+  const M = R.market;
+  if(M.home || M.draw || M.away){
+    out += `=== Market 1X2 (INSIGHT SAJA) ===\n`;
+    out += `Book Home: ${(M.home*100).toFixed(1)}% | Draw: ${(M.draw*100).toFixed(1)}% | Away: ${(M.away*100).toFixed(1)}%\n\n`;
+  }
+  if(M.ouLine){
+    out += `Market OU: Line ${M.ouLine}  (Over: ${M.over || "-"} | Under: ${M.under || "-"})\n`;
+  }
+  if(R.hdp){
+    out += `HDP Line: ${R.hdp.line}  (Book H: ${(R.hdp.probH*100).toFixed(1)}% | Book A: ${(R.hdp.probA*100).toFixed(1)}%)\n`;
+  }
+
+  out += `\nCatatan v33:\n`;
+  out += `- Semua hasil murni dari statistik yang Anda input.\n`;
+  out += `- Market (1X2/OU/HDP) hanya info tambahan, tidak menggeser model.\n`;
+  out += `- Mode Safe/Balanced/Aggressive hanya mengubah cara memakai λ (low/base/high),\n`;
+  out += `  tidak memaksa Over/Under dan tidak memihak salah satu tim.\n`;
+
+  document.getElementById("result").textContent = out;
+}
+
+/* ============== CLEAR SEMUA INPUT ================= */
+
+function clearAll(){
+  const els = document.querySelectorAll("input, textarea, select");
+  els.forEach(el => { el.value = ""; });
+  document.getElementById("result").textContent = "Hasil akan muncul di sini…";
+}
+</script>
+
+</div>
+</body>
+</html>
