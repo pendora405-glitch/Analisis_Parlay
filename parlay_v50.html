@@ -1,0 +1,2284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Parlay TITAN v50.Final — Hybrid xG Final Engine</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    background: #05060a;
+    color: #e0e0e0;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+  }
+  h1, h2, h3 {
+    margin: 0 0 8px 0;
+    font-weight: 600;
+  }
+  h1 {
+    text-align: center;
+    padding: 18px 8px 6px 8px;
+    font-size: 24px;
+    color: #4fc3f7;
+  }
+  h2 {
+    font-size: 18px;
+    color: #80d8ff;
+  }
+  h3 {
+    font-size: 15px;
+    color: #ffd180;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 12px;
+    color: #90a4ae;
+    margin-bottom: 10px;
+  }
+  .container {
+    width: 95%;
+    max-width: 1200px;
+    margin: 0 auto 40px auto;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .col-2 {
+    flex: 1 1 360px;
+    min-width: 0;
+  }
+  .box {
+    background: #0c1118;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    border: 1px solid #263238;
+  }
+  .box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .tag {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #263238;
+    color: #cfd8dc;
+  }
+  label {
+    display: block;
+    margin-top: 6px;
+    margin-bottom: 2px;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  input, select, textarea {
+    width: 100%;
+    padding: 7px 8px;
+    border-radius: 6px;
+    border: 1px solid #37474f;
+    background: #050810;
+    color: #eceff1;
+    font-size: 13px;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: #4fc3f7;
+  }
+  textarea {
+    min-height: 60px;
+    resize: vertical;
+  }
+  button {
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 4px 4px 4px 0;
+    white-space: nowrap;
+  }
+  .btn-main {
+    background: #0288d1;
+    color: #ffffff;
+  }
+  .btn-clear {
+    background: #455a64;
+    color: #eceff1;
+  }
+  .btn-auto {
+    background: #00695c;
+    color: #e0f2f1;
+  }
+  .btn-warn {
+    background: #ef6c00;
+    color: #fff3e0;
+  }
+  .small-note {
+    font-size: 11px;
+    color: #90a4ae;
+    margin-top: 4px;
+  }
+  #result_panel {
+    white-space: pre-wrap;
+    font-family: Consolas, Menlo, monospace;
+    font-size: 12px;
+    background: #000000;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #263238;
+    min-height: 220px;
+    overflow-x: auto;
+  }
+  hr {
+    border: none;
+    border-top: 1px solid #263238;
+    margin: 8px 0;
+  }
+  @media (max-width: 768px) {
+    h1 { font-size: 20px; }
+    .container { width: 96%; }
+  }
+</style>
+<style>
+/* ============================================================
+   v50 CLEAN — PART 3
+   MODERN UI ENHANCEMENT (NO SCRIPT, NO LOGIC)
+   ============================================================ */
+
+/* Smooth font rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Improve container spacing */
+.container {
+  max-width: 1080px;
+  margin: auto;
+  padding: 20px 14px;
+}
+
+/* Card / box upgrade */
+.box {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 22px;
+  border: 1px solid #dfe3eb;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: 0.25s ease;
+}
+.box:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+}
+
+/* Headers */
+.box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.box-header h2 {
+  font-size: 20px;
+  margin: 0;
+  color: #2a2e37;
+}
+
+/* Tags */
+.tag {
+  padding: 3px 8px;
+  background: #eef3ff;
+  color: #3a5aff;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+/* Inputs uniform */
+input, select, textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cfd5e3;
+  font-size: 14px;
+  border-radius: 6px;
+  outline: none;
+  transition: 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: #3a5aff;
+  box-shadow: 0 0 0 2px rgba(58,90,255,0.2);
+}
+
+/* Button main */
+.btn-main {
+  width: 100%;
+  background: #3a5aff;
+  color: white;
+  border: none;
+  padding: 12px;
+  font-size: 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: 0.2s;
+}
+.btn-main:hover {
+  background: #2543d6;
+}
+
+/* Button clear */
+.btn-clear {
+  width: 100%;
+  background: #f1f1f1;
+  color: #333;
+  border: none;
+  padding: 11px;
+  font-size: 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.btn-clear:hover {
+  background: #e4e4e4;
+}
+
+/* Output panel */
+#result_panel {
+  background: #f9fbff;
+  padding: 14px;
+  border-radius: 8px;
+  min-height: 180px;
+  white-space: pre-line;
+  font-size: 14px;
+  border: 1px solid #d8e0f7;
+  color: #1f232c;
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+/* Section separator */
+.small-note {
+  font-size: 12px;
+  color: #7d8899;
+  margin-top: 6px;
+}
+
+/* Better section divider */
+h1 {
+  text-align: center;
+  font-size: 26px;
+  margin-bottom: 24px;
+  color: #1d2230;
+}
+</style>
+<style>
+/* ============================================================
+   v50 FINAL — PART 5 : DARK MODE PREMIUM (AUTO + TOGGLE)
+   ============================================================ */
+
+/* Base (light mode default) */
+:root {
+  --bg: #f7f9fc;
+  --bg-box: #ffffff;
+  --text: #1e232d;
+  --subtext: #8c93a3;
+  --line: #dadfea;
+  --btn-main: #3a5aff;
+  --btn-main-hover: #2845db;
+  --btn-clear: #eeeeee;
+  --btn-clear-hover: #dddddd;
+  --panel-bg: #f9fbff;
+}
+
+/* Dark mode variables */
+.dark {
+  --bg: #0f1116;
+  --bg-box: #1a1d24;
+  --text: #e3e7ef;
+  --subtext: #9da7b8;
+  --line: #2a2f3a;
+  --btn-main: #4d75ff;
+  --btn-main-hover: #3c5ce0;
+  --btn-clear: #2b2f39;
+  --btn-clear-hover: #343946;
+  --panel-bg: #171a1f;
+}
+
+/* Apply base */
+body {
+  background: var(--bg);
+  color: var(--text);
+  transition: background .25s ease, color .25s ease;
+}
+
+/* Boxes */
+.box {
+  background: var(--bg-box);
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+
+/* Inputs */
+input, select, textarea {
+  background: var(--bg-box);
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--btn-main);
+  box-shadow: 0 0 0 2px rgba(80,120,255,0.25);
+}
+
+/* Output panel */
+#result_panel {
+  background: var(--panel-bg);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+/* Buttons */
+.btn-main {
+  background: var(--btn-main);
+  color: #fff;
+}
+.btn-main:hover {
+  background: var(--btn-main-hover);
+}
+.btn-clear {
+  background: var(--btn-clear);
+  color: var(--text);
+}
+.btn-clear:hover {
+  background: var(--btn-clear-hover);
+}
+
+/* Toggle button */
+#theme_toggle {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  background: var(--bg-box);
+  border: 1px solid var(--line);
+  padding: 9px 14px;
+  font-size: 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  color: var(--text);
+  transition: 0.25s ease;
+}
+#theme_toggle:hover {
+  background: var(--btn-main);
+  color: #fff;
+  border-color: var(--btn-main);
+}
+</style>
+
+<!-- DARK MODE BUTTON -->
+<button id="theme_toggle">Dark Mode</button>
+
+<script>
+/* ============================================================
+   v50 FINAL — PART 5 SCRIPT (TOGGLE HANDLER)
+   ============================================================ */
+
+(function(){
+  const root = document.documentElement;
+  const btn  = document.getElementById("theme_toggle");
+
+  // Auto detect user system
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  if(prefersDark) root.classList.add("dark");
+
+  function updateButton(){
+    btn.textContent = root.classList.contains("dark") 
+      ? "Light Mode"
+      : "Dark Mode";
+  }
+
+  btn.addEventListener("click", function(){
+    root.classList.toggle("dark");
+    updateButton();
+  });
+
+  updateButton();
+})();
+</script>
+</head>
+<body>
+<h1>Parlay TITAN v50.Final</h1>
+<div class="subtitle">
+  Hybrid xG Final Engine • Netral (tanpa odds) • Tidak condong ke 1X2 / Over / Under • Murni dari input statistik & konteks
+</div>
+<canvas id="radarChart" width="350" height="350"
+style="margin-top:20px; width:100%; max-width:350px; display:block;"></canvas>
+<div class="container">
+
+  <!-- ================================================= -->
+  <!--                   PANEL TIM                       -->
+  <!-- ================================================= -->
+
+  <div class="row">
+
+    <!-- ===================== -->
+    <!--        HOME PANEL     -->
+    <!-- ===================== -->
+    <div class="col-2">
+      <div class="box">
+        <div class="box-header">
+          <h2>Home Team</h2>
+          <span class="tag">Statistik Utama</span>
+        </div>
+
+        <label>Nama Tim</label>
+        <input id="h_name" type="text">
+
+        <label>ELO Rating</label>
+        <input id="h_elo" type="number" step="1" min="500" max="3000">
+
+        <label>Rest Days</label>
+        <input id="h_rest" type="number" step="0.1">
+
+        <label>Total Shots / Match</label>
+        <input id="h_shots" type="number" step="0.1">
+
+        <label>Shots on Target / Match</label>
+        <input id="h_sot" type="number" step="0.1">
+
+        <label>xG per Match</label>
+        <input id="h_xg" type="number" step="0.01">
+
+        <label>Danger Zone xG (DZXG)</label>
+        <input id="h_dzxg" type="number" step="0.01">
+
+        <label>Goals Conceded</label>
+        <input id="h_gc" type="number" step="0.1">
+
+        <label>Shots Conceded</label>
+        <input id="h_shc" type="number" step="0.1">
+
+        <label>GK Saves / Match</label>
+        <input id="h_gksv" type="number" step="0.1">
+
+        <label>Interceptions</label>
+        <input id="h_int" type="number" step="0.1">
+
+        <label>Progressive Passes/Carries</label>
+        <input id="h_prog" type="number" step="0.1">
+
+        <label>Final Third Entries</label>
+        <input id="h_f3" type="number" step="0.1">
+
+        <label>Possession (%)</label>
+        <input id="h_poss" type="number" step="0.1">
+
+        <label>Build-Up Rating (1–10)</label>
+        <input id="h_build" type="number" step="0.1" min="1" max="10">
+
+        <label>Defense Level (1–10)</label>
+        <input id="h_deflvl" type="number" step="0.1" min="1" max="10">
+
+        <label>Pressing Strength (1–10)</label>
+        <input id="h_press" type="number" step="0.1" min="1" max="10">
+
+        <label>Finishing Quality (1–10)</label>
+        <input id="h_finish" type="number" step="0.1" min="1" max="10">
+
+        <label>Importance (1–10)</label>
+        <input id="h_imp" type="number" step="0.1" min="1" max="10">
+
+        <label>Rotation (1–10)</label>
+        <input id="h_rot" type="number" step="0.1" min="1" max="10">
+
+        <label>Absence (GK:x;DF:x;MD:x;FW:x)</label>
+        <input id="h_abs" type="text" placeholder="GK:0;DF:0;MD:0;FW:0">
+
+        <hr>
+        <h3>Advanced (Opsional)</h3>
+
+        <label>Form 5 Laga (W/D/L)</label>
+        <input id="h_form_raw" type="text">
+
+        <label>Form Rating (1–10)</label>
+        <input id="h_form" type="number" step="0.1" min="1" max="10">
+
+        <label>Stability (1–10)</label>
+        <input id="h_stab" type="number" step="0.1" min="1" max="10">
+
+        <label>Availability % (Auto Absence)</label>
+        <input id="h_avail" type="number" step="1" min="0" max="100">
+
+        <label>GK Rating (Auto GK)</label>
+        <input id="h_gk" type="number" step="0.1" min="1" max="10">
+
+        <label>Style (Directness, Auto Style)</label>
+        <input id="h_style" type="number" step="0.1" min="1" max="10">
+
+        <label>Possession Tendency (Auto Style)</label>
+        <input id="h_poss_t" type="number" step="0.1" min="1" max="10">
+
+        <label>Cross Accuracy % (Auto Cross)</label>
+        <input id="h_cross" type="number" step="0.1">
+
+        <label>Big Chances / Match (untuk F3 Threat)</label>
+        <input id="h_bc" type="number" step="0.1">
+
+        <label>Final Third Threat (Auto F3T)</label>
+        <input id="h_f3t" type="number" step="0.1" min="1" max="10">
+
+        <label>GK Sweeper Distance (Auto GKDist)</label>
+        <input id="h_gkdist" type="number" step="0.1" min="1" max="10">
+
+        <label>Press Resistance (Auto PressRes)</label>
+        <input id="h_pressres" type="number" step="0.1" min="1" max="10">
+
+        <label>Transition Strength (Auto Transition)</label>
+        <input id="h_trans" type="number" step="0.1" min="1" max="10">
+
+        <label>Low Block Index (Auto LowBlock)</label>
+        <input id="h_lb" type="number" step="0.1" min="1" max="10">
+
+        <label>Pressure Wave (Auto Wave)</label>
+        <input id="h_wave" type="number" step="0.1" min="1" max="10">
+
+        <label>xThreat (Auto xThreat)</label>
+        <input id="h_xthreat" type="number" step="0.1" min="1" max="10">
+
+        <label>Momentum DM15 (Auto DM15)</label>
+        <input id="h_dm15" type="number" step="0.1" min="1" max="10">
+      </div>
+    </div>
+
+    <!-- ===================== -->
+    <!--        AWAY PANEL     -->
+    <!-- ===================== -->
+    <div class="col-2">
+      <div class="box">
+        <div class="box-header">
+          <h2>Away Team</h2>
+          <span class="tag">Statistik Utama</span>
+        </div>
+
+        <label>Nama Tim</label>
+        <input id="a_name" type="text">
+
+        <label>ELO Rating</label>
+        <input id="a_elo" type="number" step="1" min="500" max="3000">
+
+        <label>Rest Days</label>
+        <input id="a_rest" type="number" step="0.1">
+
+        <label>Total Shots / Match</label>
+        <input id="a_shots" type="number" step="0.1">
+
+        <label>Shots on Target / Match</label>
+        <input id="a_sot" type="number" step="0.1">
+
+        <label>xG per Match</label>
+        <input id="a_xg" type="number" step="0.01">
+
+        <label>Danger Zone xG (DZXG)</label>
+        <input id="a_dzxg" type="number" step="0.01">
+
+        <label>Goals Conceded</label>
+        <input id="a_gc" type="number" step="0.1">
+
+        <label>Shots Conceded</label>
+        <input id="a_shc" type="number" step="0.1">
+
+        <label>GK Saves / Match</label>
+        <input id="a_gksv" type="number" step="0.1">
+
+        <label>Interceptions</label>
+        <input id="a_int" type="number" step="0.1">
+
+        <label>Progressive Passes/Carries</label>
+        <input id="a_prog" type="number" step="0.1">
+
+        <label>Final Third Entries</label>
+        <input id="a_f3" type="number" step="0.1">
+
+        <label>Possession (%)</label>
+        <input id="a_poss" type="number" step="0.1">
+
+        <label>Build-Up Rating (1–10)</label>
+        <input id="a_build" type="number" step="0.1" min="1" max="10">
+
+        <label>Defense Level (1–10)</label>
+        <input id="a_deflvl" type="number" step="0.1" min="1" max="10">
+
+        <label>Pressing Strength (1–10)</label>
+        <input id="a_press" type="number" step="0.1" min="1" max="10">
+
+        <label>Finishing Quality (1–10)</label>
+        <input id="a_finish" type="number" step="0.1" min="1" max="10">
+
+        <label>Importance (1–10)</label>
+        <input id="a_imp" type="number" step="0.1" min="1" max="10">
+
+        <label>Rotation (1–10)</label>
+        <input id="a_rot" type="number" step="0.1" min="1" max="10">
+
+        <label>Absence (GK:x;DF:x;MD:x;FW:x)</label>
+        <input id="a_abs" type="text" placeholder="GK:0;DF:0;MD:0;FW:0">
+
+        <hr>
+        <h3>Advanced (Opsional)</h3>
+
+        <label>Form 5 Laga (W/D/L)</label>
+        <input id="a_form_raw" type="text">
+
+        <label>Form Rating (1–10)</label>
+        <input id="a_form" type="number" step="0.1" min="1" max="10">
+
+        <label>Stability (1–10)</label>
+        <input id="a_stab" type="number" step="0.1" min="1" max="10">
+
+        <label>Availability % (Auto Absence)</label>
+        <input id="a_avail" type="number" step="1" min="0" max="100">
+
+        <label>GK Rating (Auto GK)</label>
+        <input id="a_gk" type="number" step="0.1" min="1" max="10">
+
+        <label>Style (Directness, Auto Style)</label>
+        <input id="a_style" type="number" step="0.1" min="1" max="10">
+
+        <label>Possession Tendency (Auto Style)</label>
+        <input id="a_poss_t" type="number" step="0.1" min="1" max="10">
+
+        <label>Cross Accuracy % (Auto Cross)</label>
+        <input id="a_cross" type="number" step="0.1">
+
+        <label>Big Chances / Match (untuk F3 Threat)</label>
+        <input id="a_bc" type="number" step="0.1">
+
+        <label>Final Third Threat (Auto F3T)</label>
+        <input id="a_f3t" type="number" step="0.1" min="1" max="10">
+
+        <label>GK Sweeper Distance (Auto GKDist)</label>
+        <input id="a_gkdist" type="number" step="0.1" min="1" max="10">
+
+        <label>Press Resistance (Auto PressRes)</label>
+        <input id="a_pressres" type="number" step="0.1" min="1" max="10">
+
+        <label>Transition Strength (Auto Transition)</label>
+        <input id="a_trans" type="number" step="0.1" min="1" max="10">
+
+        <label>Low Block Index (Auto LowBlock)</label>
+        <input id="a_lb" type="number" step="0.1" min="1" max="10">
+
+        <label>Pressure Wave (Auto Wave)</label>
+        <input id="a_wave" type="number" step="0.1" min="1" max="10">
+
+        <label>xThreat (Auto xThreat)</label>
+        <input id="a_xthreat" type="number" step="0.1" min="1" max="10">
+
+        <label>Momentum DM15 (Auto DM15)</label>
+        <input id="a_dm15" type="number" step="0.1" min="1" max="10">
+      </div>
+    </div>
+
+  </div> <!-- /row -->
+
+
+  <!-- ================================================= -->
+  <!--                 MATCH CONTEXT                     -->
+  <!-- ================================================= -->
+
+  <div class="box">
+    <div class="box-header">
+      <h2>Match Context</h2>
+      <span class="tag">Situasi Laga</span>
+    </div>
+
+    <label for="ctx_mode">Mode Pertandingan</label>
+    <select id="ctx_mode">
+      <option value="">-- Pilih Mode --</option>
+      <option value="league">League Match</option>
+      <option value="cup">Cup Match (Knockout)</option>
+      <option value="final">Cup Final</option>
+      <option value="derby">Derby / Rivalitas</option>
+      <option value="relegation">Relegation Battle</option>
+      <option value="title">Title Race</option>
+      <option value="intl">International Match</option>
+      <option value="friendly">Friendly</option>
+    </select>
+
+    <label for="ctx_weather">Cuaca</label>
+    <select id="ctx_weather">
+      <option value="">Manual (Tidak Auto)</option>
+      <option value="clear">Cerah / Normal</option>
+      <option value="rain">Hujan</option>
+      <option value="heavy_rain">Hujan Lebat</option>
+      <option value="snow">Salju</option>
+      <option value="windy">Banyak Angin</option>
+    </select>
+
+    <label for="ctx_tempo">Tempo Laga (1–10)</label>
+    <input id="ctx_tempo" type="number" step="0.1" min="1" max="10">
+
+    <label for="ctx_ref">Referee Strictness (1–10)</label>
+    <input id="ctx_ref" type="number" step="0.1" min="1" max="10">
+
+    <label for="ctx_var">Variance Level (1–10)</label>
+    <input id="ctx_var" type="number" step="0.1" min="1" max="10">
+
+    <label for="ctx_chaos">Chaos Index (1–10)</label>
+    <input id="ctx_chaos" type="number" step="0.1" min="1" max="10">
+
+    <label for="ctx_stage">Tahap Musim</label>
+    <select id="ctx_stage">
+      <option value="">-- Pilih Stage --</option>
+      <option value="early">Awal Musim</option>
+      <option value="mid">Tengah Musim</option>
+      <option value="late">Akhir Musim</option>
+    </select>
+
+    <label for="ctx_h2h_raw">H2H (Format: 2-1,1-0,0-1...)</label>
+    <textarea id="ctx_h2h_raw" placeholder="Kosongkan jika belum pernah bertemu"></textarea>
+
+    <label for="ctx_league">Nama Liga (untuk Auto Tempo)</label>
+    <input id="ctx_league" type="text" placeholder="contoh: Premier League, Serie A">
+
+    <label for="ctx_note">Catatan Tambahan (opsional)</label>
+    <textarea id="ctx_note" placeholder="catatan internal, pelatih baru, jadwal padat, travel, dsb"></textarea>
+  </div>
+
+
+  <!-- ================================================= -->
+  <!--              AUTO ENGINE PANEL (FINAL)            -->
+  <!-- ================================================= -->
+
+  <div class="box">
+    <div class="box-header">
+      <h2>Auto Engine v50.Final</h2>
+      <span class="tag">Pengisian Cepat</span>
+    </div>
+
+    <h3>Auto Context</h3>
+    <button class="btn-auto" onclick="autoContextPack_v45()">AUTO CONTEXT PACK</button>
+
+    <h3>Auto Dasar</h3>
+    <button class="btn-auto" onclick="autoImportance_v45()">Auto Importance</button>
+    <button class="btn-auto" onclick="autoRotation_v45()">Auto Rotation</button>
+    <button class="btn-auto" onclick="autoAbsence_v45()">Auto Absence</button>
+    <button class="btn-auto" onclick="autoPitch_v45()">Auto Kondisi Lapangan</button>
+    <button class="btn-auto" onclick="autoStage_v45()">Auto Tahap Musim</button>
+
+    <h3>Auto Statistik Lanjut</h3>
+    <button class="btn-auto" onclick="autoForm_v45()">Auto Form Rating</button>
+    <button class="btn-auto" onclick="autoGK_v45()">Auto GK Impact</button>
+    <button class="btn-auto" onclick="autoStyle_v45()">Auto Tactical Style</button>
+
+    <h3>Auto Advanced</h3>
+    <button class="btn-auto" onclick="autoVariance_v45()">Auto Variance</button>
+    <button class="btn-auto" onclick="autoDM15_v45()">Auto Momentum DM15+</button>
+    <button class="btn-auto" onclick="autoDefline_v45()">Auto Defense Line</button>
+    <button class="btn-auto" onclick="autoCross_v45()">Auto Cross%</button>
+    <button class="btn-auto" onclick="autoBuildUpAdv_v45()">Auto Build-Up Advanced</button>
+    <button class="btn-auto" onclick="autoBigMatch_v45()">Auto Big Match Detector</button>
+
+    <h3>Auto PRO</h3>
+    <button class="btn-auto" onclick="autoXThreat_v45()">Auto xThreat</button>
+    <button class="btn-auto" onclick="autoChaos_v45()">Auto Chaos</button>
+    <button class="btn-auto" onclick="autoPressRes_v45()">Auto Press-Res</button>
+    <button class="btn-auto" onclick="autoTransition_v45()">Auto Transition</button>
+    <button class="btn-auto" onclick="autoWave_v45()">Auto Pressure Wave</button>
+    <button class="btn-auto" onclick="autoLowBlock_v45()">Auto Low Block</button>
+    <button class="btn-auto" onclick="autoGKDist_v45()">Auto GK Sweeper Distance</button>
+    <button class="btn-auto" onclick="autoF3T_v45()">Auto Final Third Threat</button>
+
+    <h3>Auto ELITE (FINAL)</h3>
+    <button class="btn-warn" onclick="autoElite_v45()">AUTO ELITE — Semua Auto dalam 1 klik</button>
+
+    <div class="small-note">
+      Auto Elite mengisi SEMUA nilai kosong secara otomatis.  
+      Tidak memaksa Over/Under — tetap netral.
+    </div>
+  </div>
+
+
+  <!-- ================================================= -->
+  <!--            OUTPUT PANEL & ANALYZE BUTTON          -->
+  <!-- ================================================= -->
+
+  <div class="box">
+    <div class="box-header">
+      <h2>Output Analisis</h2>
+      <span class="tag">Hasil Perhitungan</span>
+    </div>
+
+    <div id="result_panel">
+Hasil analisis akan muncul di sini setelah klik ANALYZE.
+    </div>
+
+    <br>
+    <button id="btn_analyze_v45" class="btn-main">ANALYZE</button>
+    <button id="btn_clear_v45" class="btn-clear">CLEAR</button>
+
+    <div class="small-note">
+      Semua hasil berasal dari perhitungan statistik & taktik.  
+      Tidak menggunakan odds. Tidak condong ke arah tertentu.
+    </div>
+  </div>
+
+  <!-- Script v50 (auto + engine) akan ditempel di Part 2 -->
+</div> <!-- /container -->
+<script>
+/* ============================================================
+   v50 FINAL — PART 2A
+   HELPER, PARSER, NORMALIZER, BASIC AUTO MODULE
+   ============================================================ */
+
+/* ------------------------------ */
+/* BASIC ELEMENT ACCESS           */
+/* ------------------------------ */
+function get(id){
+  const el = document.getElementById(id);
+  return el ? el.value : "";
+}
+function setVal(id,val){
+  const el = document.getElementById(id);
+  if(el) el.value = val;
+}
+function toNum(v, def=0){
+  if(v === undefined || v === null || v==="") return def;
+  const n = Number(v);
+  return isNaN(n) ? def : n;
+}
+function clamp(v,min,max){
+  return Math.max(min,Math.min(max,v));
+}
+
+/* ------------------------------ */
+/* ABSENCE PARSER                 */
+/* GK:x;DF:x;MD:x;FW:x            */
+/* ------------------------------ */
+function parseAbs(s){
+  let out = {GK:0, DF:0, MD:0, FW:0};
+  if(!s || typeof s!=="string") return out;
+
+  s.split(";").forEach(p=>{
+    let z = p.split(":");
+    if(z.length===2){
+      const k = z[0].trim().toUpperCase();
+      const v = Number(z[1]);
+      if(out[k]!==undefined && !isNaN(v)) out[k]=v;
+    }
+  });
+  return out;
+}
+
+/* ------------------------------ */
+/* H2H PARSER (2-1,1-0,0-1...)    */
+/* ------------------------------ */
+function parseH2H_v45(raw){
+  if(!raw || raw.trim()===""){
+    return {has:false, rating:5, played:0, avgH:0, avgA:0};
+  }
+  const arr = raw.split(",");
+  let sumH=0,sumA=0,ct=0;
+  arr.forEach(x=>{
+    const zz = x.split("-");
+    if(zz.length===2){
+      const h = Number(zz[0]);
+      const a = Number(zz[1]);
+      if(!isNaN(h)&&!isNaN(a)){
+        sumH+=h; sumA+=a; ct++;
+      }
+    }
+  });
+  if(ct===0) return {has:false,rating:5,played:0,avgH:0,avgA:0};
+
+  const avgH = sumH/ct;
+  const avgA = sumA/ct;
+  // rating sederhana: lebih condong ke tim yg rata2 gol lebih tinggi
+  let r = 5 + ((avgH-avgA)*2);
+  r = clamp(r,1,10);
+
+  return {has:true, rating:r, played:ct, avgH, avgA};
+}
+
+/* ============================================================
+   AUTO CONTEXT v50 (sama dasar v45, stabil)
+   ============================================================ */
+function autoContextPack_v45(){
+  const mode   = get("ctx_mode") || "league";
+  const league = (get("ctx_league")||"").toLowerCase();
+
+  // tempo dari liga
+  let tempo = 5;
+  if(league.includes("premier")||league.includes("bundesliga")||
+     league.includes("eredivisie")){
+    tempo = 7.5;
+  } else if(league.includes("laliga")){
+    tempo = 6.8;
+  } else if(league.includes("serie") || league.includes("liga 1")){
+    tempo = 6.0;
+  } else if(league.includes("ligue")){
+    tempo = 6.2;
+  }
+
+  // koreksi dari mode
+  if(mode==="derby")       tempo += 0.5;
+  if(mode==="title")       tempo += 0.7;
+  if(mode==="cup")         tempo -= 0.2;
+  if(mode==="final")       tempo -= 0.3;
+  if(mode==="friendly")    tempo -= 1;
+
+  tempo = clamp(tempo,3,9.5);
+
+  // referee strictness
+  let ref = 5;
+  if(mode==="derby")       ref=7.5;
+  if(mode==="final")       ref=8.2;
+  if(mode==="title")       ref=7.2;
+  if(mode==="friendly")    ref=3.5;
+
+  // chaos + variance dasar
+  let variance = 5;
+  let chaos    = 5;
+  if(tempo>=7){ variance+=1; chaos+=1; }
+  if(mode==="derby") chaos+=0.8;
+  if(mode==="final") variance-=0.3;
+
+  setVal("ctx_tempo", tempo.toFixed(1));
+  setVal("ctx_ref",   clamp(ref,1,10).toFixed(1));
+  setVal("ctx_var",   clamp(variance,1,10).toFixed(1));
+  setVal("ctx_chaos", clamp(chaos,1,10).toFixed(1));
+
+  alert("AUTO CONTEXT v50 selesai.");
+}
+
+/* ============================================================
+   AUTO IMPORTANCE v50
+   ============================================================ */
+function autoImportance_v45(){
+  const mode = (get("ctx_mode")||"league").toLowerCase();
+  function calcImp(rest){
+    let imp=5;
+    if(mode==="derby") imp=8;
+    else if(mode==="final") imp=9;
+    else if(mode==="cup") imp=7;
+    else if(mode==="relegation") imp=8;
+    else if(mode==="title") imp=8;
+    else if(mode==="intl") imp=6;
+
+    if(rest<=2) imp -=1;
+    if(rest>=5) imp +=1;
+
+    return clamp(imp,1,10);
+  }
+
+  const rh = toNum(get("h_rest"),3);
+  const ra = toNum(get("a_rest"),3);
+
+  setVal("h_imp", calcImp(rh));
+  setVal("a_imp", calcImp(ra));
+
+  alert("Auto Importance berhasil.");
+}
+
+/* ============================================================
+   AUTO ROTATION v50
+   ============================================================ */
+function autoRotation_v45(){
+  function calcRot(rest){
+    if(rest>=6) return 3;
+    if(rest>=5) return 4;
+    if(rest>=4) return 5;
+    if(rest>=3) return 6;
+    if(rest>=2) return 7;
+    return 8;
+  }
+  setVal("h_rot", calcRot(toNum(get("h_rest"),3)));
+  setVal("a_rot", calcRot(toNum(get("a_rest"),3)));
+
+  alert("Auto Rotation selesai.");
+}
+
+/* ============================================================
+   AUTO ABSENCE v50
+   ============================================================ */
+function autoAbsence_v45(){
+  function availability(abs){
+    const a = parseAbs(abs);
+    let score = a.GK*3 + a.DF*1.5 + a.MD*1.2 + a.FW*2;
+    score = clamp(score,0,10);
+    return clamp(100 - score*5, 50, 100);
+  }
+  setVal("h_avail", availability(get("h_abs")));
+  setVal("a_avail", availability(get("a_abs")));
+
+  alert("Auto Absence selesai.");
+}
+
+/* ============================================================
+   AUTO PITCH (CUACA)
+   ============================================================ */
+function autoPitch_v45(){
+  const cuaca = get("ctx_weather");
+  if(!cuaca){
+    alert("Silakan pilih cuaca terlebih dahulu.");
+    return;
+  }
+  let tempo = toNum(get("ctx_tempo"),5);
+
+  if(cuaca==="clear") tempo += 0;
+  else if(cuaca==="rain") tempo -=0.5;
+  else if(cuaca==="heavy_rain") tempo -=1;
+  else if(cuaca==="snow") tempo -=1.3;
+  else if(cuaca==="windy") tempo -=0.7;
+
+  tempo = clamp(tempo,2.5,9.5);
+  setVal("ctx_tempo", tempo.toFixed(1));
+
+  alert("Auto Kondisi Lapangan selesai.");
+}
+
+/* ============================================================
+   AUTO STAGE (EARLY/MID/LATE)
+   ============================================================ */
+function autoStage_v45(){
+  const stage = get("ctx_stage");
+  if(!stage){
+    alert("Pilih tahap musim dulu.");
+    return;
+  }
+  let h = toNum(get("h_stab"),5);
+  let a = toNum(get("a_stab"),5);
+
+  if(stage==="early"){ h+=1; a+=1; }
+  if(stage==="late"){  h-=1; a-=1; }
+
+  setVal("h_stab", clamp(h,1,10));
+  setVal("a_stab", clamp(a,1,10));
+
+  alert("Auto Tahap Musim selesai.");
+}
+
+/* ============================================================
+   AUTO FORM (W/D/L)
+   ============================================================ */
+function autoForm_v45(){
+  function calc(raw){
+    if(!raw) return 5;
+    let s=0;
+    for(const c of raw.toUpperCase()){
+      if(c==="W") s+=2.5;
+      else if(c==="D") s+=1;
+      else if(c==="L") s-=0.5;
+    }
+    return clamp(Math.round(s),1,10);
+  }
+
+  setVal("h_form", calc(get("h_form_raw")));
+  setVal("a_form", calc(get("a_form_raw")));
+
+  alert("Auto Form selesai.");
+}
+
+/* ============================================================
+   AUTO GK IMPACT
+   ============================================================ */
+function autoGK_v45(){
+  function calc(sv,shc){
+    if(shc<=0) return 5;
+    return clamp(Math.round((sv/shc)*10),1,10);
+  }
+
+  setVal("h_gk", calc(toNum(get("h_gksv")), toNum(get("h_shc"))));
+  setVal("a_gk", calc(toNum(get("a_gksv")), toNum(get("a_shc"))));
+
+  alert("Auto GK selesai.");
+}
+
+/* ============================================================
+   AUTO STYLE (PRESS, DIRECTNESS, POSS TENDENCY)
+   ============================================================ */
+function autoStyle_v45(){
+  function detect(sh, sot, poss){
+    let press = (sh>=15)?8:(sh>=12)?6:4;
+    let direct = (poss<=48)?7:5;
+    let possT = (poss>=55)?7:5;
+    return {press, direct, possT};
+  }
+
+  const h = detect(toNum(get("h_shots")), toNum(get("h_sot")), toNum(get("h_poss")));
+  const a = detect(toNum(get("a_shots")), toNum(get("a_sot")), toNum(get("a_poss")));
+
+  setVal("h_press", h.press);
+  setVal("h_style", h.direct);
+  setVal("h_poss_t", h.possT);
+
+  setVal("a_press", a.press);
+  setVal("a_style", a.direct);
+  setVal("a_poss_t", a.possT);
+
+  alert("Auto Style selesai.");
+}
+</script>
+<script>
+/* ============================================================
+   v50 FINAL — PART 2B
+   ADVANCED AUTO MODULES + AUTO ELITE
+   ============================================================ */
+
+/* ============================================================
+   AUTO VARIANCE
+   ============================================================ */
+function autoVariance_v45(){
+  const tempo = toNum(get("ctx_tempo"),5);
+  const avgShots = (toNum(get("h_shots")) + toNum(get("a_shots"))) / 2;
+
+  let v = (tempo*0.6) + (avgShots*0.4)/3;
+  v = clamp(Math.round(v),1,10);
+
+  setVal("ctx_var", v);
+  alert("Auto Variance selesai.");
+}
+
+/* ============================================================
+   AUTO CHAOS
+   ============================================================ */
+function autoChaos_v45(){
+  const tempo = toNum(get("ctx_tempo"),5);
+  const variance = toNum(get("ctx_var"),5);
+
+  let chaos = tempo*0.6 + variance*0.4;
+  chaos = clamp(Math.round(chaos),1,10);
+
+  setVal("ctx_chaos", chaos);
+  alert("Auto Chaos selesai.");
+}
+
+/* ============================================================
+   AUTO MOMENTUM DM15
+   ============================================================ */
+function autoDM15_v45(){
+  function calc(form,tempo){
+    return clamp(Math.round((form*0.6)+(tempo*0.4)),1,10);
+  }
+  const tempo = toNum(get("ctx_tempo"),5);
+
+  setVal("h_dm15", calc(toNum(get("h_form"),5), tempo));
+  setVal("a_dm15", calc(toNum(get("a_form"),5), tempo));
+
+  alert("Auto Momentum DM15+ selesai.");
+}
+
+/* ============================================================
+   AUTO DEFENSE LINE
+   ============================================================ */
+function autoDefline_v45(){
+  function calc(sc, poss){
+    let d = 6;
+    if(sc<=10) d+=1;
+    if(poss>=55) d+=1;
+    return clamp(d,1,10);
+  }
+
+  setVal("h_deflvl", calc(toNum(get("h_shc")), toNum(get("h_poss"))));
+  setVal("a_deflvl", calc(toNum(get("a_shc")), toNum(get("a_poss"))));
+
+  alert("Auto Defense Line selesai.");
+}
+
+/* ============================================================
+   AUTO CROSS%
+   ============================================================ */
+function autoCross_v45(){
+  function cx(poss){
+    if(poss>=60) return 20;
+    if(poss>=50) return 24;
+    if(poss>=40) return 26;
+    return 18;
+  }
+
+  setVal("h_cross", cx(toNum(get("h_poss"))));
+  setVal("a_cross", cx(toNum(get("a_poss"))));
+
+  alert("Auto Cross selesai.");
+}
+
+/* ============================================================
+   AUTO BUILD-UP ADVANCED
+   ============================================================ */
+function autoBuildUpAdv_v45(){
+  function bu(poss,prog,f3){
+    let score = (poss*0.04) + (prog*0.3) + (f3*0.2);
+    return clamp(Math.round(score),1,10);
+  }
+  setVal("h_build", bu(toNum(get("h_poss")),toNum(get("h_prog")),toNum(get("h_f3"))));
+  setVal("a_build", bu(toNum(get("a_poss")),toNum(get("a_prog")),toNum(get("a_f3"))));
+
+  alert("Auto Build-Up Advanced selesai.");
+}
+
+/* ============================================================
+   AUTO BIG MATCH DETECTOR
+   ============================================================ */
+function autoBigMatch_v45(){
+  const imp   = (toNum(get("h_imp")) + toNum(get("a_imp"))) / 2 || 5;
+  const tempo = toNum(get("ctx_tempo"),5);
+  const varc  = toNum(get("ctx_var"),5);
+
+  let score = (imp*0.4) + (tempo*0.3) + (varc*0.3);
+
+  if(score>=7){
+    setVal("ctx_mode","bigmatch");
+    alert("AUTO Big Match: terdeteksi → Mode diset ke bigmatch");
+  } else {
+    alert("AUTO Big Match: tidak terdeteksi");
+  }
+}
+
+/* ============================================================
+   AUTO xTHREAT
+   ============================================================ */
+function autoXThreat_v45(){
+  function xt(prog,f3,xg){
+    let sc = (prog*0.3)+(f3*0.3)+(xg*0.4);
+    return clamp(Math.round(sc),1,10);
+  }
+  setVal("h_xthreat", xt(toNum(get("h_prog")),toNum(get("h_f3")),toNum(get("h_xg"))));
+  setVal("a_xthreat", xt(toNum(get("a_prog")),toNum(get("a_f3")),toNum(get("a_xg"))));
+
+  alert("Auto xThreat selesai.");
+}
+
+/* ============================================================
+   AUTO PRESS-RESISTANCE
+   ============================================================ */
+function autoPressRes_v45(){
+  function pr(poss,prog){
+    return clamp(Math.round((poss*0.05)+(prog*0.4)),1,10);
+  }
+
+  setVal("h_pressres", pr(toNum(get("h_poss")),toNum(get("h_prog"))));
+  setVal("a_pressres", pr(toNum(get("a_poss")),toNum(get("a_prog"))));
+
+  alert("Auto Press-Resistance selesai.");
+}
+
+/* ============================================================
+   AUTO TRANSITION
+   ============================================================ */
+function autoTransition_v45(){
+  function ts(sh,sot,prog){
+    let v = (sh*0.2)+(sot*0.5)+(prog*0.3);
+    return clamp(Math.round(v/3),1,10);
+  }
+
+  setVal("h_trans", ts(toNum(get("h_shots")),toNum(get("h_sot")),toNum(get("h_prog"))));
+  setVal("a_trans", ts(toNum(get("a_shots")),toNum(get("a_sot")),toNum(get("a_prog"))));
+
+  alert("Auto Transition selesai.");
+}
+
+/* ============================================================
+   AUTO PRESSURE WAVE
+   ============================================================ */
+function autoWave_v45(){
+  function wave(sh,tempo){
+    return clamp(Math.round(((sh*0.5)+(tempo*0.5))/2),1,10);
+  }
+  const tempo = toNum(get("ctx_tempo"),5);
+
+  setVal("h_wave", wave(toNum(get("h_shots")), tempo));
+  setVal("a_wave", wave(toNum(get("a_shots")), tempo));
+
+  alert("Auto Pressure Wave selesai.");
+}
+
+/* ============================================================
+   AUTO LOW BLOCK
+   ============================================================ */
+function autoLowBlock_v45(){
+  function lb(gc,shc,poss){
+    let s=5;
+    if(gc<=1.0 && shc<=10) s+=1;
+    if(poss<=45) s+=1;
+    return clamp(s,1,10);
+  }
+
+  setVal("h_lb", lb(toNum(get("h_gc")),toNum(get("h_shc")),toNum(get("h_poss"))));
+  setVal("a_lb", lb(toNum(get("a_gc")),toNum(get("a_shc")),toNum(get("a_poss"))));
+
+  alert("Auto Low Block selesai.");
+}
+
+/* ============================================================
+   AUTO GK SWEEPER DISTANCE
+   ============================================================ */
+function autoGKDist_v45(){
+  function dist(poss,shc){
+    let r = (poss*0.03)+(10-Math.min(shc,10));
+    return clamp(Math.round(r),1,10);
+  }
+  setVal("h_gkdist", dist(toNum(get("h_poss")),toNum(get("h_shc"))));
+  setVal("a_gkdist", dist(toNum(get("a_poss")),toNum(get("a_shc"))));
+
+  alert("Auto GK Sweeper Distance selesai.");
+}
+
+/* ============================================================
+   AUTO FINAL THIRD THREAT (F3T)
+   ============================================================ */
+function autoF3T_v45(){
+  function f3t(f3,bc){
+    let sc = (f3*0.6)+(bc*0.4);
+    return clamp(Math.round(sc/2),1,10);
+  }
+  setVal("h_f3t", f3t(toNum(get("h_f3")),toNum(get("h_bc"))));
+  setVal("a_f3t", f3t(toNum(get("a_f3")),toNum(get("a_bc"))));
+
+  alert("Auto Final Third Threat selesai.");
+}
+
+/* ============================================================
+   AUTO ELITE v50 (SEMUA AUTO DALAM SATU KLIK)
+   ============================================================ */
+function autoElite_v45(){
+  try {
+    // CONTEXT
+    autoContextPack_v45();
+    if(get("ctx_stage"))  autoStage_v45();
+    if(get("ctx_weather")) autoPitch_v45();
+
+    // TIM DASAR
+    autoImportance_v45();
+    autoRotation_v45();
+    autoAbsence_v45();
+    autoForm_v45();
+    autoGK_v45();
+    autoStyle_v45();
+
+    // ADVANCED
+    autoVariance_v45();
+    autoChaos_v45();
+    autoDM15_v45();
+    autoDefline_v45();
+    autoCross_v45();
+    autoBuildUpAdv_v45();
+    autoPressRes_v45();
+    autoTransition_v45();
+    autoWave_v45();
+    autoLowBlock_v45();
+    autoGKDist_v45();
+    autoF3T_v45();
+    autoXThreat_v45();
+
+    // BIG MATCH DETECTOR
+    autoBigMatch_v45();
+
+    alert("AUTO ELITE v50: Semua modul auto telah terisi.");
+  } catch(e){
+    console.error(e);
+    alert("Error pada AUTO ELITE (lihat console).");
+  }
+}
+</script>
+<script>
+/* ============================================================
+   v50 FINAL — PART 2C
+   CORE ENGINE (HYBRID xG, POISSON, RISK, PROFILE)
+   ============================================================ */
+
+/* ------------------------------ */
+/* READ CONTEXT                   */
+/* ------------------------------ */
+function readCtx_v45(){
+  return {
+    mode:   get("ctx_mode")    || "league",
+    weather:get("ctx_weather") || "",
+    tempo:  toNum(get("ctx_tempo"),5),
+    ref:    toNum(get("ctx_ref"),5),
+    variance: toNum(get("ctx_var"),5),
+    chaos:    toNum(get("ctx_chaos"),5),
+    stage:    get("ctx_stage") || "",
+    h2h_raw:  get("ctx_h2h_raw") || "",
+    league:   get("ctx_league") || "",
+    note:     get("ctx_note")   || ""
+  };
+}
+
+/* ------------------------------ */
+/* BUILD TEAM OBJECT              */
+/* ------------------------------ */
+function buildTeam_v45(side){
+  const p = (side==="h" ? "h_" : "a_");
+  const t = {};
+  t.side   = side;
+  t.name   = get(p+"name") || (side==="h" ? "HOME" : "AWAY");
+
+  t.elo    = toNum(get(p+"elo"),1600);
+  t.rest   = toNum(get(p+"rest"),3);
+
+  t.shots  = toNum(get(p+"shots"),12);
+  t.sot    = toNum(get(p+"sot"),4);
+  t.xg     = toNum(get(p+"xg"),1.3);
+  t.dzxg   = toNum(get(p+"dzxg"),0);
+
+  t.gc     = toNum(get(p+"gc"),1.1);
+  t.shc    = toNum(get(p+"shc"),9.5);
+  t.gksv   = toNum(get(p+"gksv"),3.2);
+  t.intc   = toNum(get(p+"int"),7.0);
+
+  t.prog   = toNum(get(p+"prog"),12);
+  t.f3     = toNum(get(p+"f3"),8);
+  t.poss   = toNum(get(p+"poss"),50);
+
+  t.build  = toNum(get(p+"build"),5);
+  t.deflvl = toNum(get(p+"deflvl"),5);
+  t.press  = toNum(get(p+"press"),5);
+  t.finish = toNum(get(p+"finish"),5);
+
+  t.imp    = toNum(get(p+"imp"),5);
+  t.rot    = toNum(get(p+"rot"),5);
+  t.absStr = get(p+"abs") || "";
+
+  // advanced (boleh kosong)
+  t.form   = toNum(get(p+"form"),5);
+  t.stab   = toNum(get(p+"stab"),5);
+  t.avail  = toNum(get(p+"avail"),100);
+  t.gkRate = toNum(get(p+"gk"),5);
+  t.style  = toNum(get(p+"style"),5);
+  t.possT  = toNum(get(p+"poss_t"),5);
+
+  t.cross  = toNum(get(p+"cross"),20);
+  t.bc     = toNum(get(p+"bc"),1);
+  t.f3t    = toNum(get(p+"f3t"),5);
+  t.gkdist = toNum(get(p+"gkdist"),5);
+  t.pressRes=toNum(get(p+"pressres"),5);
+  t.trans  = toNum(get(p+"trans"),5);
+  t.lb     = toNum(get(p+"lb"),5);
+  t.wave   = toNum(get(p+"wave"),5);
+  t.xthreat= toNum(get(p+"xthreat"),5);
+  t.dm15   = toNum(get(p+"dm15"),5);
+
+  return t;
+}
+
+/* ------------------------------ */
+/* PHASE METRICS                  */
+/* ------------------------------ */
+function phaseDef_v45(t){
+  const raw = ((11 - t.gc)*0.30) + ((11 - t.shc)*0.24) +
+              (t.gksv*0.26) + (t.intc*0.20);
+  return clamp(raw/4.8,1,10);
+}
+function phaseMid_v45(t){
+  const raw = (t.prog*0.50) + (t.f3*0.50);
+  return clamp(raw/5.0,1,10);
+}
+function phaseAtk_v45(t){
+  const raw = (t.xg*0.38) + (t.sot*0.32) + (t.finish*0.30);
+  return clamp(raw/4.4,1,10);
+}
+
+/* ------------------------------ */
+/* TACTICAL SUPPORT METRICS       */
+/* ------------------------------ */
+function xThreat_v45(t){
+  const raw = (t.f3*0.32) + (t.prog*0.22) +
+              (t.xg*0.28) + (t.sot*0.18);
+  return clamp(raw/4.6,1,10);
+}
+function boxCtrl_v45(t){
+  const raw = ((11 - t.gc)*0.28) + ((11 - t.shc)*0.22) +
+              (t.intc*0.24) + (t.gksv*0.26);
+  return clamp(raw/4.8,1,10);
+}
+function overload_v45(t){
+  const raw = (t.f3*0.45) + (t.prog*0.28) + (t.poss*0.27);
+  return clamp(raw/4.8,1,10);
+}
+function antiPress_v45(t){
+  const raw = (t.build*0.55) + (t.prog*0.45);
+  return clamp(raw/5.0,1,10);
+}
+function transPress_v45(t){
+  const raw = (t.press*0.55) + (t.intc*0.45);
+  return clamp(raw/5.0,1,10);
+}
+function fTilt_v45(t,opp){
+  const tilt = (t.f3 + t.prog) - (opp.f3 + opp.prog);
+  return clamp((tilt/25)+5,1,10);
+}
+
+/* ------------------------------ */
+/* ADVANCED METRICS               */
+/* ------------------------------ */
+function edt_v45(t){ // Enhanced Danger Threat
+  const dz  = t.dzxg || 0;
+  const raw = (t.xThreat*0.40) + (t.f3*0.18) + (t.prog*0.14) +
+              (t.overload*0.14) + (dz*0.32) + (t.atkPhase*0.18);
+  return clamp(raw/4.8,1,10);
+}
+function xDef_v45(t){
+  const raw = (t.defPhase*0.30) + (t.boxCtrl*0.28) +
+              ((11 - t.gc)*0.18) + ((11 - t.shc)*0.14) +
+              (t.gksv*0.20) + (t.intc*0.14);
+  return clamp(raw/4.8,1,10);
+}
+function brs_v45(t){
+  const raw = (t.intc*0.45) + ((11 - t.shc)*0.30) + (t.transPress*0.25);
+  return clamp(raw/4.3,1,10);
+}
+function xCarry_v45(t){
+  const raw = (t.prog*0.40) + (t.f3*0.40) + (t.poss*0.20);
+  return clamp(raw/4.8,1,10);
+}
+function flowRisk_v45(H,A){
+  const raw = Math.abs(H.transPress - A.transPress)*0.4 +
+              Math.abs(H.antiPress - A.antiPress)*0.3 +
+              Math.abs(H.overload   - A.overload)*0.3;
+  return clamp(raw/2.5,1,10);
+}
+
+/* ------------------------------ */
+/* TEMPO / CHAOS / LOW BLOCK      */
+/* ------------------------------ */
+function tempoConf_v45(H,A,ctx){
+  const t   = ctx.tempo || 5;
+  const raw = Math.abs(H.build - A.build)*0.30 +
+              Math.abs(H.press - A.press)*0.30 +
+              Math.abs(H.poss  - A.poss)*0.20 +
+              (t*0.20);
+  return clamp(raw/2.4,1,10);
+}
+function chaosScore_v45(H,A,tempoConf){
+  const raw = Math.abs(H.fTilt - A.fTilt)*0.28 +
+              Math.abs(H.overload - A.overload)*0.22 +
+              (tempoConf*0.50);
+  return clamp(raw/2.4,1,10);
+}
+function lowBlockScore_v45(t){
+  let s=0;
+  if(t.defPhase>=7.5) s+=0.35;
+  if(t.boxCtrl>=7.0)  s+=0.25;
+  if(t.fTilt<=4.5)    s+=0.20;
+  if(t.overload<=4.5 && t.atkPhase<=5.0) s+=0.20;
+  return clamp(s,0,1);
+}
+
+/* ------------------------------ */
+/* CONTEXT MODIFIERS              */
+/* ------------------------------ */
+function ctxMod_v45(ctx){
+  let f = 1.0;
+  if(ctx.mode==="derby")      f += 0.08;
+  if(ctx.mode==="cup")        f += 0.04;
+  if(ctx.mode==="final")      f += 0.06;
+  if(ctx.mode==="relegation") f += 0.06;
+  if(ctx.mode==="title")      f += 0.06;
+  if(ctx.weather==="rain")      f -= 0.04;
+  if(ctx.weather==="heavy_rain")f -= 0.08;
+  if(ctx.weather==="snow")      f -= 0.10;
+  return clamp(f,0.82,1.12);
+}
+function ICM_v45(absStr){
+  const abs = parseAbs(absStr);
+  const penalty = abs.GK*0.12 + abs.DF*0.08 + abs.MD*0.06 + abs.FW*0.06;
+  return clamp(1 - penalty,0.65,1.05);
+}
+function gkIso_v45(t,opp){
+  const raw = (t.gksv*0.40) + ((11 - t.gc)*0.30) +
+              ((11 - t.shc)*0.20) - (opp.xThreat*0.10);
+  return clamp(raw/4.8,1,10);
+}
+
+/* ------------------------------ */
+/* HYBRID xG                      */
+/* ------------------------------ */
+function hybridXG_v45(t,opp,flowR){
+  const dz   = t.dzxg || 0;
+  const base = (t.xg*0.45) + (t.edt*0.30) + (t.xThreat*0.18) +
+               (t.xCarry*0.12) + (dz*0.30) -
+               (opp.xDef*0.25) - (flowR*0.15);
+  return clamp(base/4.6,0.2,4.8);
+}
+
+/* ------------------------------ */
+/* POISSON / PROBABILITY ENGINE   */
+/* ------------------------------ */
+function factorial_v45(n){
+  if(n<=1) return 1;
+  let r=1;
+  for(let i=2;i<=n;i++) r*=i;
+  return r;
+}
+function poisson_v45(lambda,k){
+  if(lambda<=0) lambda=0.0001;
+  return Math.pow(lambda,k)*Math.exp(-lambda)/factorial_v45(k);
+}
+function prob3W_v45(lH,lA){
+  let pH=0,pD=0,pA=0;
+  for(let i=0;i<=10;i++){
+    for(let j=0;j<=10;j++){
+      const p = poisson_v45(lH,i)*poisson_v45(lA,j);
+      if(i>j) pH+=p;
+      else if(i===j) pD+=p;
+      else pA+=p;
+    }
+  }
+  return {H:pH,D:pD,A:pA};
+}
+function ouProb_v45(lH,lA,line){
+  let over=0,under=0;
+  for(let i=0;i<=10;i++){
+    for(let j=0;j<=10;j++){
+      const g = i+j;
+      const p = poisson_v45(lH,i)*poisson_v45(lA,j);
+      if(g>line) over+=p;
+      else       under+=p;
+    }
+  }
+  return {over,under};
+}
+function btts_v45(lH,lA){
+  let yes=0,no=0;
+  for(let i=0;i<=10;i++){
+    for(let j=0;j<=10;j++){
+      const p = poisson_v45(lH,i)*poisson_v45(lA,j);
+      if(i>0 && j>0) yes+=p; else no+=p;
+    }
+  }
+  return {yes,no};
+}
+function topScores_v45(lH,lA){
+  const arr=[];
+  for(let i=0;i<=5;i++){
+    for(let j=0;j<=5;j++){
+      const p = poisson_v45(lH,i)*poisson_v45(lA,j);
+      arr.push({score:`${i}-${j}`,prob:p});
+    }
+  }
+  arr.sort((a,b)=>b.prob-a.prob);
+  return arr.slice(0,8);
+}
+
+/* ------------------------------ */
+/* CARDS / CORNERS / POSSESSION   */
+/* ------------------------------ */
+function cardsModel_v45(H,A,ctx,chaos){
+  let base = 3.4;
+  base += (ctx.ref-5)*0.18;
+  base += (chaos-5)*0.12;
+  if(ctx.mode==="derby")      base += 0.6;
+  if(ctx.mode==="relegation") base += 0.3;
+  if(ctx.mode==="cup")        base += 0.2;
+  base = clamp(base,2.0,8.5);
+
+  const h = clamp(base*(H.press/10)*0.52,0.4,6);
+  const a = clamp(base*(A.press/10)*0.48,0.4,6);
+  return {total:base, home:h, away:a};
+}
+function cornersModel_v45(t){
+  const raw = (t.shots*0.20) + (t.f3*0.22) + (t.prog*0.16);
+  return clamp(raw/1.8,1,12);
+}
+function possModel_v45(H,A){
+  const total = H.poss + A.poss;
+  if(total<=0) return {H:50,A:50};
+  return {
+    H: clamp((H.poss/total)*100,30,70),
+    A: clamp((A.poss/total)*100,30,70)
+  };
+}
+
+/* ------------------------------ */
+/* RELIABILITY / RISK / PENALTY   */
+/* ------------------------------ */
+function relScore_v45(t,chaos){
+  const raw = (t.xThreat*0.22)+(t.edt*0.22)+(t.xDef*0.20)+
+              (t.boxCtrl*0.14)+(t.build*0.12)-(chaos*0.10);
+  return clamp(raw/3.8,1,10);
+}
+function riskScore_v45(H,A,chaos){
+  const raw = chaos*0.45 +
+              Math.abs(H.fTilt - A.fTilt)*0.25 +
+              Math.abs(H.overload - A.overload)*0.20;
+  return clamp(raw/2.2,1,10);
+}
+function collapse_v45(t,risk){
+  const raw = ((11 - t.deflvl)*0.30) + ((11 - t.xDef)*0.26) + (risk*0.24);
+  return clamp(raw/2.1,1,10);
+}
+function ncgGrade_v45(rel,chaos){
+  const s = rel*0.7 - chaos*0.3;
+  if(s>=7.8) return "A+";
+  if(s>=6.8) return "A";
+  if(s>=5.8) return "B";
+  if(s>=4.5) return "C";
+  if(s>=3.5) return "D";
+  return "E";
+}
+function penRisk_v45(H,A,ctx,chaos,tempoC){
+  let raw = (H.press + A.press)*0.16 +
+            (H.boxCtrl + A.boxCtrl)*0.10 +
+            (H.transPress + A.transPress)*0.10 +
+            chaos*0.14 + tempoC*0.08 +
+            ctx.ref*0.18 +
+            (ctx.mode==="derby"      ? 1.2 : 0) +
+            (ctx.mode==="relegation" ? 0.8 : 0) +
+            (ctx.mode==="cup"        ? 0.4 : 0);
+  return clamp(raw/2.2,1,10);
+}
+
+/* ------------------------------ */
+/* MATCH PROFILE v50              */
+/* ------------------------------ */
+function matchProfile_v50(ctx, chaos, tempoC, poss){
+  let tempoTag = "sedang";
+  if(tempoC <= 4) tempoTag = "lambat / terkontrol";
+  else if(tempoC >= 7) tempoTag = "cepat / intens";
+
+  let chaosTag = "stabil";
+  if(chaos <= 4) chaosTag = "sangat terstruktur";
+  else if(chaos >= 7) chaosTag = "tinggi & sulit diprediksi";
+
+  let possTag = "imbang";
+  if(poss.H >= poss.A + 8) possTag = "Home dominan bola";
+  else if(poss.A >= poss.H + 8) possTag = "Away dominan bola";
+
+  let modeTag = "Laga liga biasa";
+  if(ctx.mode==="derby")       modeTag = "Derby / Rivalitas";
+  else if(ctx.mode==="relegation") modeTag = "Pertarungan degradasi";
+  else if(ctx.mode==="title")  modeTag = "Laga perebutan gelar";
+  else if(ctx.mode==="cup")    modeTag = "Knock-out / Cup";
+  else if(ctx.mode==="final")  modeTag = "Final";
+
+  return `${modeTag}, tempo ${tempoTag}, chaos ${chaosTag}, pola penguasaan: ${possTag}.`;
+}
+
+/* ============================================================
+   MAIN ANALYZE v50 (NAMA TETAP analyze_v45)
+   ============================================================ */
+function analyze_v45(){
+  const ctx = readCtx_v45();
+  const h2h = parseH2H_v45(ctx.h2h_raw);
+
+  const H = buildTeam_v45("h");
+  const A = buildTeam_v45("a");
+
+  // PHASES
+  H.defPhase = phaseDef_v45(H);  A.defPhase = phaseDef_v45(A);
+  H.midPhase = phaseMid_v45(H);  A.midPhase = phaseMid_v45(A);
+  H.atkPhase = phaseAtk_v45(H);  A.atkPhase = phaseAtk_v45(A);
+
+  H.xThreat  = xThreat_v45(H);   A.xThreat  = xThreat_v45(A);
+  H.boxCtrl  = boxCtrl_v45(H);   A.boxCtrl  = boxCtrl_v45(A);
+  H.overload = overload_v45(H);  A.overload = overload_v45(A);
+  H.antiPress= antiPress_v45(H); A.antiPress= antiPress_v45(A);
+  H.transPress=transPress_v45(H);A.transPress=transPress_v45(A);
+
+  H.fTilt    = fTilt_v45(H,A);   A.fTilt    = fTilt_v45(A,H);
+
+  // ADVANCED
+  H.edt    = edt_v45(H);     A.edt    = edt_v45(A);
+  H.xDef   = xDef_v45(H);    A.xDef   = xDef_v45(A);
+  H.brSpd  = brs_v45(H);     A.brSpd  = brs_v45(A);
+  H.xCarry = xCarry_v45(H);  A.xCarry = xCarry_v45(A);
+
+  const flowR   = flowRisk_v45(H,A);
+  const tempoC  = tempoConf_v45(H,A,ctx);
+  const chaos   = ctx.chaos || chaosScore_v45(H,A,tempoC);
+  const lbH     = lowBlockScore_v45(H), lbA = lowBlockScore_v45(A);
+  const ctxMult = ctxMod_v45(ctx);
+  const icmH    = ICM_v45(H.absStr), icmA = ICM_v45(A.absStr);
+  const gkIsoH  = gkIso_v45(H,A),   gkIsoA = gkIso_v45(A,H);
+
+  // HYBRID xG
+  let baseXH = hybridXG_v45(H,A,flowR)*icmH*ctxMult;
+  let baseXA = hybridXG_v45(A,H,flowR)*icmA*ctxMult;
+
+  // lawan low block
+  baseXH *= (1 - lbA*0.15);
+  baseXA *= (1 - lbH*0.15);
+
+  // H2H small adjust
+  if(h2h.has){
+    const adj  = (h2h.rating-5)/5;
+    const safe = clamp(adj*0.07,-0.07,0.07);
+    baseXH *= (1+safe);
+    baseXA *= (1-safe);
+  }
+
+  baseXH = clamp(baseXH,0.05,5.0);
+  baseXA = clamp(baseXA,0.05,5.0);
+
+  // VARIANCE
+  function varModel_v45(bx, chaos, tempoC){
+    let vol = (chaos*0.44)+(tempoC*0.26);
+    vol = clamp(vol/6.8,0.65,1.55);
+    return {base: bx*vol, vol};
+  }
+  const varH = varModel_v45(baseXH,chaos,tempoC);
+  const varA = varModel_v45(baseXA,chaos,tempoC);
+
+  const lH = clamp(varH.base,0.05,5.5);
+  const lA = clamp(varA.base,0.05,5.5);
+
+  // PROBABILITIES
+  const p3    = prob3W_v45(lH,lA);
+  const ou15  = ouProb_v45(lH,lA,1.5);
+  const ou25  = ouProb_v45(lH,lA,2.5);
+  const ou35  = ouProb_v45(lH,lA,3.5);
+  const bt    = btts_v45(lH,lA);
+  const scor  = topScores_v45(lH,lA);
+
+  // CARDS / CORNERS / POSSESSION
+  const cards = cardsModel_v45(H,A,ctx,chaos);
+  const cH    = cornersModel_v45(H);
+  const cA    = cornersModel_v45(A);
+  const poss  = possModel_v45(H,A);
+
+  // RELIABILITY / COLLAPSE / PENALTY
+  const relH = relScore_v45(H,chaos), relA = relScore_v45(A,chaos);
+  const risk = riskScore_v45(H,A,chaos);
+  const colH = collapse_v45(H,risk), colA = collapse_v45(A,risk);
+  const ncgH = ncgGrade_v45(relH,chaos), ncgA = ncgGrade_v45(relA,chaos);
+  const penR = penRisk_v45(H,A,ctx,chaos,tempoC);
+
+  const matchProfile = matchProfile_v50(ctx, chaos, tempoC, poss);
+
+  const result = {
+    ctx, h2h,
+    H, A,
+    lambdaH:lH, lambdaA:lA,
+    p3,
+    ou15, ou25, ou35,
+    bt,
+    scores:scor,
+    cards,
+    corners:{home:cH, away:cA, total:cH+cA},
+    poss,
+    rel:{H:relH,A:relA},
+    risk,
+    collapse:{H:colH,A:colA},
+    ncg:{H:ncgH,A:ncgA},
+    penR,
+    chaos,
+    tempoC,
+    lb:{H:lbH,A:lbA},
+    gkIso:{H:gkIsoH,A:gkIsoA},
+    matchProfile
+  };
+
+  render_v45(result);  // renderer di Part 2D
+  return result;
+}
+</script>
+<script>
+/* ============================================================
+   v50 FINAL — PART 2D
+   RENDER ENGINE (TAMPILKAN HASIL KE PANEL)
+   ============================================================ */
+
+function render_v45(res){ // v50 renderer
+  const box = document.getElementById("result_panel");
+  if(!box) return;
+
+  const H = res.H, A = res.A;
+  const pH = Math.round(res.p3.H*100);
+  const pD = Math.round(res.p3.D*100);
+  const pA = Math.round(res.p3.A*100);
+
+  const ou15o = Math.round(res.ou15.over*100);
+  const ou15u = Math.round(res.ou15.under*100);
+  const ou25o = Math.round(res.ou25.over*100);
+  const ou25u = Math.round(res.ou25.under*100);
+  const ou35o = Math.round(res.ou35.over*100);
+  const ou35u = Math.round(res.ou35.under*100);
+
+  const bty = Math.round(res.bt.yes*100);
+  const btn = Math.round(res.bt.no*100);
+
+  const sLines = res.scores
+    .map(s=>`${s.score} (${Math.round(s.prob*100)}%)`)
+    .join(" · ");
+
+  const h2hLine = res.h2h.has
+    ? `H2H ${res.h2h.played} laga · Gol H: ${res.h2h.avgH.toFixed(2)} · Gol A: ${res.h2h.avgA.toFixed(2)}`
+    : `H2H: tidak diisi / belum ada pertemuan.`;
+
+  const header =
+`${H.name || "HOME"} vs ${A.name || "AWAY"}
+Mode: ${res.ctx.mode || "league"}, TempoConf: ${res.tempoC.toFixed(2)}, Chaos: ${res.chaos.toFixed(2)}, VarInput: ${res.ctx.variance.toFixed(2)}
+Profil Laga: ${res.matchProfile}
+`;
+
+  const probBlock =
+`3-Way Prob (netral, tanpa odds):
+  Home : ${pH}% 
+  Draw : ${pD}% 
+  Away : ${pA}%
+
+Over/Under (murni Poisson, λ Home/Away):
+  O/U 1.5 : Over ${ou15o}% · Under ${ou15u}%
+  O/U 2.5 : Over ${ou25o}% · Under ${ou25u}%
+  O/U 3.5 : Over ${ou35o}% · Under ${ou35u}%
+
+BTTS:
+  Yes: ${bty}%
+  No : ${btn}%
+`;
+
+  const lambdaBlock =
+`Expected Goals (λ Poisson):
+  λ Home : ${res.lambdaH.toFixed(3)}
+  λ Away : ${res.lambdaA.toFixed(3)}
+
+Scorelines paling mungkin:
+  ${sLines}
+`;
+
+  const extraBlock =
+`Cards (EX, non-odds):
+  Total : ${res.cards.total.toFixed(2)}
+  Home  : ${res.cards.home.toFixed(2)}
+  Away  : ${res.cards.away.toFixed(2)}
+
+Corners (EX):
+  Total : ${(res.corners.total).toFixed(1)}
+  Home  : ${res.corners.home.toFixed(1)}
+  Away  : ${res.corners.away.toFixed(1)}
+
+Possession (estimate):
+  Home : ${res.poss.H.toFixed(1)}%
+  Away : ${res.poss.A.toFixed(1)}%
+`;
+
+  const relBlock =
+`Reliability & Collapse:
+  Reliability : H ${res.rel.H.toFixed(2)} · A ${res.rel.A.toFixed(2)}
+  Collapse    : H ${res.collapse.H.toFixed(2)} · A ${res.collapse.A.toFixed(2)}
+  NCG Grade   : H ${res.ncg.H} · A ${res.ncg.A}
+
+Penalty-zone risk (non-odds):
+  Level: ${res.penR.toFixed(2)} / 10
+`;
+
+  const h2hBlock =
+`Info H2H:
+  ${h2hLine}
+`;
+
+  box.textContent = header + "\n" +
+                    probBlock + "\n" +
+                    lambdaBlock + "\n" +
+                    extraBlock + "\n" +
+                    relBlock + "\n" +
+                    h2hBlock;
+}
+</script>
+<script>
+/* ============================================================
+   v50 FINAL — PART 4 (UX TEXT HIGHLIGHT SYSTEM)
+   ============================================================ */
+
+/* 
+Highlight memakai simbol aman:
+⚫ = netral
+🟢 = positif (dominan / tinggi)
+🟡 = sedang
+🔴 = tinggi / risiko
+*/
+
+function mark3way(pH,pD,pA){
+  const max = Math.max(pH,pD,pA);
+  function m(x){
+    if(x === max && x >= 45) return "🟢";
+    if(x === max && x < 45) return "🟡";
+    return "⚫";
+  }
+  return {
+    H: m(pH)+" "+pH+"%",
+    D: m(pD)+" "+pD+"%",
+    A: m(pA)+" "+pA+"%"
+  };
+}
+
+function markOU(overPercent){
+  if(overPercent >= 60) return "🟢 "+overPercent+"%";
+  if(overPercent >= 50) return "🟡 "+overPercent+"%";
+  return "⚫ "+overPercent+"%";
+}
+
+function markRisk(value){
+  if(value >= 7.0) return "🔴 "+value.toFixed(2);
+  if(value >= 5.0) return "🟡 "+value.toFixed(2);
+  return "⚫ "+value.toFixed(2);
+}
+
+function markReliability(value){
+  if(value >= 7) return "🟢 "+value.toFixed(2);
+  if(value >= 5) return "🟡 "+value.toFixed(2);
+  return "⚫ "+value.toFixed(2);
+}
+
+/* 
+Integrasi ke render_v45:
+Kita patch versi renderer supaya memakai highlight text.
+*/
+const _render_raw = render_v45;
+render_v45 = function(res){
+  const box = document.getElementById("result_panel");
+  if(!box) return;
+
+  const H = res.H, A = res.A;
+
+  // 3Way highlight
+  const p3 = mark3way(
+    Math.round(res.p3.H*100),
+    Math.round(res.p3.D*100),
+    Math.round(res.p3.A*100)
+  );
+
+  // OU highlight
+  const ou = {
+    ou15o: markOU(Math.round(res.ou15.over*100)),
+    ou15u: markOU(Math.round(res.ou15.under*100)),
+    ou25o: markOU(Math.round(res.ou25.over*100)),
+    ou25u: markOU(Math.round(res.ou25.under*100)),
+    ou35o: markOU(Math.round(res.ou35.over*100)),
+    ou35u: markOU(Math.round(res.ou35.under*100)),
+  };
+
+  // Risk markers
+  const rel = {
+    H: markReliability(res.rel.H),
+    A: markReliability(res.rel.A),
+  };
+  const collapse = {
+    H: markRisk(res.collapse.H),
+    A: markRisk(res.collapse.A),
+  };
+  const penR = markRisk(res.penR);
+
+  // Compose final output (text only)
+  let txt = "";
+
+  txt += `${H.name} vs ${A.name}\n`;
+  txt += `Profil Laga: ${res.matchProfile}\n`;
+  txt += `TempoConf: ${res.tempoC.toFixed(2)}, Chaos: ${res.chaos.toFixed(2)}, Var: ${res.ctx.variance.toFixed(2)}\n\n`;
+
+  txt += `3-WAY Probability:\n`;
+  txt += `  Home : ${p3.H}\n`;
+  txt += `  Draw : ${p3.D}\n`;
+  txt += `  Away : ${p3.A}\n\n`;
+
+  txt += `Over/Under (Poisson λ):\n`;
+  txt += `  O/U 1.5 : Over ${ou.ou15o} · Under ${ou.ou15u}\n`;
+  txt += `  O/U 2.5 : Over ${ou.ou25o} · Under ${ou.ou25u}\n`;
+  txt += `  O/U 3.5 : Over ${ou.ou35o} · Under ${ou.ou35u}\n\n`;
+
+  txt += `Expected Goals:\n`;
+  txt += `  λ Home : ${res.lambdaH.toFixed(3)}\n`;
+  txt += `  λ Away : ${res.lambdaA.toFixed(3)}\n\n`;
+
+  txt += `Scorelines paling mungkin:\n  `;
+  txt += res.scores
+         .map(s => `${s.score} (${Math.round(s.prob*100)}%)`)
+         .join(" · ");
+  txt += "\n\n";
+
+  txt += `Cards Expected:\n`;
+  txt += `  Total : ${res.cards.total.toFixed(2)}\n`;
+  txt += `  Home  : ${res.cards.home.toFixed(2)}\n`;
+  txt += `  Away  : ${res.cards.away.toFixed(2)}\n\n`;
+
+  txt += `Corners Expected:\n`;
+  txt += `  Total : ${(res.corners.total).toFixed(1)}\n`;
+  txt += `  Home  : ${res.corners.home.toFixed(1)}\n`;
+  txt += `  Away  : ${res.corners.away.toFixed(1)}\n\n`;
+
+  txt += `Possession:\n`;
+  txt += `  Home : ${res.poss.H.toFixed(1)}%\n`;
+  txt += `  Away : ${res.poss.A.toFixed(1)}%\n\n`;
+
+  txt += `Reliability & Collapse:\n`;
+  txt += `  Reliability: H ${rel.H} · A ${rel.A}\n`;
+  txt += `  Collapse:    H ${collapse.H} · A ${collapse.A}\n`;
+  txt += `  NCG Grade:   H ${res.ncg.H} · A ${res.ncg.A}\n\n`;
+
+  txt += `Penalty-zone Risk:\n`;
+  txt += `  Level: ${penR} / 10\n\n`;
+
+  txt += `H2H Info:\n`;
+  txt += `  ${res.h2h.has ? 
+      `Pertemuan: ${res.h2h.played} laga · Avg H ${res.h2h.avgH.toFixed(2)} · Avg A ${res.h2h.avgA.toFixed(2)}`
+      : "Tidak ada / tidak diisi."}`;
+  txt += "\n";
+
+  box.textContent = txt;
+};
+</script>
+<script>
+/* ============================================================
+   v50 FINAL — PART 6 : RADAR CHART (NO LIBRARY)
+   ============================================================ */
+
+function drawRadar_v50(stats){
+  const canvas = document.getElementById("radarChart");
+  if(!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  const size = canvas.width;
+  const center = size / 2;
+  const maxValue = 10;
+  const radius = size * 0.38;
+
+  ctx.clearRect(0, 0, size, size);
+
+  const labels = [
+    "Hybrid-xG",
+    "xDef",
+    "xThreat",
+    "EDT",
+    "Build-Up",
+    "F3 Threat",
+    "PressRes",
+    "Transition"
+  ];
+
+  const values = [
+    stats.xg,     // 1–10
+    stats.xdef,
+    stats.xthreat,
+    stats.edt,
+    stats.build,
+    stats.f3t,
+    stats.pr,
+    stats.trans
+  ];
+
+  const total = labels.length;
+  const angleStep = (Math.PI * 2) / total;
+
+  /* Draw web / background */
+  ctx.strokeStyle = "#8893a6";
+  ctx.lineWidth = 0.7;
+  for(let lv=2; lv<=10; lv+=2){
+    const r = (lv/maxValue) * radius;
+    ctx.beginPath();
+    for(let i=0;i<total;i++){
+      const angle = i * angleStep - Math.PI/2;
+      const x = center + Math.cos(angle)*r;
+      const y = center + Math.sin(angle)*r;
+      if(i===0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  /* Draw labels */
+  ctx.fillStyle = "#ffffff"; /* auto overridden by dark mode var */
+  ctx.font = "13px sans-serif";
+
+  for(let i=0;i<total;i++){
+    const angle = i * angleStep - Math.PI/2;
+    const x = center + Math.cos(angle)*(radius+18);
+    const y = center + Math.sin(angle)*(radius+18);
+    ctx.textAlign = "center";
+    ctx.fillText(labels[i], x, y);
+  }
+
+  /* Draw stat polygon */
+  ctx.beginPath();
+  ctx.strokeStyle = "#3a5aff";
+  ctx.lineWidth = 2;
+  ctx.fillStyle = "rgba(58,90,255,0.18)";
+
+  for(let i=0;i<total;i++){
+    const val = values[i];
+    const r = (val/maxValue) * radius;
+    const angle = i * angleStep - Math.PI/2;
+    const x = center + Math.cos(angle)*r;
+    const y = center + Math.sin(angle)*r;
+    if(i===0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+  ctx.fill();
+}
+
+/* ============================================================
+   PATCH ANALYZER → panggil radar chart setelah analisis
+   ============================================================ */
+
+const _oldAnalyze = analyze_v45;
+
+analyze_v45 = function(){
+  const res = _oldAnalyze();  // jalankan mesin asli
+  if(!res) return;
+
+  // Buat radar input
+  const stats = {
+    xg: Math.round(res.lambdaH*5 + res.lambdaA*5) / 2 > 10 ? 10 : Math.round((res.lambdaH*5 + res.lambdaA*5)/2),
+    xdef: (res.H.defP + res.A.defP)/2,
+    xthreat: (res.H.xThreat + res.A.xThreat)/2,
+    edt: (res.H.edt + res.A.edt)/2,
+    build: (res.H.build + res.A.build)/2,
+    f3t: (res.H.f3t + res.A.f3t)/2,
+    pr: (res.H.pressres + res.A.pressres)/2,
+    trans: (res.H.trans + res.A.trans)/2
+  };
+
+  drawRadar_v50(stats);
+  return res;
+};
+</script>
+<script>
+/* ============================================================
+   v50 FINAL — PART 2E
+   CLEAR FUNCTION + BUTTON EVENT BIND
+   ============================================================ */
+
+/* ------------------------------ */
+/* CLEAR ALL INPUTS               */
+/* ------------------------------ */
+function clear_v45(){
+  const ids = document.querySelectorAll("input, select, textarea");
+  ids.forEach(el=>{
+    if(el.tagName==="SELECT") el.selectedIndex = 0;
+    else el.value = "";
+  });
+
+  const box = document.getElementById("result_panel");
+  if(box) box.textContent = "Hasil analisis akan muncul di sini setelah klik ANALYZE.";
+
+  alert("Semua input telah dikosongkan.");
+}
+
+/* ------------------------------ */
+/* EVENT BIND                     */
+/* ------------------------------ */
+window.addEventListener("DOMContentLoaded", function(){
+
+  const bAnalyze = document.getElementById("btn_analyze_v45");
+  const bClear   = document.getElementById("btn_clear_v45");
+
+  if(bAnalyze) bAnalyze.onclick = analyze_v45; // Mesin utama v50
+  if(bClear)   bClear.onclick   = clear_v45;
+
+});
+</script>
+</body>
+</html>
