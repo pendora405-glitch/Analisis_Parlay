@@ -1,0 +1,1095 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>Parlay TITAN v30 — Quantum Hybrid Neural</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <style>
+    body{
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:#020617;
+      color:#e5e7eb;
+      margin:0;
+      padding:0;
+    }
+    .container{
+      max-width:1150px;
+      margin:0 auto;
+      padding:16px;
+    }
+    h1{
+      font-size:22px;
+      margin:0 0 6px 0;
+      font-weight:600;
+      text-align:center;
+    }
+    h2{
+      font-size:16px;
+      margin:0 0 8px 0;
+      font-weight:600;
+    }
+    h3{
+      font-size:13px;
+      margin:10px 0 4px 0;
+      font-weight:600;
+    }
+    .box{
+      background:#020617;
+      border-radius:10px;
+      padding:12px;
+      border:1px solid #1f2937;
+      margin-bottom:12px;
+    }
+    label{
+      display:block;
+      font-size:11px;
+      opacity:0.8;
+      margin:4px 0 2px 0;
+    }
+    input,select,textarea{
+      width:100%;
+      box-sizing:border-box;
+      margin-bottom:6px;
+      padding:6px 8px;
+      border-radius:6px;
+      border:1px solid #1f2937;
+      background:#020617;
+      color:#e5e7eb;
+      font-size:12px;
+    }
+    textarea{min-height:60px;resize:vertical;}
+    button{
+      width:100%;
+      padding:8px 10px;
+      border-radius:6px;
+      border:none;
+      cursor:pointer;
+      font-size:13px;
+      margin:4px 0;
+    }
+    .btn-main{background:#6366f1;color:#fff;}
+    .btn-clear{background:#111827;color:#e5e7eb;border:1px solid #374151;}
+    .auto-btn{
+      background:#0ea5e9;
+      color:#e5e7eb;
+      font-size:11px;
+      width:auto;
+      display:inline-block;
+      padding:5px 8px;
+      margin:2px 2px 4px 0;
+    }
+    .small-note{font-size:11px;opacity:0.8;}
+    #result{
+      white-space:pre-wrap;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:12px;
+      background:#000;
+      color:#e5e7eb;
+      border-radius:8px;
+      padding:10px;
+      border:1px solid #1f2937;
+      min-height:80px;
+    }
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+  <h1>Parlay TITAN v30 — Quantum Hybrid Neural</h1>
+
+  <div class="small-note">
+    v30 = v29 + Quantum Hybrid: Fusion XG v8 · Neural Pattern v30 · Transition Pressure Index v2 ·
+    Chaos & Risk Stabilizer · OU tetap netral (tidak dipaksa Over/Under), hasil 100% dari input.
+  </div>
+<!-- ================= HOME ================= -->
+  <div class="box">
+    <h2>HOME TEAM — Statistik</h2>
+
+    <label>Nama Tim Home</label>
+    <input id="h_name">
+
+    <label>Shots per Game</label>
+    <input id="h_shots">
+
+    <label>Shots on Target (SOT)</label>
+    <input id="h_sot">
+
+    <label>Progressive Passes / Carries</label>
+    <input id="h_prog">
+
+    <label>Final Third Entries</label>
+    <input id="h_f3">
+
+    <label>Possession %</label>
+    <input id="h_poss">
+
+    <label>xG (Expected Goals per Game, jika ada)</label>
+    <input id="h_xg">
+
+    <label>Goals Conceded per Game</label>
+    <input id="h_gc">
+
+    <label>Shots Conceded</label>
+    <input id="h_shc">
+
+    <label>ELO Rating</label>
+    <input id="h_elo">
+
+    <label>Interceptions per Game</label>
+    <input id="h_int">
+
+    <label>Rest Days</label>
+    <input id="h_rest">
+
+    <label>Absensi Pemain (format: GK:1; DF:1; MD:0; FW:2)</label>
+    <input id="h_abs">
+
+    <div class="small-note">Tombol AUTO hanya mempermudah, tidak wajib. Engine v30 tetap memiliki fallback ketika AUTO tidak dipakai.</div>
+
+    <button class="auto-btn" onclick="autoBuildUp('h')">AUTO BUILD-UP</button>
+    <button class="auto-btn" onclick="autoDefense('h')">AUTO DEFENSE</button>
+    <button class="auto-btn" onclick="autoImportance('h')">AUTO IMPORTANCE</button>
+    <button class="auto-btn" onclick="autoRotation('h')">AUTO ROTATION</button>
+    <button class="auto-btn" onclick="autoPress('h')">AUTO PRESS</button>
+    <button class="auto-btn" onclick="autoFinish('h')">AUTO FINISH</button>
+
+    <!-- hidden internal values -->
+    <input type="hidden" id="h_build">
+    <input type="hidden" id="h_deflvl">
+    <input type="hidden" id="h_imp">
+    <input type="hidden" id="h_rot">
+    <input type="hidden" id="h_press">
+    <input type="hidden" id="h_finish">
+  </div>
+<!-- ================= AWAY ================= -->
+  <div class="box">
+    <h2>AWAY TEAM — Statistik</h2>
+
+    <label>Nama Tim Away</label>
+    <input id="a_name">
+
+    <label>Shots per Game</label>
+    <input id="a_shots">
+
+    <label>Shots on Target (SOT)</label>
+    <input id="a_sot">
+
+    <label>Progressive Passes / Carries</label>
+    <input id="a_prog">
+
+    <label>Final Third Entries</label>
+    <input id="a_f3">
+
+    <label>Possession %</label>
+    <input id="a_poss">
+
+    <label>xG (Expected Goals per Game, jika ada)</label>
+    <input id="a_xg">
+
+    <label>Goals Conceded per Game</label>
+    <input id="a_gc">
+
+    <label>Shots Conceded</label>
+    <input id="a_shc">
+
+    <label>ELO Rating</label>
+    <input id="a_elo">
+
+    <label>Interceptions per Game</label>
+    <input id="a_int">
+
+    <label>Rest Days</label>
+    <input id="a_rest">
+
+    <label>Absensi Pemain (format: GK:1; DF:1; MD:0; FW:2)</label>
+    <input id="a_abs">
+
+    <div class="small-note">
+      Tombol AUTO tidak wajib digunakan. Jika tidak diklik, engine v30 tetap menghitung otomatis (fallback).
+    </div>
+
+    <button class="auto-btn" onclick="autoBuildUp('a')">AUTO BUILD-UP</button>
+    <button class="auto-btn" onclick="autoDefense('a')">AUTO DEFENSE</button>
+    <button class="auto-btn" onclick="autoImportance('a')">AUTO IMPORTANCE</button>
+    <button class="auto-btn" onclick="autoRotation('a')">AUTO ROTATION</button>
+    <button class="auto-btn" onclick="autoPress('a')">AUTO PRESS</button>
+    <button class="auto-btn" onclick="autoFinish('a')">AUTO FINISH</button>
+
+    <!-- hidden internal values -->
+    <input type="hidden" id="a_build">
+    <input type="hidden" id="a_deflvl">
+    <input type="hidden" id="a_imp">
+    <input type="hidden" id="a_rot">
+    <input type="hidden" id="a_press">
+    <input type="hidden" id="a_finish">
+  </div>
+<!-- ============== KONTEKS PERTANDINGAN ============== -->
+  <div class="box">
+    <h2>Konteks Pertandingan</h2>
+
+    <label>Jenis Kompetisi</label>
+    <select id="comp_type">
+      <option value="">Pilih Kompetisi</option>
+      <option value="league">Liga</option>
+      <option value="cup">Cup / Knockout</option>
+      <option value="intl">Pertandingan Antar Negara</option>
+      <option value="friendly">Friendly</option>
+    </select>
+
+    <label>Detail Mode</label>
+    <select id="comp_detail">
+      <option value="">Pilih Detail</option>
+      <option value="league_early">Liga (Awal Musim)</option>
+      <option value="league_mid">Liga (Pertengahan Musim)</option>
+      <option value="league_late">Liga (Akhir Musim / Title Race)</option>
+
+      <option value="cup_r1">Cup (R1–R3)</option>
+      <option value="cup_quarter">Cup Quarter-final</option>
+      <option value="cup_semi">Cup Semi-final</option>
+      <option value="cup_final">Cup Final</option>
+
+      <option value="two_leg_first">2 Leg – Leg 1</option>
+      <option value="two_leg_second">2 Leg – Leg 2</option>
+
+      <option value="derby">Derby / Big Rivalry</option>
+      <option value="relegation">Relegation Battle</option>
+    </select>
+
+    <label>Cuaca Pertandingan</label>
+    <select id="weather">
+      <option value="">Normal</option>
+      <option value="rain">Hujan</option>
+      <option value="heavy_rain">Hujan Deras</option>
+      <option value="hot">Panas</option>
+      <option value="cold">Dingin</option>
+    </select>
+
+    <div class="small-note">
+      Mode kompetisi dan cuaca mempengaruhi λ (expected goals), ritme permainan, dan stabilitas model.
+    </div>
+  </div>
+<!-- ============== H2H PANEL ============== -->
+  <div class="box">
+    <h2>H2H (Head-to-Head)</h2>
+
+    <textarea id="h2h_data" placeholder="Satu baris per pertandingan, contoh format:
+2–1
+0–0
+1–2
+Atau kosong jika kedua tim belum pernah bertemu."></textarea>
+
+    <label>Jumlah H2H terakhir dipakai (3–10)</label>
+    <input id="h2h_count" placeholder="misal: 5">
+    
+    <div class="small-note">
+      H2H bersifat opsional. Jika kosong, engine v30 otomatis melewati modul H2H.
+    </div>
+  </div>
+
+  <!-- ============== MARKET PANEL ============== -->
+  <div class="box">
+    <h2>Market (Insight Saja, Tidak Mengubah Hasil Model)</h2>
+
+    <h3>1X2 Odds</h3>
+    <label>Home</label>
+    <input id="m_home">
+
+    <label>Draw</label>
+    <input id="m_draw">
+
+    <label>Away</label>
+    <input id="m_away">
+
+    <h3>Over / Under (OU)</h3>
+    <label>Line OU</label>
+    <input id="m_ou_line" placeholder="misal: 2.5">
+
+    <label>Odds Over</label>
+    <input id="m_over">
+
+    <label>Odds Under</label>
+    <input id="m_under">
+
+    <h3>HDP (Asian Handicap)</h3>
+    <label>HDP Line</label>
+    <input id="m_hdp_line" placeholder="-0.25">
+
+    <label>Odds Home</label>
+    <input id="m_hdp_home">
+
+    <label>Odds Away</label>
+    <input id="m_hdp_away">
+
+    <div class="small-note">
+      ⚠ Market (1X2 / OU / HDP) **tidak menggeser λ** dan tidak membuat prediksi condong.  
+      Hanya dipakai untuk insight tambahan dan deteksi trap, bukan mempengaruhi perhitungan model.
+    </div>
+  </div>
+<!-- ============== ACTION BUTTONS ============== -->
+  <div class="box">
+    <button class="btn-main" onclick="analyze_v30()">ANALYZE v30</button>
+    <button class="btn-clear" onclick="clearAll()">CLEAR</button>
+  </div>
+
+  <!-- ============== OUTPUT RESULT ============== -->
+  <div class="box">
+    <h2>Hasil Analisis</h2>
+    <div id="result">Hasil akan tampil di sini…</div>
+  </div>
+<!-- =================================================== -->
+<!--                 SCRIPT — PART 7                     -->
+<!--    Helper / Parser / Auto Engine / Form Engine v30  -->
+<!-- =================================================== -->
+
+<script>
+
+function val(id){ return document.getElementById(id).value.trim(); }
+function setVal(id,v){ document.getElementById(id).value = v; }
+
+function safeNum(v){
+  v = (v ?? "").toString().trim();
+  if(v==="" || isNaN(parseFloat(v))) return 0;
+  return parseFloat(v);
+}
+
+function clamp(v,min,max){
+  return Math.min(Math.max(v,min),max);
+}
+
+function parseAbs(str){
+  let a={GK:0,DF:0,MD:0,FW:0};
+  if(!str) return a;
+  str.split(";").forEach(s=>{
+    const m=s.split(":");
+    if(m.length===2){
+      const k=m[0].trim().toUpperCase();
+      const v=safeNum(m[1]);
+      if(a[k]!=null) a[k]=v;
+    }
+  });
+  return a;
+}
+
+function poisson(lambda, k){
+  if(lambda<=0) lambda=0.0001;
+  return Math.pow(lambda,k)*Math.exp(-lambda)/factorial(k);
+}
+
+function factorial(n){
+  if(n<=1) return 1;
+  let r=1;
+  for(let i=2;i<=n;i++) r*=i;
+  return r;
+}
+
+function prob3W(lH,lA){
+  let pH=0,pD=0,pA=0;
+  for(let i=0;i<=10;i++){
+    for(let j=0;j<=10;j++){
+      const p = poisson(lH,i)*poisson(lA,j);
+      if(i>j) pH+=p;
+      else if(i===j) pD+=p;
+      else pA+=p;
+    }
+  }
+  return {home:pH, draw:pD, away:pA};
+}
+
+/* ====================== AUTO ENGINE ====================== */
+
+function autoBuildUp(s){
+  const prog = safeNum(val(s+"_prog"));
+  const f3   = safeNum(val(s+"_f3"));
+  const poss = safeNum(val(s+"_poss"));
+
+  const score = (prog*0.35)+(f3*0.40)+(poss*0.25);
+  const build = clamp(score/10, 2, 10);
+
+  setVal(s+"_build", build.toFixed(2));
+}
+
+function autoDefense(s){
+  const gc  = safeNum(val(s+"_gc"));
+  const shc = safeNum(val(s+"_shc"));
+  const intc= safeNum(val(s+"_int"));
+
+  const base = 11 - (gc*1.22 + shc*0.18 - intc*0.30);
+  const deflvl = clamp(base,2,10);
+
+  setVal(s+"_deflvl", deflvl.toFixed(2));
+}
+
+function autoImportance(s){
+  const elo  = safeNum(val(s+"_elo"));
+  const rest = safeNum(val(s+"_rest"));
+
+  let imp = (elo/300) + (rest*0.10);
+  imp = clamp(imp,1,10);
+
+  setVal(s+"_imp", imp.toFixed(2));
+}
+
+function autoRotation(s){
+  const rest = safeNum(val(s+"_rest"));
+  const abs  = parseAbs(val(s+"_abs"));
+
+  let rot = (rest*0.18)
+            - abs.DF*0.15
+            - abs.MD*0.10
+            - abs.FW*0.12;
+
+  rot = clamp(rot+5,1,10);
+  setVal(s+"_rot", rot.toFixed(2));
+}
+
+function autoPress(s){
+  const poss = safeNum(val(s+"_poss"));
+  const intc = safeNum(val(s+"_int"));
+
+  const raw = (poss*0.05)+(intc*0.22);
+  const press = clamp(raw,1,10);
+
+  setVal(s+"_press", press.toFixed(2));
+}
+
+function autoFinish(s){
+  const sot   = safeNum(val(s+"_sot"));
+  const xg    = safeNum(val(s+"_xg"));
+  const shots = safeNum(val(s+"_shots"));
+
+  let fin = (sot*0.25)+(xg*0.55)+(shots*0.06);
+  fin = clamp(fin/2,1,10);
+
+  setVal(s+"_finish", fin.toFixed(2));
+}
+
+/* ====================== FORM ENGINE v30 ====================== */
+
+function formEngine_v30(t){
+  const atk =
+    (t.shots*0.10) +
+    (t.sot*0.32) +
+    (t.prog*0.06) +
+    (t.f3*0.08) +
+    (t.poss*0.04) +
+    (t.xg*0.40) +
+    (t.finish*0.28);
+
+  const def =
+    (11 - t.gc)*0.35 +
+    (11 - t.shc*0.12) +
+    (t.intc*0.14) +
+    (t.deflvl*0.45);
+
+  return {
+    atk: clamp(atk/4.5,1,10),
+    def: clamp(def/4.5,1,10)
+  };
+}
+
+</script>
+<!-- =================================================== -->
+<!--                 SCRIPT — PART 8                     -->
+<!--   Fusion-xG v8 / Neural / Risk / Output / Clear     -->
+<!-- =================================================== -->
+
+<script>
+
+/* ============== FUSION XG v8 + PCS v7 + ICM v30 ============== */
+
+function xg8Fusion(t, opp){
+  const base =
+    t.shots*0.08 +
+    t.sot*0.23 +
+    t.finish*0.36 +
+    t.build*0.16 +
+    opp.gc*0.22 -
+    opp.deflvl*0.13;
+
+  const fusion =
+    base +
+    (t.form.atk*0.28) -
+    (opp.form.def*0.18);
+
+  return clamp(fusion, 0.2, 5.0);
+}
+
+function pcs_v7Fusion(lH, lA){
+  let max = 10, outH = 0, outA = 0;
+  for(let i=0;i<=max;i++){
+    for(let j=0;j<=max;j++){
+      const p = poisson(lH,i)*poisson(lA,j);
+      if(i>j) outH+=p;
+      else if(i<j) outA+=p;
+    }
+  }
+  return {
+    h: clamp(outH,0.01,0.99),
+    a: clamp(outA,0.01,0.99)
+  };
+}
+
+function ICM_v30(abs){
+  let penalty = 0;
+  penalty += abs.GK*0.60;
+  penalty += abs.DF*0.50;
+  penalty += abs.MD*0.35;
+  penalty += abs.FW*0.45;
+  return clamp(1 - penalty/10, 0.70, 1.0);
+}
+
+/* ============== MOMENTUM / TEMPO / TRANSITION / PRESS / DLL ============== */
+
+function momentum_v30(t){
+  const f = t.form.atk;
+  const r = t.rot;
+  const p = t.press;
+  const fin = t.finish;
+
+  let raw = f*0.40 + r*0.25 + p*0.18 + fin*0.17;
+  return clamp(raw/2, 1, 10);
+}
+
+function tempo_v30(t){
+  let temp =
+    t.poss*0.05 +
+    t.prog*0.06 +
+    t.f3*0.04 +
+    t.form.def*0.12;
+
+  return clamp(temp/3, 1, 10);
+}
+
+function transition_v30(t, opp){
+  let raw =
+    t.prog*0.12 +
+    t.f3*0.08 +
+    t.shots*0.03 -
+    opp.deflvl*0.10;
+
+  return clamp(raw/2, 1, 10);
+}
+
+function pressTrap_v30(t, opp){
+  let trap =
+    t.press*0.28 -
+    opp.build*0.15 +
+    t.intc*0.12;
+
+  return clamp(trap, 1, 10);
+}
+
+function setPiece_v30(t){
+  let sp =
+    t.f3*0.04 +
+    t.intc*0.05 +
+    t.shots*0.04 +
+    t.finish*0.18;
+
+  return clamp(sp/2.2, 1, 10);
+}
+
+function depth_v30(t){
+  let base =
+    t.rot*0.40 +
+    t.form.def*0.22 +
+    t.form.atk*0.22 -
+    t.abs.GK*0.5 -
+    t.abs.DF*0.3 -
+    t.abs.MD*0.2 -
+    t.abs.FW*0.35;
+  return clamp(base, 1, 10);
+}
+
+function chaosIndex_v30(t, opp){
+  let raw =
+    Math.abs(t.mom - opp.mom)*0.3 +
+    Math.abs(t.tempo - opp.tempo)*0.25 +
+    Math.abs(t.transition - opp.transition)*0.25 +
+    Math.abs(t.pressTrap - opp.pressTrap)*0.20;
+
+  return clamp(raw, 1, 10);
+}
+
+function neuralPattern_v30(t, opp){
+  const base =
+    (t.form.atk - opp.form.def)*0.35 +
+    (t.mom - opp.mom)*0.25 +
+    (t.tempo - opp.tempo)*0.15 +
+    (t.transition - opp.transition)*0.10 +
+    (t.pressTrap - opp.pressTrap)*0.15;
+
+  return clamp(base/2, -1.5, 1.5);
+}
+
+/* ============== CONTEXT / RELIABILITY / RISK / COLLAPSE / NCG / STYLE ============== */
+
+function contextEngine_v4(ctx){
+  let mod = 1.0;
+
+  switch(ctx.comp){
+    case "league":
+      if(ctx.detail==="league_late") mod = 1.06;
+      else if(ctx.detail==="league_early") mod = 0.97;
+      break;
+    case "cup":
+      if(ctx.detail==="cup_final") mod = 0.95;
+      else if(ctx.detail==="cup_semi") mod = 0.98;
+      break;
+    case "intl":
+      mod = 1.04; break;
+    case "friendly":
+      mod = 0.95; break;
+  }
+
+  if(ctx.detail==="derby")       mod *= 1.10;
+  if(ctx.detail==="relegation")  mod *= 1.08;
+
+  switch(ctx.weather){
+    case "rain":       mod *= 0.97; break;
+    case "heavy_rain": mod *= 0.94; break;
+    case "hot":        mod *= 0.96; break;
+    case "cold":       mod *= 0.98; break;
+  }
+
+  return clamp(mod, 0.85, 1.15);
+}
+
+function reliability_v30(t, opp){
+  let rel =
+    t.form.atk*0.16 +
+    t.form.def*0.18 +
+    t.depth*0.22 -
+    opp.mom*0.08 +
+    t.build*0.12 +
+    t.finish*0.18;
+
+  return clamp(rel/4, 1, 10);
+}
+
+function convergence_v30(base, neural){
+  let blend = base + neural*0.35;
+  return clamp(blend, 0.2, 5.5);
+}
+
+function riskEngine_v30(t, opp, chaos){
+  let risk =
+    chaos*0.5 +
+    Math.abs(t.mom - opp.mom)*0.28 +
+    Math.abs(t.depth - opp.depth)*0.22;
+  return clamp(risk, 1, 10);
+}
+
+function collapseProb_v30(t){
+  let dcp =
+    (11 - t.deflvl)*0.30 +
+    t.chaos*0.12 +
+    t.risk*0.25 -
+    t.depth*0.20;
+  return clamp(dcp, 1, 10);
+}
+
+function NCG_v30(rel, chaos){
+  let score = rel*0.7 - chaos*0.3;
+  if(score>=7.5) return "A+";
+  if(score>=6.5) return "A";
+  if(score>=5.5) return "B";
+  if(score>=4.0) return "C";
+  if(score>=3.0) return "D";
+  return "E";
+}
+
+function styleMatrix_v30(t, opp){
+  const tempoGap = t.tempo - opp.tempo;
+  const pressGap = t.pressTrap - opp.pressTrap;
+  const transGap = t.transition - opp.transition;
+
+  if(tempoGap>2 && transGap>1.5) return "End-to-End (High Tempo)";
+  if(pressGap>2)                 return "Pressing War";
+  if(tempoGap<-1.5)              return "Slow Tactical";
+  if(transGap>2)                 return "Direct Fast Break";
+  if(Math.abs(pressGap)<1 && Math.abs(tempoGap)<1) return "Compact & Controlled";
+  if(opp.chaos>7)                return "Chaos Match";
+  return "Balanced Mixed Style";
+}
+
+/* ============== TEAM BUILDER & MARKET / H2H / HDP READER ============== */
+
+function buildTeam(prefix){
+  const abs = parseAbs(val(prefix+"_abs"));
+
+  let t = {
+    name:  val(prefix+"_name") || (prefix==="h"?"Home":"Away"),
+    shots: safeNum(val(prefix+"_shots")),
+    sot:   safeNum(val(prefix+"_sot")),
+    prog:  safeNum(val(prefix+"_prog")),
+    f3:    safeNum(val(prefix+"_f3")),
+    poss:  safeNum(val(prefix+"_poss")) || 50,
+    xg:    safeNum(val(prefix+"_xg")),
+    gc:    safeNum(val(prefix+"_gc")),
+    shc:   safeNum(val(prefix+"_shc")),
+    elo:   safeNum(val(prefix+"_elo")) || 1500,
+    intc:  safeNum(val(prefix+"_int")),
+    rest:  safeNum(val(prefix+"_rest")) || 3,
+    abs:   abs,
+    build: safeNum(val(prefix+"_build")),
+    deflvl:safeNum(val(prefix+"_deflvl")),
+    imp:   safeNum(val(prefix+"_imp")),
+    rot:   safeNum(val(prefix+"_rot")),
+    press: safeNum(val(prefix+"_press")),
+    finish:safeNum(val(prefix+"_finish"))
+  };
+
+  // fallback jika tombol AUTO belum dipakai
+  if(!t.build){
+    const score = t.prog*0.35 + t.f3*0.40 + t.poss*0.25;
+    t.build = clamp(score/10,2,10);
+  }
+  if(!t.deflvl){
+    const base = 11 - (t.gc*1.22 + t.shc*0.18 - t.intc*0.30);
+    t.deflvl = clamp(base,2,10);
+  }
+  if(!t.imp){
+    t.imp = clamp(t.elo/350,1,10);
+  }
+  if(!t.rot){
+    let rot = (t.rest*0.18)-t.abs.DF*0.15-t.abs.MD*0.10-t.abs.FW*0.12;
+    t.rot = clamp(rot+5,1,10);
+  }
+  if(!t.press){
+    const raw = (t.poss*0.05)+(t.intc*0.22);
+    t.press = clamp(raw,1,10);
+  }
+  if(!t.finish){
+    let fin = (t.sot*0.25)+(t.xg*0.55)+(t.shots*0.06);
+    t.finish = clamp(fin/2,1,10);
+  }
+
+  t.form = formEngine_v30(t);
+  return t;
+}
+
+function readMarket(){
+  const home=safeNum(val("m_home"));
+  const draw=safeNum(val("m_draw"));
+  const away=safeNum(val("m_away"));
+
+  let invH=home>0?1/home:0;
+  let invD=draw>0?1/draw:0;
+  let invA=away>0?1/away:0;
+  let sum=invH+invD+invA;
+
+  return {
+    home:   sum>0?invH/sum:0,
+    draw:   sum>0?invD/sum:0,
+    away:   sum>0?invA/sum:0,
+    ouLine: safeNum(val("m_ou_line")),
+    over:   safeNum(val("m_over")),
+    under:  safeNum(val("m_under")),
+    hdpLine:safeNum(val("m_hdp_line")),
+    hdpHome:safeNum(val("m_hdp_home")),
+    hdpAway:safeNum(val("m_hdp_away"))
+  };
+}
+
+function readH2H(){
+  const raw = val("h2h_data");
+  if(!raw) return null;
+  const lines = raw.split("\n").map(x=>x.trim()).filter(x=>x);
+  if(!lines.length) return null;
+
+  const useN = clamp(safeNum(val("h2h_count")) || lines.length,1,lines.length);
+  let gfH=0,gfA=0,count=0;
+
+  for(let i=0;i<useN;i++){
+    const L = lines[i];
+    const m = L.match(/(\d+)\s*[–-]\s*(\d+)/);
+    if(!m) continue;
+    const h = parseInt(m[1],10);
+    const a = parseInt(m[2],10);
+    gfH += h;
+    gfA += a;
+    count++;
+  }
+  if(count===0) return null;
+  return {played:count, atk:gfH/count, def:gfA/count};
+}
+
+function readHDP(){
+  const line=safeNum(val("m_hdp_line"));
+  const oh  =safeNum(val("m_hdp_home"));
+  const oa  =safeNum(val("m_hdp_away"));
+  if(!line || !oh || !oa) return null;
+  const invH=1/oh, invA=1/oa, s=invH+invA;
+  return {line, probH:invH/s, probA:invA/s};
+}
+
+/* ============== BTTS / HT / CARDS / CORNERS / SCORELINE / OU ============== */
+
+function BTTS_v30(lH,lA){
+  let yes=0,no=0;
+  for(let i=0;i<=10;i++){
+    for(let j=0;j<=10;j++){
+      const p = poisson(lH,i)*poisson(lA,j);
+      if(i>0 && j>0) yes+=p; else no+=p;
+    }
+  }
+  return {yes,no};
+}
+
+function HT_v30(lH,lA){
+  const hth = lH*0.42;
+  const hta = lA*0.42;
+  return prob3W(hth,hta);
+}
+
+function cards_v30(t,opp){
+  let base =
+    t.press*0.25 +
+    opp.press*0.15 +
+    t.tempo*0.12 +
+    opp.tempo*0.10;
+  return clamp(base/2,1,10);
+}
+
+function corners_v30(t){
+  let c =
+    t.shots*0.12 +
+    t.sot*0.18 +
+    t.prog*0.10 +
+    t.f3*0.08;
+  return clamp(c/2.5,1,15);
+}
+
+function scorelineMatrix_v30(lH,lA){
+  let arr=[];
+  for(let i=0;i<=5;i++){
+    for(let j=0;j<=5;j++){
+      const p = poisson(lH,i)*poisson(lA,j);
+      arr.push({h:i,a:j,p});
+    }
+  }
+  arr.sort((x,y)=>y.p-x.p);
+  return arr.slice(0,6);
+}
+
+function ouProb_v30(lH,lA,line){
+  const max=10;
+  let pOver=0,pUnder=0;
+  for(let i=0;i<=max;i++){
+    for(let j=0;j<=max;j++){
+      const p=poisson(lH,i)*poisson(lA,j);
+      if(i+j>line) pOver+=p; else pUnder+=p;
+    }
+  }
+  const s=pOver+pUnder||1;
+  return {over:pOver/s, under:pUnder/s};
+}
+
+/* ============== ENGINE UTAMA v30 ============== */
+
+function analyze_v30(){
+  const H = buildTeam("h");
+  const A = buildTeam("a");
+
+  const ctx = {
+    comp:   val("comp_type"),
+    detail: val("comp_detail"),
+    weather:val("weather")
+  };
+
+  const market = readMarket();
+  const h2h    = readH2H();
+  const hdp    = readHDP();
+
+  const icmH = ICM_v30(H.abs);
+  const icmA = ICM_v30(A.abs);
+
+  const baseXH = xg8Fusion(H,A)*icmH;
+  const baseXA = xg8Fusion(A,H)*icmA;
+
+  const pcs   = pcs_v7Fusion(baseXH,baseXA);
+
+  let baseH = clamp(baseXH + pcs.h*0.22,0.2,5);
+  let baseA = clamp(baseXA + pcs.a*0.22,0.2,5);
+
+  H.mom       = momentum_v30(H);
+  A.mom       = momentum_v30(A);
+  H.tempo     = tempo_v30(H);
+  A.tempo     = tempo_v30(A);
+  H.transition= transition_v30(H,A);
+  A.transition= transition_v30(A,H);
+  H.pressTrap = pressTrap_v30(H,A);
+  A.pressTrap = pressTrap_v30(A,H);
+  H.sp        = setPiece_v30(H);
+  A.sp        = setPiece_v30(A);
+  H.depth     = depth_v30(H);
+  A.depth     = depth_v30(A);
+  H.chaos     = chaosIndex_v30(H,A);
+  A.chaos     = chaosIndex_v30(A,H);
+
+  const neuralH = neuralPattern_v30(H,A);
+  const neuralA = -neuralH;
+
+  let λH = convergence_v30(baseH,neuralH);
+  let λA = convergence_v30(baseA,neuralA);
+
+  const ctxMod = contextEngine_v4(ctx);
+  λH *= ctxMod;
+  λA *= ctxMod;
+
+  if(h2h){
+    const mod = clamp((h2h.atk-h2h.def)/12, -0.10, 0.10);
+    λH *= (1+mod);
+    λA *= (1-mod);
+  }
+
+  λH = clamp(λH,0.05,5.5);
+  λA = clamp(λA,0.05,5.5);
+
+  const p3 = prob3W(λH,λA);
+
+  const lineOU = market.ouLine || 2.5;
+  const ouRes  = ouProb_v30(λH,λA,lineOU);
+
+  const btts   = BTTS_v30(λH,λA);
+  const ht     = HT_v30(λH,λA);
+  const cardsH = cards_v30(H,A);
+  const cardsA = cards_v30(A,H);
+  const cornersH = corners_v30(H);
+  const cornersA = corners_v30(A);
+  const scorelines = scorelineMatrix_v30(λH,λA);
+
+  H.risk     = riskEngine_v30(H,A,H.chaos);
+  A.risk     = riskEngine_v30(A,H,A.chaos);
+  H.collapse = collapseProb_v30(H);
+  A.collapse = collapseProb_v30(A);
+
+  const relH = reliability_v30(H,A);
+  const relA = reliability_v30(A,H);
+
+  const ncgH = NCG_v30(relH,H.chaos);
+  const ncgA = NCG_v30(relA,A.chaos);
+
+  const style = styleMatrix_v30(H,A);
+
+  renderResult_v30({
+    H,A,
+    λH,λA,
+    p3,
+    btts,
+    ht,
+    cardsH,cardsA,
+    cornersH,cornersA,
+    scorelines,
+    market,
+    h2h,
+    lineOU,
+    ouRes,
+    relH,relA,
+    ncgH,ncgA,
+    style,
+    hdp
+  });
+}
+
+/* ============== RENDER OUTPUT ============== */
+
+function renderResult_v30(R){
+  const H=R.H, A=R.A;
+  let out="";
+
+  out += `MATCH: ${H.name} vs ${A.name}\n`;
+  out += `====================================\n\n`;
+
+  out += `EXPECTED GOALS (Fusion-X v8)\n`;
+  out += `λ Home: ${R.λH.toFixed(3)}   |   λ Away: ${R.λA.toFixed(3)}\n\n`;
+
+  out += `=== 1X2 (murni dari λ, Poisson) ===\n`;
+  out += `Home : ${(R.p3.home*100).toFixed(1)}%\n`;
+  out += `Draw : ${(R.p3.draw*100).toFixed(1)}%\n`;
+  out += `Away : ${(R.p3.away*100).toFixed(1)}%\n\n`;
+
+  out += `=== Over / Under (netral, tidak dipaksa) ===\n`;
+  out += `Line OU: ${R.lineOU}\n`;
+  out += `Over : ${(R.ouRes.over*100).toFixed(1)}%\n`;
+  out += `Under: ${(R.ouRes.under*100).toFixed(1)}%\n\n`;
+
+  out += `=== BTTS ===\n`;
+  out += `YES: ${(R.btts.yes*100).toFixed(1)}%   |   NO: ${(R.btts.no*100).toFixed(1)}%\n\n`;
+
+  out += `=== HT 1X2 (45') ===\n`;
+  out += `HT Home: ${(R.ht.home*100).toFixed(1)}%\n`;
+  out += `HT Draw: ${(R.ht.draw*100).toFixed(1)}%\n`;
+  out += `HT Away: ${(R.ht.away*100).toFixed(1)}%\n\n`;
+
+  out += `=== Cards & Corners (indikatif, bukan pasti) ===\n`;
+  out += `Cards Intensity: Home ${R.cardsH.toFixed(1)} | Away ${R.cardsA.toFixed(1)}\n`;
+  out += `Corners (relatif): Home ${R.cornersH.toFixed(1)} | Away ${R.cornersA.toFixed(1)}\n\n`;
+
+  out += `=== Top Scorelines (Matrix Poisson) ===\n`;
+  R.scorelines.forEach(s=>{
+    out += `${s.h}-${s.a} : ${(s.p*100).toFixed(2)}%\n`;
+  });
+  out += `\n`;
+
+  out += `=== Profile & Style v30 ===\n`;
+  out += `Momentum: ${H.mom.toFixed(1)} vs ${A.mom.toFixed(1)}\n`;
+  out += `Tempo   : ${H.tempo.toFixed(1)} vs ${A.tempo.toFixed(1)}\n`;
+  out += `Trans   : ${H.transition.toFixed(1)} vs ${A.transition.toFixed(1)}\n`;
+  out += `PressTrp: ${H.pressTrap.toFixed(1)} vs ${A.pressTrap.toFixed(1)}\n`;
+  out += `SetPiece: ${H.sp.toFixed(1)} vs ${A.sp.toFixed(1)}\n`;
+  out += `Depth   : ${H.depth.toFixed(1)} vs ${A.depth.toFixed(1)}\n`;
+  out += `Chaos   : ${H.chaos.toFixed(1)} vs ${A.chaos.toFixed(1)}\n`;
+  out += `Style   : ${R.style}\n\n`;
+
+  out += `=== Reliability & NCG (Neural Confidence Grade) ===\n`;
+  out += `Home: ${R.relH.toFixed(1)}  ( ${R.ncgH} )\n`;
+  out += `Away: ${R.relA.toFixed(1)}  ( ${R.ncgA} )\n\n`;
+
+  out += `=== Defensive Collapse Risk ===\n`;
+  out += `Home: ${H.collapse.toFixed(1)} /10\n`;
+  out += `Away: ${A.collapse.toFixed(1)} /10\n\n`;
+
+  if(R.h2h){
+    out += `=== H2H (ringkas) ===\n`;
+    out += `Dipakai ${R.h2h.played} laga · Avg gol H: ${R.h2h.atk.toFixed(2)} · Avg gol A: ${R.h2h.def.toFixed(2)}\n\n`;
+  } else {
+    out += `H2H: tidak diisi / diabaikan.\n\n`;
+  }
+
+  const M = R.market;
+  if(M.home || M.draw || M.away){
+    out += `=== Market 1X2 (INSIGHT SAJA) ===\n`;
+    out += `Book Home: ${(M.home*100).toFixed(1)}% | Draw: ${(M.draw*100).toFixed(1)}% | Away: ${(M.away*100).toFixed(1)}%\n\n`;
+  }
+  if(M.ouLine){
+    out += `Market OU Line: ${M.ouLine}  (Over: ${M.over} | Under: ${M.under})\n`;
+  }
+  if(R.hdp){
+    out += `HDP Line: ${R.hdp.line}  (H: ${(R.hdp.probH*100).toFixed(1)}% | A: ${(R.hdp.probA*100).toFixed(1)}%)\n`;
+  }
+
+  out += `\nCatatan:\n`;
+  out += `- Semua hasil murni berasal dari statistik & parameter yang Anda input.\n`;
+  out += `- Market hanya sebagai info tambahan / konfirmasi, tidak menggeser model.\n`;
+  out += `- Tidak ada paksaan condong Over atau Under; OU murni dari λ total.`;
+
+  document.getElementById("result").textContent = out;
+}
+
+/* ============== CLEAR INPUT ============== */
+
+function clearAll(){
+  const els = document.querySelectorAll("input,textarea,select");
+  els.forEach(el=>el.value="");
+  document.getElementById("result").textContent = "Hasil akan tampil di sini…";
+}
+
+</script>
+
+</div>
+</body>
+</html>
