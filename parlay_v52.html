@@ -1,0 +1,2513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Parlay TITAN v52 Ultimate Super Complete</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ============================================================
+     v52 PART 1 — BASE THEME (LIGHT / DARK) + LAYOUT
+     ============================================================ -->
+<style>
+:root {
+  --bg: #f7f9fc;
+  --bg-box: #ffffff;
+  --text: #1e232d;
+  --subtext: #8c93a3;
+  --line: #dadfea;
+  --btn-main: #3a5aff;
+  --btn-main-hover: #2845db;
+  --btn-clear: #eeeeee;
+  --btn-clear-hover: #dddddd;
+  --panel-bg: #f9fbff;
+}
+
+.dark {
+  --bg: #0f1116;
+  --bg-box: #1a1d24;
+  --text: #e3e7ef;
+  --subtext: #9da7b8;
+  --line: #2a2f3a;
+  --btn-main: #4d75ff;
+  --btn-main-hover: #3c5ce0;
+  --btn-clear: #2b2f39;
+  --btn-clear-hover: #343946;
+  --panel-bg: #171a1f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background .25s ease, color .25s ease;
+}
+
+h1, h2, h3 {
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+h1 {
+  text-align: center;
+  padding: 18px 8px 4px 8px;
+  font-size: 24px;
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 12px;
+  color: var(--subtext);
+  margin-bottom: 10px;
+}
+
+.container {
+  width: 95%;
+  max-width: 1180px;
+  margin: 0 auto 40px auto;
+  padding: 10px 8px 30px 8px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.col-2 {
+  flex: 1 1 360px;
+  min-width: 0;
+}
+
+.box {
+  background: var(--bg-box);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+  transition: box-shadow .2s ease;
+}
+.box:hover {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+.box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.box-header h2 {
+  font-size: 18px;
+}
+
+.tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #eef3ff;
+  color: #3a5aff;
+}
+.dark .tag {
+  background: #242a3a;
+  color: #a7beff;
+}
+
+label {
+  display: block;
+  margin-top: 6px;
+  margin-bottom: 2px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg-box);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  transition: 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--btn-main);
+  box-shadow: 0 0 0 2px rgba(58,90,255,0.22);
+}
+
+textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+button {
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 4px 4px 4px 0;
+  white-space: nowrap;
+}
+
+.btn-main {
+  width: 100%;
+  background: var(--btn-main);
+  color: #ffffff;
+}
+.btn-main:hover {
+  background: var(--btn-main-hover);
+}
+
+.btn-clear {
+  width: 100%;
+  background: var(--btn-clear);
+  color: var(--text);
+}
+.btn-clear:hover {
+  background: var(--btn-clear-hover);
+}
+
+.btn-auto {
+  background: #00695c;
+  color: #e0f2f1;
+}
+.btn-auto:hover {
+  filter: brightness(1.05);
+}
+
+.btn-warn {
+  background: #ef6c00;
+  color: #fff3e0;
+}
+.btn-warn:hover {
+  filter: brightness(0.95);
+}
+
+.small-note {
+  font-size: 11px;
+  color: var(--subtext);
+  margin-top: 4px;
+}
+
+#result_panel {
+  white-space: pre-wrap;
+  font-family: Consolas, Menlo, monospace;
+  font-size: 12px;
+  background: var(--panel-bg);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  min-height: 220px;
+  overflow-x: auto;
+  max-height: 600px;
+}
+
+/* Dark mode toggle */
+#theme_toggle {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  background: var(--bg-box);
+  border: 1px solid var(--line);
+  padding: 9px 13px;
+  font-size: 13px;
+  border-radius: 7px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  color: var(--text);
+  transition: 0.22s ease;
+  z-index: 100;
+}
+#theme_toggle:hover {
+  background: var(--btn-main);
+  color: #fff;
+  border-color: var(--btn-main);
+}
+
+/* Visual panel layout */
+.visual-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.visual-col {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.visual-title {
+  font-size: 11px;
+  color: var(--subtext);
+  margin-bottom: 4px;
+}
+
+/* Canvas wrapper outline */
+.visual-box {
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  padding: 6px;
+  background: var(--bg-box);
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  h1 { font-size: 20px; }
+  .container { width: 97%; }
+}
+</style>
+</head>
+<body>
+
+<button id="theme_toggle">Dark Mode</button>
+
+<h1>Parlay TITAN v52 Ultimate Super Complete</h1>
+<div class="subtitle">
+  Hybrid xG v4 + Deep Chaos + League Profile + Monte Carlo Lite • Netral (tanpa odds) • Tidak condong ke tim / Over / Under
+</div>
+<h3>Ultra Visual Pack v52+</h3>
+
+<canvas id="ultra_heatmap" width="320" height="160" style="border:1px solid #ccc;"></canvas>
+<br><br>
+
+<canvas id="ultra_wheel" width="180" height="180" style="border:1px solid #ccc; border-radius:50%;"></canvas>
+<br><br>
+
+<canvas id="ultra_ring" width="200" height="200" style="border:1px solid #ccc; border-radius:50%;"></canvas>
+<br><br>
+
+<canvas id="ultra_varbar" width="320" height="60" style="border:1px solid #ccc;"></canvas>
+<br><br>
+
+<canvas id="ultra_tilt" width="320" height="80" style="border:1px solid #ccc;"></canvas>
+<div class="container">
+
+  <!-- =========================================================
+       PANEL TIM (HOME & AWAY)
+       ========================================================= -->
+  <div class="row">
+
+    <!-- HOME PANEL -->
+    <div class="col-2">
+      <div class="box">
+        <div class="box-header">
+          <h2>Home Team</h2>
+          <span class="tag">Statistik Utama</span>
+        </div>
+
+        <label>Nama Tim</label>
+        <input id="h_name" type="text">
+
+        <label>ELO Rating</label>
+        <input id="h_elo" type="number" step="1" min="500" max="3000">
+
+        <label>Rest Days</label>
+        <input id="h_rest" type="number" step="0.1">
+
+        <label>Total Shots / Match</label>
+        <input id="h_shots" type="number" step="0.1">
+
+        <label>Shots on Target / Match</label>
+        <input id="h_sot" type="number" step="0.1">
+
+        <label>xG per Match</label>
+        <input id="h_xg" type="number" step="0.01">
+
+        <label>Danger Zone xG (DZXG)</label>
+        <input id="h_dzxg" type="number" step="0.01">
+
+        <label>Goals Conceded</label>
+        <input id="h_gc" type="number" step="0.1">
+
+        <label>Shots Conceded</label>
+        <input id="h_shc" type="number" step="0.1">
+
+        <label>GK Saves / Match</label>
+        <input id="h_gksv" type="number" step="0.1">
+
+        <label>Interceptions</label>
+        <input id="h_int" type="number" step="0.1">
+
+        <label>Progressive Passes/Carries</label>
+        <input id="h_prog" type="number" step="0.1">
+
+        <label>Final Third Entries</label>
+        <input id="h_f3" type="number" step="0.1">
+
+        <label>Possession (%)</label>
+        <input id="h_poss" type="number" step="0.1">
+
+        <label>Build-Up Rating (1–10)</label>
+        <input id="h_build" type="number" step="0.1" min="1" max="10">
+
+        <label>Defense Level (1–10)</label>
+        <input id="h_deflvl" type="number" step="0.1" min="1" max="10">
+
+        <label>Pressing Strength (1–10)</label>
+        <input id="h_press" type="number" step="0.1" min="1" max="10">
+
+        <label>Finishing Quality (1–10)</label>
+        <input id="h_finish" type="number" step="0.1" min="1" max="10">
+
+        <label>Importance (1–10)</label>
+        <input id="h_imp" type="number" step="0.1" min="1" max="10">
+
+        <label>Rotation (1–10)</label>
+        <input id="h_rot" type="number" step="0.1" min="1" max="10">
+
+        <label>Absence (GK:x;DF:x;MD:x;FW:x)</label>
+        <input id="h_abs" type="text" placeholder="GK:0;DF:0;MD:0;FW:0">
+
+        <hr>
+        <h3>Advanced (Opsional)</h3>
+
+        <label>Form 5 Laga (W/D/L)</label>
+        <input id="h_form_raw" type="text">
+
+        <label>Form Rating (1–10)</label>
+        <input id="h_form" type="number" step="0.1" min="1" max="10">
+
+        <label>Stability (1–10)</label>
+        <input id="h_stab" type="number" step="0.1" min="1" max="10">
+
+        <label>Availability % (Auto Absence)</label>
+        <input id="h_avail" type="number" step="1" min="0" max="100">
+
+        <label>GK Rating (1–10)</label>
+        <input id="h_gk" type="number" step="0.1" min="1" max="10">
+
+        <label>Style (Directness, 1–10)</label>
+        <input id="h_style" type="number" step="0.1" min="1" max="10">
+
+        <label>Possession Tendency (1–10)</label>
+        <input id="h_poss_t" type="number" step="0.1" min="1" max="10">
+
+        <label>Cross Accuracy %</label>
+        <input id="h_cross" type="number" step="0.1">
+
+        <label>Big Chances / Match</label>
+        <input id="h_bc" type="number" step="0.1">
+
+        <label>Final Third Threat (1–10)</label>
+        <input id="h_f3t" type="number" step="0.1" min="1" max="10">
+
+        <label>GK Sweeper Distance (1–10)</label>
+        <input id="h_gkdist" type="number" step="0.1" min="1" max="10">
+
+        <label>Press Resistance (1–10)</label>
+        <input id="h_pressres" type="number" step="0.1" min="1" max="10">
+
+        <label>Transition Strength (1–10)</label>
+        <input id="h_trans" type="number" step="0.1" min="1" max="10">
+
+        <label>Low Block Index (1–10)</label>
+        <input id="h_lb" type="number" step="0.1" min="1" max="10">
+
+        <label>Pressure Wave (1–10)</label>
+        <input id="h_wave" type="number" step="0.1" min="1" max="10">
+
+        <label>xThreat Manual (1–10)</label>
+        <input id="h_xthreat" type="number" step="0.1" min="1" max="10">
+
+        <label>Momentum DM15 (1–10)</label>
+        <input id="h_dm15" type="number" step="0.1" min="1" max="10">
+      </div>
+    </div>
+
+    <!-- AWAY PANEL -->
+    <div class="col-2">
+      <div class="box">
+        <div class="box-header">
+          <h2>Away Team</h2>
+          <span class="tag">Statistik Utama</span>
+        </div>
+
+        <label>Nama Tim</label>
+        <input id="a_name" type="text">
+
+        <label>ELO Rating</label>
+        <input id="a_elo" type="number" step="1" min="500" max="3000">
+
+        <label>Rest Days</label>
+        <input id="a_rest" type="number" step="0.1">
+
+        <label>Total Shots / Match</label>
+        <input id="a_shots" type="number" step="0.1">
+
+        <label>Shots on Target / Match</label>
+        <input id="a_sot" type="number" step="0.1">
+
+        <label>xG per Match</label>
+        <input id="a_xg" type="number" step="0.01">
+
+        <label>Danger Zone xG (DZXG)</label>
+        <input id="a_dzxg" type="number" step="0.01">
+
+        <label>Goals Conceded</label>
+        <input id="a_gc" type="number" step="0.1">
+
+        <label>Shots Conceded</label>
+        <input id="a_shc" type="number" step="0.1">
+
+        <label>GK Saves / Match</label>
+        <input id="a_gksv" type="number" step="0.1">
+
+        <label>Interceptions</label>
+        <input id="a_int" type="number" step="0.1">
+
+        <label>Progressive Passes/Carries</label>
+        <input id="a_prog" type="number" step="0.1">
+
+        <label>Final Third Entries</label>
+        <input id="a_f3" type="number" step="0.1">
+
+        <label>Possession (%)</label>
+        <input id="a_poss" type="number" step="0.1">
+
+        <label>Build-Up Rating (1–10)</label>
+        <input id="a_build" type="number" step="0.1" min="1" max="10">
+
+        <label>Defense Level (1–10)</label>
+        <input id="a_deflvl" type="number" step="0.1" min="1" max="10">
+
+        <label>Pressing Strength (1–10)</label>
+        <input id="a_press" type="number" step="0.1" min="1" max="10">
+
+        <label>Finishing Quality (1–10)</label>
+        <input id="a_finish" type="number" step="0.1" min="1" max="10">
+
+        <label>Importance (1–10)</label>
+        <input id="a_imp" type="number" step="0.1" min="1" max="10">
+
+        <label>Rotation (1–10)</label>
+        <input id="a_rot" type="number" step="0.1" min="1" max="10">
+
+        <label>Absence (GK:x;DF:x;MD:x;FW:x)</label>
+        <input id="a_abs" type="text" placeholder="GK:0;DF:0;MD:0;FW:0">
+
+        <hr>
+        <h3>Advanced (Opsional)</h3>
+
+        <label>Form 5 Laga (W/D/L)</label>
+        <input id="a_form_raw" type="text">
+
+        <label>Form Rating (1–10)</label>
+        <input id="a_form" type="number" step="0.1" min="1" max="10">
+
+        <label>Stability (1–10)</label>
+        <input id="a_stab" type="number" step="0.1" min="1" max="10">
+
+        <label>Availability % (Auto Absence)</label>
+        <input id="a_avail" type="number" step="1" min="0" max="100">
+
+        <label>GK Rating (1–10)</label>
+        <input id="a_gk" type="number" step="0.1" min="1" max="10">
+
+        <label>Style (Directness, 1–10)</label>
+        <input id="a_style" type="number" step="0.1" min="1" max="10">
+
+        <label>Possession Tendency (1–10)</label>
+        <input id="a_poss_t" type="number" step="0.1" min="1" max="10">
+
+        <label>Cross Accuracy %</label>
+        <input id="a_cross" type="number" step="0.1">
+
+        <label>Big Chances / Match</label>
+        <input id="a_bc" type="number" step="0.1">
+
+        <label>Final Third Threat (1–10)</label>
+        <input id="a_f3t" type="number" step="0.1" min="1" max="10">
+
+        <label>GK Sweeper Distance (1–10)</label>
+        <input id="a_gkdist" type="number" step="0.1" min="1" max="10">
+
+        <label>Press Resistance (1–10)</label>
+        <input id="a_pressres" type="number" step="0.1" min="1" max="10">
+
+        <label>Transition Strength (1–10)</label>
+        <input id="a_trans" type="number" step="0.1" min="1" max="10">
+
+        <label>Low Block Index (1–10)</label>
+        <input id="a_lb" type="number" step="0.1" min="1" max="10">
+
+        <label>Pressure Wave (1–10)</label>
+        <input id="a_wave" type="number" step="0.1" min="1" max="10">
+
+        <label>xThreat Manual (1–10)</label>
+        <input id="a_xthreat" type="number" step="0.1" min="1" max="10">
+
+        <label>Momentum DM15 (1–10)</label>
+        <input id="a_dm15" type="number" step="0.1" min="1" max="10">
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MATCH CONTEXT + AUTO ENGINE BUTTONS
+       ========================================================= -->
+  <div class="box">
+    <div class="box-header">
+      <h2>Match Context</h2>
+      <span class="tag">Situasi Laga</span>
+    </div>
+
+    <label for="ctx_mode">Mode Pertandingan</label>
+    <select id="ctx_mode">
+      <option value="">-- Pilih Mode --</option>
+      <option value="league">League Match</option>
+      <option value="cup">Cup Match (Knockout)</option>
+      <option value="final">Cup Final</option>
+      <option value="derby">Derby / Rivalitas</option>
+      <option value="relegation">Relegation Battle</option>
+      <option value="title">Title Race</option>
+      <option value="intl">International Match</option>
+      <option value="friendly">Friendly</option>
+      <option value="bigmatch">Big Match</option>
+    </select>
+
+    <label for="ctx_weather">Cuaca</label>
+    <select id="ctx_weather">
+      <option value="">Manual (Tidak Auto)</option>
+      <option value="clear">Cerah / Normal</option>
+      <option value="rain">Hujan</option>
+      <option value="heavy_rain">Hujan Lebat</option>
+      <option value="snow">Salju</option>
+      <option value="windy">Banyak Angin</option>
+    </select>
+
+    <label for="ctx_tempo">Tempo Laga (1–10)</label>
+    <input id="ctx_tempo" type="number" step="0.1" min="1" max="10">
+
+    <label for="ctx_ref">Referee Strictness (1–10)</label>
+    <input id="ctx_ref" type="number" step="0.1" min="1" max="10">
+
+    <label for="ctx_var">Variance Level (1–10)</label>
+    <input id="ctx_var" type="number" step="0.1" min="1" max="10">
+
+    <label for="ctx_chaos">Chaos Index (1–10)</label>
+    <input id="ctx_chaos" type="number" step="0.1" min="1" max="10">
+
+    <label for="ctx_stage">Tahap Musim</label>
+    <select id="ctx_stage">
+      <option value="">-- Pilih Stage --</option>
+      <option value="early">Awal Musim</option>
+      <option value="mid">Tengah Musim</option>
+      <option value="late">Akhir Musim</option>
+    </select>
+
+    <label for="ctx_h2h_raw">H2H (Format: 2-1,1-0,0-1...)</label>
+    <textarea id="ctx_h2h_raw" placeholder="Kosongkan jika belum pernah bertemu"></textarea>
+
+    <label for="ctx_league">Nama Liga</label>
+    <input id="ctx_league" type="text" placeholder="contoh: Premier League, Serie A, Liga 1 Indonesia">
+
+    <label for="ctx_note">Catatan Tambahan</label>
+    <textarea id="ctx_note" placeholder="pelatih baru, jadwal padat, travel jauh, dsb"></textarea>
+  </div>
+
+  <div class="box">
+    <div class="box-header">
+      <h2>Auto Engine v52</h2>
+      <span class="tag">Auto Basic – Advanced – Elite</span>
+    </div>
+
+    <h3>Auto Context</h3>
+    <button class="btn-auto" id="btn_auto_ctx">AUTO CONTEXT PACK</button>
+
+    <h3>Auto Dasar</h3>
+    <button class="btn-auto" id="btn_auto_imp">Auto Importance</button>
+    <button class="btn-auto" id="btn_auto_rot">Auto Rotation</button>
+    <button class="btn-auto" id="btn_auto_abs">Auto Absence</button>
+    <button class="btn-auto" id="btn_auto_pitch">Auto Kondisi Lapangan</button>
+    <button class="btn-auto" id="btn_auto_stage">Auto Tahap Musim</button>
+
+    <h3>Auto Statistik Lanjut</h3>
+    <button class="btn-auto" id="btn_auto_form">Auto Form Rating</button>
+    <button class="btn-auto" id="btn_auto_gk">Auto GK Impact</button>
+    <button class="btn-auto" id="btn_auto_style">Auto Tactical Style</button>
+    <button class="btn-auto" id="btn_auto_var">Auto Variance</button>
+    <button class="btn-auto" id="btn_auto_chaos">Auto Chaos</button>
+    <button class="btn-auto" id="btn_auto_dm15">Auto Momentum DM15+</button>
+    <button class="btn-auto" id="btn_auto_defline">Auto Defense Line</button>
+    <button class="btn-auto" id="btn_auto_cross">Auto Cross%</button>
+    <button class="btn-auto" id="btn_auto_build">Auto Build-Up Advanced</button>
+    <button class="btn-auto" id="btn_auto_bigmatch">Auto Big Match Detector</button>
+
+    <h3>Auto PRO</h3>
+    <button class="btn-auto" id="btn_auto_xthreat">Auto xThreat</button>
+    <button class="btn-auto" id="btn_auto_pressres">Auto Press-Res</button>
+    <button class="btn-auto" id="btn_auto_trans">Auto Transition</button>
+    <button class="btn-auto" id="btn_auto_wave">Auto Pressure Wave</button>
+    <button class="btn-auto" id="btn_auto_lowblock">Auto Low Block</button>
+    <button class="btn-auto" id="btn_auto_gkdist">Auto GK Sweeper Distance</button>
+    <button class="btn-auto" id="btn_auto_f3t">Auto Final Third Threat</button>
+
+    <h3>Auto ELITE (Semua)</h3>
+    <button class="btn-warn" id="btn_auto_elite">AUTO ELITE — All in 1 Klik</button>
+<h3>Auto+ Shortcuts v52</h3>
+<button class="btn-warn" id="btn_auto_plus_prep">AUTO+ Prep (isi Auto saja)</button>
+<button class="btn-warn" id="btn_auto_plus_full">AUTO+ Full (Auto + ANALYZE)</button>
+<div class="small-note">
+  AUTO+ = jalankan paket Auto penting + (opsional) langsung ANALYZE v52 dalam satu klik.
+</div>
+    <div class="small-note">
+      AUTO hanya membantu isi angka berdasarkan statistik & konteks input.  
+      Tidak menggunakan odds, tidak memaksa arah prediksi.
+    </div>
+  </div>
+
+  <!-- =========================================================
+       OUTPUT & VISUAL PANEL
+       ========================================================= -->
+  <div class="box">
+    <div class="box-header">
+      <h2>Output Analisis</h2>
+      <span class="tag">v52 Engine Result</span>
+    </div>
+
+    <div id="result_panel">
+Hasil analisis akan muncul di sini setelah klik ANALYZE.
+    </div>
+
+    <div class="visual-row">
+      <div class="visual-col">
+        <div class="visual-title">Radar Hybrid Stats (v52)</div>
+        <div class="visual-box">
+          <canvas id="radarChart" width="280" height="280"
+            style="width:100%;max-width:280px;display:block;"></canvas>
+        </div>
+      </div>
+      <div class="visual-col">
+        <div class="visual-title">Momentum Wave (Lite)</div>
+        <div class="visual-box">
+          <canvas id="momentumChart" width="280" height="120"
+            style="width:100%;max-width:280px;display:block;"></canvas>
+        </div>
+      </div>
+      <div class="visual-col">
+        <div class="visual-title">Attack Direction Heatline</div>
+        <div class="visual-box">
+          <canvas id="heatChart" width="280" height="120"
+            style="width:100%;max-width:280px;display:block;"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <br>
+    <button id="btn_analyze_v52" class="btn-main">ANALYZE v52</button>
+    <button id="btn_clear_v52" class="btn-clear">CLEAR</button>
+
+    <div class="small-note">
+      Semua hasil murni dari statistik & konteks.  
+      Tidak menggunakan odds pasar dan tidak memberi saran 1X2 / Over / Under.
+    </div>
+  </div>
+
+</div> <!-- /container -->
+
+<!-- ============================================================
+     v52 PART 2+ : SCRIPT ENGINE (akan ditempel di bawah)
+     ============================================================ -->
+<script>
+/* ============================================================
+   v52 PART 2 — HELPER + AUTO ENGINE + THEME
+   ============================================================ */
+
+/* ---------- Helper umum ---------- */
+function get(id){
+  const el = document.getElementById(id);
+  return el ? el.value : "";
+}
+function setVal(id, val){
+  const el = document.getElementById(id);
+  if(el) el.value = val;
+}
+function toNum(v, def=0){
+  if(v===undefined || v===null || v==="") return def;
+  const n = Number(v);
+  return isNaN(n) ? def : n;
+}
+function clamp(v, min, max){
+  return Math.max(min, Math.min(max, v));
+}
+function parseAbs(s){
+  let out = {GK:0,DF:0,MD:0,FW:0};
+  if(!s || typeof s!=="string") return out;
+  s.split(";").forEach(p=>{
+    const z = p.split(":");
+    if(z.length===2){
+      const k = z[0].trim().toUpperCase();
+      const v = Number(z[1]);
+      if(out[k]!==undefined && !isNaN(v)) out[k]=v;
+    }
+  });
+  return out;
+}
+function parseH2H(raw){
+  if(!raw || raw.trim()==="") return {has:false,rating:5,played:0,avgH:0,avgA:0};
+  const arr = raw.split(",");
+  let sumH=0,sumA=0,ct=0;
+  arr.forEach(x=>{
+    const zz = x.split("-");
+    if(zz.length===2){
+      const h = Number(zz[0]);
+      const a = Number(zz[1]);
+      if(!isNaN(h)&&!isNaN(a)){sumH+=h; sumA+=a; ct++;}
+    }
+  });
+  if(ct===0) return {has:false,rating:5,played:0,avgH:0,avgA:0};
+  const avgH = sumH/ct, avgA = sumA/ct;
+  let r = 5 + ((avgH-avgA)*2);
+  r = clamp(r,1,10);
+  return {has:true,rating:r,played:ct,avgH,avgA};
+}
+
+/* ============================================================
+   AUTO ENGINE v52
+   ============================================================ */
+
+/* ---------- Auto Context Pack ---------- */
+function autoContextPack(){
+  const mode   = get("ctx_mode") || "league";
+  const league = (get("ctx_league")||"").toLowerCase();
+
+  let tempo = 5;
+  if(league.includes("premier")||league.includes("bundesliga")||league.includes("eredivisie")) tempo = 7.5;
+  else if(league.includes("laliga")) tempo = 6.8;
+  else if(league.includes("serie")||league.includes("liga 1")) tempo = 6.0;
+  else if(league.includes("ligue")) tempo = 6.2;
+
+  if(mode==="derby") tempo +=0.6;
+  if(mode==="title") tempo +=0.8;
+  if(mode==="cup") tempo -=0.2;
+  if(mode==="final") tempo -=0.4;
+  if(mode==="friendly") tempo -=1.0;
+  tempo = clamp(tempo,3,9.5);
+
+  let ref = 5;
+  if(mode==="derby") ref=7.5;
+  if(mode==="final") ref=8.2;
+  if(mode==="title") ref=7.2;
+  if(mode==="friendly") ref=3.5;
+
+  let variance = 5, chaos = 5;
+  if(tempo>=7){variance+=1; chaos+=1;}
+  if(mode==="derby") chaos+=0.8;
+  if(mode==="final") variance-=0.3;
+  if(mode==="friendly"){variance-=0.4; chaos-=0.4;}
+
+  setVal("ctx_tempo", tempo.toFixed(1));
+  setVal("ctx_ref", clamp(ref,1,10).toFixed(1));
+  setVal("ctx_var", clamp(variance,1,10).toFixed(1));
+  setVal("ctx_chaos", clamp(chaos,1,10).toFixed(1));
+
+  alert("AUTO CONTEXT PACK selesai.");
+}
+
+/* ---------- Auto Importance ---------- */
+function autoImportance(){
+  const mode = (get("ctx_mode")||"league").toLowerCase();
+  function calcImp(rest){
+    let imp=5;
+    if(mode==="derby") imp=8;
+    else if(mode==="final") imp=9;
+    else if(mode==="cup") imp=7;
+    else if(mode==="relegation") imp=8;
+    else if(mode==="title") imp=8;
+    else if(mode==="intl") imp=6;
+    else if(mode==="friendly") imp=4;
+    if(rest<=2) imp-=1;
+    if(rest>=5) imp+=1;
+    return clamp(imp,1,10);
+  }
+  const rh = toNum(get("h_rest"),3);
+  const ra = toNum(get("a_rest"),3);
+  setVal("h_imp", calcImp(rh));
+  setVal("a_imp", calcImp(ra));
+  alert("Auto Importance selesai.");
+}
+
+/* ---------- Auto Rotation ---------- */
+function autoRotation(){
+  function calcRot(rest){
+    if(rest>=6) return 3;
+    if(rest>=5) return 4;
+    if(rest>=4) return 5;
+    if(rest>=3) return 6;
+    if(rest>=2) return 7;
+    return 8;
+  }
+  setVal("h_rot", calcRot(toNum(get("h_rest"),3)));
+  setVal("a_rot", calcRot(toNum(get("a_rest"),3)));
+  alert("Auto Rotation selesai.");
+}
+
+/* ---------- Auto Absence → Availability% ---------- */
+function autoAbsence(){
+  function availability(abs){
+    const a = parseAbs(abs);
+    let score = a.GK*3 + a.DF*1.5 + a.MD*1.2 + a.FW*2;
+    score = clamp(score,0,10);
+    return clamp(100 - score*5, 50, 100);
+  }
+  setVal("h_avail", availability(get("h_abs")));
+  setVal("a_avail", availability(get("a_abs")));
+  alert("Auto Absence → Availability selesai.");
+}
+
+/* ---------- Auto Kondisi Lapangan (Cuaca → Tempo) ---------- */
+function autoPitch(){
+  const cuaca = get("ctx_weather");
+  if(!cuaca){alert("Pilih cuaca dulu."); return;}
+  let tempo = toNum(get("ctx_tempo"),5);
+  if(cuaca==="rain") tempo -=0.4;
+  else if(cuaca==="heavy_rain") tempo -=1.0;
+  else if(cuaca==="snow") tempo -=1.3;
+  else if(cuaca==="windy") tempo -=0.6;
+  tempo = clamp(tempo,2.5,9.5);
+  setVal("ctx_tempo", tempo.toFixed(1));
+  alert("Auto Kondisi Lapangan selesai.");
+}
+
+/* ---------- Auto Stage (Early/Mid/Late) ---------- */
+function autoStage(){
+  const stage = get("ctx_stage");
+  if(!stage){alert("Pilih tahap musim dulu."); return;}
+  let h = toNum(get("h_stab"),5);
+  let a = toNum(get("a_stab"),5);
+  if(stage==="early"){h+=1; a+=1;}
+  if(stage==="late"){h-=1; a-=1;}
+  setVal("h_stab", clamp(h,1,10));
+  setVal("a_stab", clamp(a,1,10));
+  alert("Auto Tahap Musim selesai.");
+}
+
+/* ---------- Auto Form ---------- */
+function autoForm(){
+  function calc(raw){
+    if(!raw) return 5;
+    let s=0;
+    for(const c of raw.toUpperCase()){
+      if(c==="W") s+=2.5;
+      else if(c==="D") s+=1;
+      else if(c==="L") s-=0.5;
+    }
+    return clamp(Math.round(s),1,10);
+  }
+  setVal("h_form", calc(get("h_form_raw")));
+  setVal("a_form", calc(get("a_form_raw")));
+  alert("Auto Form Rating selesai.");
+}
+
+/* ---------- Auto GK Impact ---------- */
+function autoGK(){
+  function calc(sv,shc){
+    if(shc<=0) return 5;
+    return clamp(Math.round((sv/shc)*10),1,10);
+  }
+  setVal("h_gk", calc(toNum(get("h_gksv")), toNum(get("h_shc"))));
+  setVal("a_gk", calc(toNum(get("a_gksv")), toNum(get("a_shc"))));
+  alert("Auto GK Impact selesai.");
+}
+
+/* ---------- Auto Tactical Style + Press + PossT ---------- */
+function autoStyle(){
+  function detect(sh,sot,poss){
+    let press = (sh>=15)?8:(sh>=12)?6:4;
+    let direct = (poss<=48)?7:5;
+    let possT = (poss>=55)?7:5;
+    return {press,direct,possT};
+  }
+  const h = detect(toNum(get("h_shots")),toNum(get("h_sot")),toNum(get("h_poss")));
+  const a = detect(toNum(get("a_shots")),toNum(get("a_sot")),toNum(get("a_poss")));
+  setVal("h_press", h.press); setVal("h_style",h.direct); setVal("h_poss_t",h.possT);
+  setVal("a_press", a.press); setVal("a_style",a.direct); setVal("a_poss_t",a.possT);
+  alert("Auto Tactical Style selesai.");
+}
+
+/* ---------- Auto Variance ---------- */
+function autoVariance(){
+  const tempo = toNum(get("ctx_tempo"),5);
+  const avgShots = (toNum(get("h_shots")) + toNum(get("a_shots"))) / 2;
+  let v = (tempo*0.6) + (avgShots*0.4)/3;
+  v = clamp(Math.round(v),1,10);
+  setVal("ctx_var", v);
+  alert("Auto Variance selesai.");
+}
+
+/* ---------- Auto Chaos ---------- */
+function autoChaos(){
+  const tempo = toNum(get("ctx_tempo"),5);
+  const variance = toNum(get("ctx_var"),5);
+  let chaos = tempo*0.6 + variance*0.4;
+  chaos = clamp(Math.round(chaos),1,10);
+  setVal("ctx_chaos", chaos);
+  alert("Auto Chaos selesai.");
+}
+
+/* ---------- Auto Momentum DM15 ---------- */
+function autoDM15(){
+  function calc(form,tempo){
+    return clamp(Math.round((form*0.6)+(tempo*0.4)),1,10);
+  }
+  const tempo = toNum(get("ctx_tempo"),5);
+  setVal("h_dm15", calc(toNum(get("h_form"),5), tempo));
+  setVal("a_dm15", calc(toNum(get("a_form"),5), tempo));
+  alert("Auto Momentum DM15+ selesai.");
+}
+
+/* ---------- Auto Defense Line ---------- */
+function autoDefline(){
+  function calc(sc,poss){
+    let d=6;
+    if(sc<=10) d+=1;
+    if(poss>=55) d+=1;
+    return clamp(d,1,10);
+  }
+  setVal("h_deflvl", calc(toNum(get("h_shc")),toNum(get("h_poss"))));
+  setVal("a_deflvl", calc(toNum(get("a_shc")),toNum(get("a_poss"))));
+  alert("Auto Defense Line selesai.");
+}
+
+/* ---------- Auto Cross% ---------- */
+function autoCross(){
+  function cx(poss){
+    if(poss>=60) return 20;
+    if(poss>=50) return 24;
+    if(poss>=40) return 26;
+    return 18;
+  }
+  setVal("h_cross", cx(toNum(get("h_poss"))));
+  setVal("a_cross", cx(toNum(get("a_poss"))));
+  alert("Auto Cross% selesai.");
+}
+
+/* ---------- Auto Build-Up Advanced ---------- */
+function autoBuildUpAdv(){
+  function bu(poss,prog,f3){
+    let score = (poss*0.04)+(prog*0.3)+(f3*0.2);
+    return clamp(Math.round(score),1,10);
+  }
+  setVal("h_build", bu(toNum(get("h_poss")),toNum(get("h_prog")),toNum(get("h_f3"))));
+  setVal("a_build", bu(toNum(get("a_poss")),toNum(get("a_prog")),toNum(get("a_f3"))));
+  alert("Auto Build-Up Advanced selesai.");
+}
+
+/* ---------- Auto Big Match Detector ---------- */
+function autoBigMatch(){
+  const imp   = (toNum(get("h_imp")) + toNum(get("a_imp"))) / 2 || 5;
+  const tempo = toNum(get("ctx_tempo"),5);
+  const varc  = toNum(get("ctx_var"),5);
+  let score = (imp*0.4) + (tempo*0.3) + (varc*0.3);
+  if(score>=7){
+    setVal("ctx_mode","bigmatch");
+    alert("Big Match terdeteksi → mode bigmatch.");
+  } else {
+    alert("Big Match tidak kuat.");
+  }
+}
+
+/* ---------- Auto xThreat ---------- */
+function autoXThreat(){
+  function xt(prog,f3,xg){
+    let sc = (prog*0.3)+(f3*0.3)+(xg*0.4);
+    return clamp(Math.round(sc),1,10);
+  }
+  setVal("h_xthreat", xt(toNum(get("h_prog")),toNum(get("h_f3")),toNum(get("h_xg"))));
+  setVal("a_xthreat", xt(toNum(get("a_prog")),toNum(get("a_f3")),toNum(get("a_xg"))));
+  alert("Auto xThreat selesai.");
+}
+
+/* ---------- Auto Press-Res ---------- */
+function autoPressRes(){
+  function pr(poss,prog){
+    return clamp(Math.round((poss*0.05)+(prog*0.4)),1,10);
+  }
+  setVal("h_pressres", pr(toNum(get("h_poss")),toNum(get("h_prog"))));
+  setVal("a_pressres", pr(toNum(get("a_poss")),toNum(get("a_prog"))));
+  alert("Auto Press-Res selesai.");
+}
+
+/* ---------- Auto Transition ---------- */
+function autoTransition(){
+  function ts(sh,sot,prog){
+    let v = (sh*0.2)+(sot*0.5)+(prog*0.3);
+    return clamp(Math.round(v/3),1,10);
+  }
+  setVal("h_trans", ts(toNum(get("h_shots")),toNum(get("h_sot")),toNum(get("h_prog"))));
+  setVal("a_trans", ts(toNum(get("a_shots")),toNum(get("a_sot")),toNum(get("a_prog"))));
+  alert("Auto Transition selesai.");
+}
+
+/* ---------- Auto Pressure Wave ---------- */
+function autoWave(){
+  function wave(sh,tempo){
+    return clamp(Math.round(((sh*0.5)+(tempo*0.5))/2),1,10);
+  }
+  const tempo = toNum(get("ctx_tempo"),5);
+  setVal("h_wave", wave(toNum(get("h_shots")),tempo));
+  setVal("a_wave", wave(toNum(get("a_shots")),tempo));
+  alert("Auto Pressure Wave selesai.");
+}
+
+/* ---------- Auto Low Block ---------- */
+function autoLowBlock(){
+  function lb(gc,shc,poss){
+    let s=5;
+    if(gc<=1 && shc<=10) s+=1;
+    if(poss<=45) s+=1;
+    return clamp(s,1,10);
+  }
+  setVal("h_lb", lb(toNum(get("h_gc")),toNum(get("h_shc")),toNum(get("h_poss"))));
+  setVal("a_lb", lb(toNum(get("a_gc")),toNum(get("a_shc")),toNum(get("a_poss"))));
+  alert("Auto Low Block selesai.");
+}
+
+/* ---------- Auto GK Sweeper Distance ---------- */
+function autoGKDist(){
+  function dist(poss,shc){
+    let r = (poss*0.03)+(10-Math.min(shc,10));
+    return clamp(Math.round(r),1,10);
+  }
+  setVal("h_gkdist", dist(toNum(get("h_poss")),toNum(get("h_shc"))));
+  setVal("a_gkdist", dist(toNum(get("a_poss")),toNum(get("a_shc"))));
+  alert("Auto GK Sweeper Distance selesai.");
+}
+
+/* ---------- Auto Final Third Threat ---------- */
+function autoF3T(){
+  function f3t(f3,bc){
+    let sc = (f3*0.6)+(bc*0.4);
+    return clamp(Math.round(sc/2),1,10);
+  }
+  setVal("h_f3t", f3t(toNum(get("h_f3")),toNum(get("h_bc"))));
+  setVal("a_f3t", f3t(toNum(get("a_f3")),toNum(get("a_bc"))));
+  alert("Auto Final Third Threat selesai.");
+}
+
+/* ---------- Auto ELITE (semua Auto sekaligus) ---------- */
+function autoElite(){
+  try{
+    autoContextPack();
+    if(get("ctx_stage")) autoStage();
+    if(get("ctx_weather")) autoPitch();
+
+    autoImportance();
+    autoRotation();
+    autoAbsence();
+    autoForm();
+    autoGK();
+    autoStyle();
+    autoVariance();
+    autoChaos();
+    autoDM15();
+    autoDefline();
+    autoCross();
+    autoBuildUpAdv();
+    autoPressRes();
+    autoTransition();
+    autoWave();
+    autoLowBlock();
+    autoGKDist();
+    autoF3T();
+    autoXThreat();
+    autoBigMatch();
+
+    alert("AUTO ELITE v52 selesai (semua auto aktif).");
+  }catch(e){
+    console.error(e);
+    alert("Error AUTO ELITE (lihat console).");
+  }
+}
+
+/* ============================================================
+   CLEAR + THEME
+   ============================================================ */
+
+function clear_v52(){
+  const all=document.querySelectorAll("input,select,textarea");
+  all.forEach(el=>{
+    if(el.tagName==="SELECT") el.selectedIndex=0;
+    else el.value="";
+  });
+  const box=document.getElementById("result_panel");
+  if(box) box.textContent="Hasil analisis akan muncul di sini setelah klik ANALYZE.";
+  const ids=["radarChart","momentumChart","heatChart"];
+  ids.forEach(id=>{
+    const canvas=document.getElementById(id);
+    if(canvas){
+      const ctx=canvas.getContext("2d");
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+  });
+  alert("Semua input telah dikosongkan.");
+}
+
+/* ============================================================
+   DOMContentLoaded – binding tombol AUTO & THEME
+   ============================================================ */
+document.addEventListener("DOMContentLoaded",function(){
+  /* Theme toggle */
+  const root=document.documentElement;
+  const btnT=document.getElementById("theme_toggle");
+  if(btnT){
+    const prefersDark=window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if(prefersDark) root.classList.add("dark");
+    function updateLabel(){
+      btnT.textContent=root.classList.contains("dark")?"Light Mode":"Dark Mode";
+    }
+    btnT.addEventListener("click",function(){
+      root.classList.toggle("dark");
+      updateLabel();
+    });
+    updateLabel();
+  }
+
+  /* Auto buttons */
+  const bind = (id,fn)=>{
+    const b=document.getElementById(id);
+    if(b) b.addEventListener("click",fn);
+  };
+
+  bind("btn_auto_ctx", autoContextPack);
+  bind("btn_auto_imp", autoImportance);
+  bind("btn_auto_rot", autoRotation);
+  bind("btn_auto_abs", autoAbsence);
+  bind("btn_auto_pitch", autoPitch);
+  bind("btn_auto_stage", autoStage);
+
+  bind("btn_auto_form", autoForm);
+  bind("btn_auto_gk", autoGK);
+  bind("btn_auto_style", autoStyle);
+  bind("btn_auto_var", autoVariance);
+  bind("btn_auto_chaos", autoChaos);
+  bind("btn_auto_dm15", autoDM15);
+  bind("btn_auto_defline", autoDefline);
+  bind("btn_auto_cross", autoCross);
+  bind("btn_auto_build", autoBuildUpAdv);
+  bind("btn_auto_bigmatch", autoBigMatch);
+
+  bind("btn_auto_xthreat", autoXThreat);
+  bind("btn_auto_pressres", autoPressRes);
+  bind("btn_auto_trans", autoTransition);
+  bind("btn_auto_wave", autoWave);
+  bind("btn_auto_lowblock", autoLowBlock);
+  bind("btn_auto_gkdist", autoGKDist);
+  bind("btn_auto_f3t", autoF3T);
+
+  bind("btn_auto_elite", autoElite);
+
+  /* Clear button */
+  const btnC=document.getElementById("btn_clear_v52");
+  if(btnC) btnC.addEventListener("click",clear_v52);
+
+  /* ANALYZE v52 button → fungsi analyze_v52 akan didefinisikan di PART 3 */
+  const btnA=document.getElementById("btn_analyze_v52");
+  if(btnA){
+    btnA.addEventListener("click",function(){
+      if(typeof analyze_v52==="function") analyze_v52();
+      else alert("Engine v52 belum lengkap (PART 3 script belum dimuat).");
+    });
+  }
+});
+</script>
+<script>
+/* ============================================================
+   v52 PART 3 — ENGINE INTI (Hybrid-xG v4 + xDef + EDT)
+   ============================================================ */
+
+/* ---------- 1. Ambil seluruh input tim ---------- */
+function getTeamBlock(prefix){
+  return {
+    name: get(prefix+"_name") || "",
+    elo: toNum(get(prefix+"_elo"),1500),
+    rest: toNum(get(prefix+"_rest"),3),
+
+    shots: toNum(get(prefix+"_shots"),10),
+    sot:   toNum(get(prefix+"_sot"),4),
+    xg:    toNum(get(prefix+"_xg"),1),
+    dzxg:  toNum(get(prefix+"_dzxg"),0.2),
+
+    gc:    toNum(get(prefix+"_gc"),1.2),
+    shc:   toNum(get(prefix+"_shc"),11),
+    gksv:  toNum(get(prefix+"_gksv"),3),
+
+    interceptions: toNum(get(prefix+"_int"),8),
+    prog: toNum(get(prefix+"_prog"),12),
+    f3:   toNum(get(prefix+"_f3"),10),
+
+    poss: toNum(get(prefix+"_poss"),50),
+
+    build:  toNum(get(prefix+"_build"),5),
+    deflvl: toNum(get(prefix+"_deflvl"),5),
+    press:  toNum(get(prefix+"_press"),5),
+    finish: toNum(get(prefix+"_finish"),5),
+
+    imp:  toNum(get(prefix+"_imp"),5),
+    rot:  toNum(get(prefix+"_rot"),5),
+    abs:  parseAbs(get(prefix+"_abs")),
+
+    /* advanced */
+    form:   toNum(get(prefix+"_form"),5),
+    stab:   toNum(get(prefix+"_stab"),5),
+    avail:  toNum(get(prefix+"_avail"),90),
+    gk:     toNum(get(prefix+"_gk"),5),
+    style:  toNum(get(prefix+"_style"),5),
+    possT:  toNum(get(prefix+"_poss_t"),5),
+    cross:  toNum(get(prefix+"_cross"),20),
+    bc:     toNum(get(prefix+"_bc"),1.2),
+    f3t:    toNum(get(prefix+"_f3t"),5),
+    gkdist: toNum(get(prefix+"_gkdist"),5),
+    pressres: toNum(get(prefix+"_pressres"),5),
+    trans:    toNum(get(prefix+"_trans"),5),
+    lb:       toNum(get(prefix+"_lb"),5),
+    wave:     toNum(get(prefix+"_wave"),5),
+    xthreat:  toNum(get(prefix+"_xthreat"),5),
+    dm15:     toNum(get(prefix+"_dm15"),5)
+  };
+}
+
+/* ---------- 2. Hybrid-xG v4 (Attack Engine) ---------- */
+function hybridAttack_v52(T){
+  /* 
+     Komposisi:
+     xG raw (40%)
+     DZXG (15%)
+     xThreat (15%)
+     Build-up + F3T (15%)
+     Finishing (10%)
+     Momentum DM15 (5%)
+  */
+
+  let base =
+      T.xg*0.40 +
+      T.dzxg*0.15 +
+      (T.xthreat/10)*0.15 +
+      ((T.build + T.f3t)/20)*0.15 +
+      (T.finish/10)*0.10 +
+      (T.dm15/10)*0.05;
+
+  /* scaling 0.4 – 2.8 */
+  return clamp(base*2.2, 0.4, 2.8);
+}
+
+/* ---------- 3. xDef Engine v52 (Defense Strength) ---------- */
+function hybridDefense_v52(T){
+  /*
+     Faktor:
+     GC (negatif)
+     Shots Conceded (negatif)
+     GK rating (positif)
+     LB (positif)
+     DefLevel (positif)
+     PressResistance (positif)
+     Interceptions (positif)
+  */
+  let d =
+      (10 - T.gc)*0.12 +
+      (10 - Math.min(T.shc,20))*0.12 +
+      (T.gk/10)*0.20 +
+      (T.lb/10)*0.18 +
+      (T.deflvl/10)*0.15 +
+      (T.pressres/10)*0.12 +
+      (T.interceptions/20)*0.11;
+
+  return clamp(d*2.0, 0.5, 3.0); /* 0.5 – 3 */
+}
+
+/* ---------- 4. EDT v52 (Expected Domination Tilt) ---------- */
+function edt_v52(H,A){
+  let hScore = (H.poss*0.4) + (H.prog*0.3) + (H.f3*0.3);
+  let aScore = (A.poss*0.4) + (A.prog*0.3) + (A.f3*0.3);
+  const total = Math.max(hScore+aScore,1);
+  return {h: hScore/total, a: aScore/total};
+}
+
+/* ---------- 5. λ Base Generator ---------- */
+function lambdaCore_v52(H,A){
+  const attH = hybridAttack_v52(H);
+  const attA = hybridAttack_v52(A);
+
+  const defH = hybridDefense_v52(H);
+  const defA = hybridDefense_v52(A);
+
+  const edt  = edt_v52(H,A);
+
+  /*
+     λHome = (attackHome * (3 - defenseAway)) * EDT Home
+     λAway = (attackAway * (3 - defenseHome)) * EDT Away
+  */
+
+  let lamH = attH * (3 - defA) * edt.h;
+  let lamA = attA * (3 - defH) * edt.a;
+
+  return {
+    lambdaH: clamp(lamH,0.1,3.8),
+    lambdaA: clamp(lamA,0.1,3.8),
+    attH,attA,defH,defA,edt
+  };
+}
+
+/* ---------- 6. Fungsi utama Part 3 ---------- */
+function engineCore_v52(){
+  const H = getTeamBlock("h");
+  const A = getTeamBlock("a");
+  const C = {
+    mode : (get("ctx_mode")||"league"),
+    weather: get("ctx_weather"),
+    tempo: toNum(get("ctx_tempo"),5),
+    ref: toNum(get("ctx_ref"),5),
+    varc: toNum(get("ctx_var"),5),
+    chaos: toNum(get("ctx_chaos"),5),
+    stage: get("ctx_stage"),
+    league: get("ctx_league"),
+    h2h: parseH2H(get("ctx_h2h_raw")),
+    note: get("ctx_note")
+  };
+
+  const core = lambdaCore_v52(H,A);
+
+  return {
+    H,A,C,
+    core
+  };
+}
+
+/* ============================================================
+   analyze_v52() (sementara placeholder)
+   PART 4 akan override fungsi ini dengan versi final
+   ============================================================ */
+function analyze_v52(){
+  const out=engineCore_v52();
+  if(!out){
+    alert("Engine gagal.");
+    return;
+  }
+  document.getElementById("result_panel").textContent =
+`v52 CORE ENGINE (sementara)
+Lambda Home = ${out.core.lambdaH.toFixed(3)}
+Lambda Away = ${out.core.lambdaA.toFixed(3)}
+
+*PART 4 akan menambah:
+- Deep Chaos v52
+- League Profile v52
+- Multi skenario (BASE / LOW-EVENT / HIGH-EVENT)
+- Monte Carlo Lite (2000 simulasi)
+- Radar v2
+- Momentum v2
+- Heatline v2
+`;
+}
+</script>
+<script>
+/* ============================================================
+   v52 PART 4 — Deep Chaos + League Profile + Monte Carlo + analyze_v52
+   ============================================================ */
+
+/* ---------- Poisson util ---------- */
+function factorial_v52(n){
+  if(n<=1) return 1;
+  let r=1;
+  for(let i=2;i<=n;i++) r*=i;
+  return r;
+}
+function poisson_v52(lambda,k){
+  if(lambda<=0) lambda=0.000001;
+  return Math.pow(lambda,k)*Math.exp(-lambda)/factorial_v52(k);
+}
+function prob3W_v52(lH,lA,maxG=10){
+  let pH=0,pD=0,pA=0;
+  for(let i=0;i<=maxG;i++){
+    for(let j=0;j<=maxG;j++){
+      const p=poisson_v52(lH,i)*poisson_v52(lA,j);
+      if(i>j) pH+=p;
+      else if(i===j) pD+=p;
+      else pA+=p;
+    }
+  }
+  return {H:pH,D:pD,A:pA};
+}
+function ouProb_v52(lH,lA,line,maxG=10){
+  let over=0,under=0;
+  for(let i=0;i<=maxG;i++){
+    for(let j=0;j<=maxG;j++){
+      const g=i+j;
+      const p=poisson_v52(lH,i)*poisson_v52(lA,j);
+      if(g>line) over+=p; else under+=p;
+    }
+  }
+  return {over,under};
+}
+function btts_v52(lH,lA,maxG=10){
+  let yes=0,no=0;
+  for(let i=0;i<=maxG;i++){
+    for(let j=0;j<=maxG;j++){
+      const p=poisson_v52(lH,i)*poisson_v52(lA,j);
+      if(i>0 && j>0) yes+=p; else no+=p;
+    }
+  }
+  return {yes,no};
+}
+function topScores_v52(lH,lA,maxG=6){
+  const arr=[];
+  for(let i=0;i<=maxG;i++){
+    for(let j=0;j<=maxG;j++){
+      const p=poisson_v52(lH,i)*poisson_v52(lA,j);
+      arr.push({score:`${i}-${j}`,prob:p});
+    }
+  }
+  arr.sort((a,b)=>b.prob-a.prob);
+  return arr.slice(0,8);
+}
+
+/* ---------- League Profile v52 Pro ---------- */
+function leagueProfile_v52(ctx){
+  const name=(ctx.league||"").toLowerCase();
+  let tempoBias=0,xgScale=1,defTight=0,cardBias=0;
+
+  if(name.includes("premier")){
+    tempoBias=0.8; xgScale=1.10; defTight=0.1; cardBias=0.1;
+  }else if(name.includes("bundesliga")){
+    tempoBias=0.7; xgScale=1.12; defTight=0.0; cardBias=0.0;
+  }else if(name.includes("eredivisie")){
+    tempoBias=0.6; xgScale=1.15; defTight=0.0; cardBias=0.0;
+  }else if(name.includes("laliga")){
+    tempoBias=0.3; xgScale=1.00; defTight=0.3; cardBias=0.05;
+  }else if(name.includes("serie")){
+    tempoBias=0.2; xgScale=0.97; defTight=0.5; cardBias=0.1;
+  }else if(name.includes("ligue")){
+    tempoBias=0.2; xgScale=0.98; defTight=0.3; cardBias=0.05;
+  }else if(name.includes("champions")||name.includes("ucl")){
+    tempoBias=0.6; xgScale=1.06; defTight=0.2; cardBias=0.08;
+  }else if(name.includes("europa")){
+    tempoBias=0.4; xgScale=1.04; defTight=0.2; cardBias=0.06;
+  }else if(name.includes("conference")){
+    tempoBias=0.4; xgScale=1.05; defTight=0.1; cardBias=0.05;
+  }else if(name.includes("liga 1")||name.includes("indonesia")){
+    tempoBias=0.2; xgScale=1.02; defTight=0.2; cardBias=0.1;
+  }else{
+    tempoBias=0.0; xgScale=1.00; defTight=0.0; cardBias=0.0;
+  }
+
+  return {
+    name: ctx.league || "Unknown League",
+    tempoBias,
+    xgScale,
+    defTight,
+    cardBias
+  };
+}
+
+/* ---------- Deep Chaos v52 ---------- */
+function deepChaos_v52(ctx, core, H, A, leagueProf){
+  const chaosBase = ctx.chaos || 5;
+  const varc      = ctx.varc || 5;
+  const tempo     = ctx.tempo || 5;
+
+  const deltaELO = (H.elo - A.elo)/400; // beda kelas bisa bikin swing
+  const eloChaos = Math.abs(deltaELO)*1.2;
+
+  let modeFactor = 0;
+  const m=(ctx.mode||"league").toLowerCase();
+  if(m==="derby") modeFactor+=1.0;
+  if(m==="relegation") modeFactor+=0.9;
+  if(m==="title") modeFactor+=0.7;
+  if(m==="cup") modeFactor+=0.4;
+  if(m==="final") modeFactor+=0.9;
+  if(m==="friendly") modeFactor-=0.7;
+
+  let stageFactor = 0;
+  if(ctx.stage==="early") stageFactor+=0.2;
+  if(ctx.stage==="late")  stageFactor+=0.4;
+
+  const edtGap = Math.abs(core.edt.h - core.edt.a)*10; // semakin timpang poss
+  const edtChaos = edtGap*0.2;
+
+  let score =
+    chaosBase*0.45 +
+    varc*0.25 +
+    tempo*0.10 +
+    modeFactor*0.70 +
+    stageFactor*0.50 +
+    leagueProf.tempoBias*0.6 +
+    eloChaos*0.9 +
+    edtChaos;
+
+  return clamp(score/2.4,1,10);
+}
+
+/* ---------- H2H / Availability / ELO adjust ---------- */
+function h2hAdjust_v52(lambdaH, lambdaA, C){
+  const h2h=C.h2h;
+  if(!h2h || !h2h.has) return {lambdaH,lambdaA};
+
+  const adj=(h2h.rating-5)/10;  // -0.4..+0.4
+  const safe=clamp(adj*0.08,-0.08,0.08);
+  return {
+    lambdaH: lambdaH*(1+safe),
+    lambdaA: lambdaA*(1-safe)
+  };
+}
+function availabilityAdjust_v52(lambdaH, lambdaA, H, A){
+  const fH = clamp(0.85 + (H.avail/100)*0.15, 0.85, 1.10);
+  const fA = clamp(0.85 + (A.avail/100)*0.15, 0.85, 1.10);
+  return {
+    lambdaH: lambdaH*fH,
+    lambdaA: lambdaA*fA
+  };
+}
+function eloAdjust_v52(lambdaH, lambdaA, H, A){
+  const delta = clamp((H.elo - A.elo)/800, -0.18, 0.18);
+  const fH = 1 + delta;
+  const fA = 1 - delta*0.9;
+  return {
+    lambdaH: lambdaH*fH,
+    lambdaA: lambdaA*fA
+  };
+}
+
+/* ---------- Context (weather + chaos + liga) ---------- */
+function contextAdjust_v52(lambdaH, lambdaA, ctx, leagueProf, deepChaos){
+  let fTempo = 1 + ((ctx.tempo||5)-5)*0.035;
+  let fChaos = 1 + ((deepChaos)-5)*0.03;
+  let fWeather = 1;
+  if(ctx.weather==="rain")       fWeather-=0.04;
+  else if(ctx.weather==="heavy_rain") fWeather-=0.09;
+  else if(ctx.weather==="snow")       fWeather-=0.11;
+  else if(ctx.weather==="windy")      fWeather-=0.05;
+  const fLeague = leagueProf.xgScale;
+  const fDef    = 1 - leagueProf.defTight*0.08;
+
+  let fGlobal = fTempo * fChaos * fWeather * fLeague * fDef;
+  fGlobal = clamp(fGlobal, 0.75, 1.35);
+
+  return {
+    lambdaH: lambdaH*fGlobal,
+    lambdaA: lambdaA*fGlobal
+  };
+}
+
+/* ---------- Cards / Corners / Possession ---------- */
+function cardsModel_v52(H,A,ctx,leagueProf,deepChaos){
+  let base=3.5;
+  base += (ctx.ref-5)*0.2;
+  base += (deepChaos-5)*0.12;
+  base += leagueProf.cardBias*0.6;
+
+  const m=(ctx.mode||"league").toLowerCase();
+  if(m==="derby")      base+=0.8;
+  if(m==="relegation") base+=0.5;
+  if(m==="final")      base+=0.6;
+
+  base = clamp(base,2.0,9.0);
+  const h=clamp(base*(H.press/10)*0.55,0.4,6.5);
+  const a=clamp(base*(A.press/10)*0.55,0.4,6.5);
+  return {total:base,home:h,away:a};
+}
+function cornersModel_v52(T){
+  const raw=(T.shots*0.22)+(T.f3*0.22)+(T.prog*0.18)+(T.wave*0.18);
+  return clamp(raw/1.9,1.0,12.0);
+}
+function possModel_v52(H,A){
+  const baseH=H.poss || 50;
+  const baseA=A.poss || 50;
+  const sum = baseH+baseA;
+  if(sum<=0) return {H:50,A:50};
+  return {
+    H: clamp((baseH/sum)*100, 30,70),
+    A: clamp((baseA/sum)*100, 30,70)
+  };
+}
+
+/* ---------- Reliability / Risk / Match Profile ---------- */
+function reliability_v52(T, deepChaos){
+  const atkScore = (T.xthreat + T.f3t + T.build + T.finish)/4;
+  const defScore = (T.lb + T.deflvl + T.gk + T.pressres)/4;
+  const stab     = T.stab || 5;
+  const raw = (atkScore*0.35)+(defScore*0.35)+(stab*0.20)-(deepChaos*0.10);
+  return clamp(raw/1.2,1,10);
+}
+function riskScore_v52(H,A,deepChaos){
+  const tilt = Math.abs(H.poss - A.poss)/10;
+  const waveGap = Math.abs(H.wave - A.wave);
+  const raw = deepChaos*0.45 + tilt*0.3 + waveGap*0.25;
+  return clamp(raw/2.3,1,10);
+}
+function collapse_v52(T,risk){
+  const raw = (10 - T.deflvl)*0.35 + (10 - T.lb)*0.25 + risk*0.40;
+  return clamp(raw/2.4,1,10);
+}
+function gradeNCG_v52(rel,deepChaos){
+  const s = rel*0.7 - deepChaos*0.3;
+  if(s>=7.8) return "A+";
+  if(s>=6.8) return "A";
+  if(s>=5.8) return "B";
+  if(s>=4.8) return "C";
+  if(s>=3.8) return "D";
+  return "E";
+}
+function matchProfile_v52(ctx,leagueProf,deepChaos,poss){
+  let tempoTag="sedang";
+  if(ctx.tempo<=4) tempoTag="lambat/terkontrol";
+  else if(ctx.tempo>=7) tempoTag="cepat/intens";
+
+  let chaosTag="stabil";
+  if(deepChaos<=4) chaosTag="sangat terstruktur";
+  else if(deepChaos>=7) chaosTag="tinggi & fluktuatif";
+
+  let possTag="imbang";
+  if(poss.H>=poss.A+8) possTag="Home dominan bola";
+  else if(poss.A>=poss.H+8) possTag="Away dominan bola";
+
+  let modeTag="Laga liga biasa";
+  const m=(ctx.mode||"league").toLowerCase();
+  if(m==="derby") modeTag="Derby / rivalitas";
+  else if(m==="relegation") modeTag="Pertarungan degradasi";
+  else if(m==="title") modeTag="Laga perebutan gelar";
+  else if(m==="cup") modeTag="Knock-out / cup";
+  else if(m==="final") modeTag="Final";
+  else if(m==="friendly") modeTag="Friendly";
+
+  return `${modeTag} · Liga: ${leagueProf.name} · Tempo: ${tempoTag} · Chaos: ${chaosTag} · Pola bola: ${possTag}`;
+}
+
+/* ---------- Monte Carlo Lite (2000 run) ---------- */
+function buildPoissonCDF_v52(lambda,maxG){
+  const cdf=[];
+  let cum=0;
+  for(let k=0;k<=maxG;k++){
+    cum += poisson_v52(lambda,k);
+    cdf.push(cum);
+  }
+  if(cdf[cdf.length-1]<0.9999){
+    cdf[cdf.length-1]=1;
+  }
+  return cdf;
+}
+function sampleFromCDF_v52(cdf){
+  const u=Math.random();
+  for(let k=0;k<cdf.length;k++){
+    if(u<=cdf[k]) return k;
+  }
+  return cdf.length-1;
+}
+function monteCarloLite_v52(lambdaH, lambdaA, runs){
+  const N=runs||2000;
+  const maxG=8;
+  const cdfH=buildPoissonCDF_v52(lambdaH,maxG);
+  const cdfA=buildPoissonCDF_v52(lambdaA,maxG);
+
+  let winH=0,winA=0,draw=0;
+  let over15=0,over25=0,over35=0,over45=0;
+  let bttsYes=0,bttsNo=0;
+  let sumH=0,sumA=0;
+
+  const scoreCount={};
+
+  for(let i=0;i<N;i++){
+    const gH=sampleFromCDF_v52(cdfH);
+    const gA=sampleFromCDF_v52(cdfA);
+    sumH+=gH; sumA+=gA;
+
+    if(gH>gA) winH++; else if(gH<gA) winA++; else draw++;
+
+    const total=gH+gA;
+    if(total>1.5) over15++;
+    if(total>2.5) over25++;
+    if(total>3.5) over35++;
+    if(total>4.5) over45++;
+
+    if(gH>0 && gA>0) bttsYes++; else bttsNo++;
+
+    const key=gH+"-"+gA;
+    scoreCount[key]=(scoreCount[key]||0)+1;
+  }
+
+  const scoreArr=Object.keys(scoreCount).map(k=>({
+    score:k,
+    prob:scoreCount[k]/N
+  })).sort((a,b)=>b.prob-a.prob).slice(0,8);
+
+  return {
+    runs:N,
+    avgH:sumH/N,
+    avgA:sumA/N,
+    pHome:winH/N,
+    pDraw:draw/N,
+    pAway:winA/N,
+    ou:{
+      "1.5":over15/N,
+      "2.5":over25/N,
+      "3.5":over35/N,
+      "4.5":over45/N
+    },
+    btts:{
+      yes:bttsYes/N,
+      no:bttsNo/N
+    },
+    scores:scoreArr
+  };
+}
+
+/* ---------- Multi skenario (BASE / LOW / HIGH) ---------- */
+function multiScenario_v52(lambdaH, lambdaA, leagueProf, deepChaos){
+  const defT=leagueProf.defTight||0;
+  const tempoBias=leagueProf.tempoBias||0;
+  const chaosNorm=(deepChaos-5)/5; // -0.8..+1
+
+  const baseH=clamp(lambdaH*(0.95 + leagueProf.xgScale*0.05),0.05,5.0);
+  const baseA=clamp(lambdaA*(0.95 + leagueProf.xgScale*0.05),0.05,5.0);
+
+  let lowFactor  = 1.0 - chaosNorm*0.25 - defT*0.25;
+  let highFactor = 1.0 + chaosNorm*0.35 + tempoBias*0.12;
+
+  lowFactor  = clamp(lowFactor,0.5,0.98);
+  highFactor = clamp(highFactor,1.02,1.7);
+
+  return {
+    base:{H:baseH,A:baseA},
+    low :{H:clamp(baseH*lowFactor,0.05,4.5), A:clamp(baseA*lowFactor,0.05,4.5)},
+    high:{H:clamp(baseH*highFactor,0.05,5.5),A:clamp(baseA*highFactor,0.05,5.5)}
+  };
+}
+function scenarioSummary_v52(lH,lA){
+  const p3=prob3W_v52(lH,lA);
+  const ou25=ouProb_v52(lH,lA,2.5);
+  const bt=btts_v52(lH,lA);
+  return {
+    lH,lA,
+    pHome:p3.H*100,
+    pDraw:p3.D*100,
+    pAway:p3.A*100,
+    ouOver:ou25.over*100,
+    ouUnder:ou25.under*100,
+    bttsYes:bt.yes*100,
+    bttsNo:bt.no*100
+  };
+}
+
+/* ---------- Helper format ---------- */
+function fpct(x){ return isNaN(x) ? "-" : x.toFixed(1)+"%"; }
+function fl(x,dec){ return x.toFixed(dec==null?3:dec); }
+
+/* ============================================================
+   FINAL analyze_v52 (override placeholder PART 3)
+   ============================================================ */
+function analyze_v52(){
+  const corePkg = engineCore_v52();
+  if(!corePkg){ alert("Engine core error."); return; }
+
+  const H=corePkg.H;
+  const A=corePkg.A;
+  const C=corePkg.C;
+  let lambdaH=corePkg.core.lambdaH;
+  let lambdaA=corePkg.core.lambdaA;
+
+  const leagueProf=leagueProfile_v52(C);
+  const deepChaos=deepChaos_v52(C,corePkg.core,H,A,leagueProf);
+
+  // kaskade penyesuaian λ
+  let adj;
+
+  adj = availabilityAdjust_v52(lambdaH,lambdaA,H,A);
+  lambdaH=adj.lambdaH; lambdaA=adj.lambdaA;
+
+  adj = eloAdjust_v52(lambdaH,lambdaA,H,A);
+  lambdaH=adj.lambdaH; lambdaA=adj.lambdaA;
+
+  adj = h2hAdjust_v52(lambdaH,lambdaA,C);
+  lambdaH=adj.lambdaH; lambdaA=adj.lambdaA;
+
+  adj = contextAdjust_v52(lambdaH,lambdaA,C,leagueProf,deepChaos);
+  lambdaH=adj.lambdaH; lambdaA=adj.lambdaA;
+
+  lambdaH=clamp(lambdaH,0.05,5.5);
+  lambdaA=clamp(lambdaA,0.05,5.5);
+
+  // Poisson analytic
+  const p3   = prob3W_v52(lambdaH,lambdaA);
+  const ou15 = ouProb_v52(lambdaH,lambdaA,1.5);
+  const ou25 = ouProb_v52(lambdaH,lambdaA,2.5);
+  const ou35 = ouProb_v52(lambdaH,lambdaA,3.5);
+  const ou45 = ouProb_v52(lambdaH,lambdaA,4.5);
+  const bt   = btts_v52(lambdaH,lambdaA);
+  const scoresTop = topScores_v52(lambdaH,lambdaA);
+
+  // Monte Carlo Lite
+  const mc = monteCarloLite_v52(lambdaH,lambdaA,2000);
+
+  // Multi scenario
+  const scen  = multiScenario_v52(lambdaH,lambdaA,leagueProf,deepChaos);
+  const scenB = scenarioSummary_v52(scen.base.H,scen.base.A);
+  const scenL = scenarioSummary_v52(scen.low.H,scen.low.A);
+  const scenH = scenarioSummary_v52(scen.high.H,scen.high.A);
+
+  // Extra stats: cards, corners, poss, reliability, risk
+  const cards   = cardsModel_v52(H,A,C,leagueProf,deepChaos);
+  const corners = {
+    home: cornersModel_v52(H),
+    away: cornersModel_v52(A)
+  };
+  corners.total = corners.home + corners.away;
+  const poss    = possModel_v52(H,A);
+
+  const relH = reliability_v52(H,deepChaos);
+  const relA = reliability_v52(A,deepChaos);
+  const risk = riskScore_v52(H,A,deepChaos);
+  const colH = collapse_v52(H,risk);
+  const colA = collapse_v52(A,risk);
+  const ncgH = gradeNCG_v52(relH,deepChaos);
+  const ncgA = gradeNCG_v52(relA,deepChaos);
+
+  const profileText = matchProfile_v52(C,leagueProf,deepChaos,poss);
+
+  // Build teks output
+  const panel=document.getElementById("result_panel");
+  if(!panel) return;
+
+  const lineScoresTop = scoresTop.map(s=>`${s.score} (${Math.round(s.prob*100)}%)`).join(" · ");
+  const lineScoresMC  = mc.scores.map(s=>`${s.score} (${Math.round(s.prob*100)}%)`).join(" · ");
+
+  const h2hLine = (C.h2h && C.h2h.has)
+    ? `H2H ${C.h2h.played} laga · Gol Rata2 H: ${C.h2h.avgH.toFixed(2)} · A: ${C.h2h.avgA.toFixed(2)}`
+    : `H2H: kosong / belum ada data.`;
+
+  const header =
+`${H.name||"HOME"} vs ${A.name||"AWAY"}
+Liga: ${leagueProf.name}
+Mode: ${C.mode || "league"} · Stage: ${C.stage || "-"} · Cuaca: ${C.weather || "-"}
+Profil Laga: ${profileText}
+
+λ CORE (Hybrid-xG v4):
+  λ Home (core) : ${corePkg.core.lambdaH.toFixed(3)}
+  λ Away (core) : ${corePkg.core.lambdaA.toFixed(3)}
+
+λ FINAL (v52 setelah konteks & liga):
+  λ Home final : ${lambdaH.toFixed(3)}
+  λ Away final : ${lambdaA.toFixed(3)}
+`;
+
+  const analyticBlock =
+`=== ANALITIK POISSON (tanpa odds, netral) ===
+
+3-Way Prob (analytic):
+  Home : ${Math.round(p3.H*100)}%
+  Draw : ${Math.round(p3.D*100)}%
+  Away : ${Math.round(p3.A*100)}%
+
+Over/Under (Poisson):
+  O/U 1.5 : Over ${Math.round(ou15.over*100)}% · Under ${Math.round(ou15.under*100)}%
+  O/U 2.5 : Over ${Math.round(ou25.over*100)}% · Under ${Math.round(ou25.under*100)}%
+  O/U 3.5 : Over ${Math.round(ou35.over*100)}% · Under ${Math.round(ou35.under*100)}%
+  O/U 4.5 : Over ${Math.round(ou45.over*100)}% · Under ${Math.round(ou45.under*100)}%
+
+BTTS (Poisson):
+  Yes : ${Math.round(bt.yes*100)}%
+  No  : ${Math.round(bt.no*100)}%
+
+Scorelines (analytic top):
+  ${lineScoresTop}
+`;
+
+  const mcBlock =
+`=== MONTE CARLO LITE (2000 simulasi) ===
+Rata-rata gol:
+  Home : ${mc.avgH.toFixed(2)}
+  Away : ${mc.avgA.toFixed(2)}
+
+3-Way (simulasi):
+  Home : ${Math.round(mc.pHome*100)}%
+  Draw : ${Math.round(mc.pDraw*100)}%
+  Away : ${Math.round(mc.pAway*100)}%
+
+Over/Under (simulasi):
+  O/U 1.5 : Over ${Math.round(mc.ou["1.5"]*100)}%
+  O/U 2.5 : Over ${Math.round(mc.ou["2.5"]*100)}%
+  O/U 3.5 : Over ${Math.round(mc.ou["3.5"]*100)}%
+  O/U 4.5 : Over ${Math.round(mc.ou["4.5"]*100)}%
+
+BTTS (simulasi):
+  Yes : ${Math.round(mc.btts.yes*100)}%
+  No  : ${Math.round(mc.btts.no*100)}%
+
+Scorelines (simulasi paling sering):
+  ${lineScoresMC}
+`;
+
+  const scenarioBlock =
+`=== v52 Multi-Skenario (netral, non-odds) ===
+
+[BASE] (λ konteks normal):
+  λ H/A : ${scenB.lH.toFixed(3)} / ${scenB.lA.toFixed(3)}
+  1X2   : H ${fpct(scenB.pHome)} · D ${fpct(scenB.pDraw)} · A ${fpct(scenB.pAway)}
+  O/U2.5: Over ${fpct(scenB.ouOver)} · Under ${fpct(scenB.ouUnder)}
+  BTTS  : Yes ${fpct(scenB.bttsYes)} · No ${fpct(scenB.bttsNo)}
+
+[LOW-EVENT] (defensif / hati-hati):
+  λ H/A : ${scenL.lH.toFixed(3)} / ${scenL.lA.toFixed(3)}
+  1X2   : H ${fpct(scenL.pHome)} · D ${fpct(scenL.pDraw)} · A ${fpct(scenL.pAway)}
+  O/U2.5: Over ${fpct(scenL.ouOver)} · Under ${fpct(scenL.ouUnder)}
+  BTTS  : Yes ${fpct(scenL.bttsYes)} · No ${fpct(scenL.bttsNo)}
+
+[HIGH-EVENT] (wild / terbuka):
+  λ H/A : ${scenH.lH.toFixed(3)} / ${scenH.lA.toFixed(3)}
+  1X2   : H ${fpct(scenH.pHome)} · D ${fpct(scenH.pDraw)} · A ${fpct(scenH.pAway)}
+  O/U2.5: Over ${fpct(scenH.ouOver)} · Under ${fpct(scenH.ouUnder)}
+  BTTS  : Yes ${fpct(scenH.bttsYes)} · No ${fpct(scenH.bttsNo)}
+`;
+
+  const extraBlock =
+`=== Ekstra (Cards • Corners • Possession) ===
+Cards (estimasi, bukan odds):
+  Total : ${cards.total.toFixed(2)}
+  Home  : ${cards.home.toFixed(2)}
+  Away  : ${cards.away.toFixed(2)}
+
+Corners (estimasi):
+  Total : ${corners.total.toFixed(1)}
+  Home  : ${corners.home.toFixed(1)}
+  Away  : ${corners.away.toFixed(1)}
+
+Possession (estimasi):
+  Home : ${poss.H.toFixed(1)}%
+  Away : ${poss.A.toFixed(1)}%
+`;
+
+  const reliabBlock =
+`=== Reliability • Risk • Collapse ===
+Reliability :
+  Home : ${relH.toFixed(2)}
+  Away : ${relA.toFixed(2)}
+
+Risk Level (match):
+  ${risk.toFixed(2)} / 10
+
+Collapse Potential:
+  Home : ${colH.toFixed(2)}
+  Away : ${colA.toFixed(2)}
+
+NCG Grade:
+  Home : ${ncgH}
+  Away : ${ncgA}
+`;
+
+  const h2hBlock =
+`=== H2H & Catatan ===
+${h2hLine}
+
+Catatan tambahan:
+${C.note || "-"}
+`;
+
+  panel.textContent = header + "\n" +
+                      analyticBlock + "\n" +
+                      mcBlock + "\n" +
+                      scenarioBlock + "\n" +
+                      extraBlock + "\n" +
+                      reliabBlock + "\n" +
+                      h2hBlock;
+
+  // Panggil visual jika sudah didefinisikan (akan di PART 5)
+  try{
+    if(typeof drawRadar_v52==="function"){
+      drawRadar_v52({H,A,lambdaH,lambdaA,core:corePkg.core,relH,relA});
+    }
+    if(typeof drawMomentum_v52==="function"){
+      drawMomentum_v52({mc,deepChaos});
+    }
+    if(typeof drawHeat_v52==="function"){
+      drawHeat_v52({H,A,leagueProf});
+    }
+  }catch(e){
+    console.warn("Visual v52 error:", e);
+  }
+
+  return {
+    H,A,C,
+    lambdaH,
+    lambdaA,
+    leagueProf,
+    deepChaos,
+    p3,
+    ou:{ou15,ou25,ou35,ou45},
+    bt,
+    scoresTop,
+    mc,
+    scen,
+    cards,
+    corners,
+    poss,
+    rel:{H:relH,A:relA},
+    risk,
+    collapse:{H:colH,A:colA},
+    ncg:{H:ncgH,A:ncgA}
+  };
+}
+</script>
+<script>
+/* ============================================================
+   v52 PART 5 — VISUAL ENGINE (Radar • Momentum • Heatline)
+   ============================================================ */
+
+/* ---------- Radar Chart v52 ---------- */
+function drawRadar_v52(pkg){
+  const canvas=document.getElementById("radarChart");
+  if(!canvas) return;
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const {H,A,lambdaH,lambdaA,core,relH,relA}=pkg;
+
+  /* data radar v52 */
+  const dataH=[
+    core.attH*10,
+    (3-core.defA)*10,
+    H.xthreat,
+    H.build,
+    relH,
+    lambdaH*10
+  ];
+  const dataA=[
+    core.attA*10,
+    (3-core.defH)*10,
+    A.xthreat,
+    A.build,
+    relA,
+    lambdaA*10
+  ];
+  const labels=["Attack","Defense","xThreat","Build","Reliability","λ"];
+
+  const cx=canvas.width/2;
+  const cy=canvas.height/2;
+  const maxR=Math.min(cx,cy)-15;
+  const step=(Math.PI*2)/labels.length;
+
+  function toXY(val,i){
+    const ang=-Math.PI/2 + step*i;
+    const r=(val/10)*maxR;
+    return {x:cx + r*Math.cos(ang), y:cy + r*Math.sin(ang)};
+  }
+
+  ctx.strokeStyle="#888";
+  ctx.lineWidth=1;
+  for(let ring=2;ring<=10;ring+=2){
+    const r=(ring/10)*maxR;
+    ctx.beginPath();
+    for(let i=0;i<=labels.length;i++){
+      const ang=-Math.PI/2 + step*i;
+      const x=cx+r*Math.cos(ang);
+      const y=cy+r*Math.sin(ang);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+
+  ctx.fillStyle="#000";
+  ctx.font="12px sans-serif";
+  labels.forEach((lb,i)=>{
+    const ang=-Math.PI/2 + step*i;
+    const x=cx+(maxR+10)*Math.cos(ang);
+    const y=cy+(maxR+10)*Math.sin(ang);
+    ctx.fillText(lb,x-15,y+4);
+  });
+
+  function drawSide(data,color,alpha){
+    ctx.beginPath();
+    data.forEach((v,i)=>{
+      const p=toXY(v,i);
+      if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+    });
+    const p0=toXY(data[0],0);
+    ctx.lineTo(p0.x,p0.y);
+    ctx.strokeStyle=color;
+    ctx.lineWidth=2;
+    ctx.stroke();
+
+    ctx.fillStyle=color;
+    ctx.globalAlpha=alpha;
+    ctx.beginPath();
+    data.forEach((v,i)=>{
+      const p=toXY(v,i);
+      if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+    });
+    ctx.lineTo(p0.x,p0.y);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+
+  drawSide(dataH,"#2ecc71",0.25);
+  drawSide(dataA,"#e74c3c",0.25);
+}
+
+/* ---------- Momentum Chart v52 ---------- */
+function drawMomentum_v52({mc,deepChaos}){
+  const canvas=document.getElementById("momentumChart");
+  if(!canvas) return;
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const cx=40;
+  const cy=canvas.height-20;
+  const w=canvas.width-80;
+  const h=canvas.height-60;
+
+  ctx.strokeStyle="#555";
+  ctx.strokeRect(cx,cy-h,w,h);
+
+  const maxTilt=3;
+  const homeTilt=(mc.avgH - mc.avgA);
+
+  const midX=cx+w/2;
+  const lineX=midX + (homeTilt/maxTilt)*(w/2);
+
+  ctx.strokeStyle="#2ecc71";
+  ctx.lineWidth=4;
+  ctx.beginPath();
+  ctx.moveTo(midX,cy-h);
+  ctx.lineTo(lineX,cy-20);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.strokeStyle="#e74c3c";
+  ctx.moveTo(midX,cy-h);
+  ctx.lineTo(midX-(lineX-midX),cy-20);
+  ctx.stroke();
+
+  ctx.fillStyle="#000";
+  ctx.font="12px sans-serif";
+  ctx.fillText("HOME Momentum",cx,20);
+  ctx.fillText("AWAY Momentum",canvas.width-150,20);
+
+  const chaosTag = deepChaos<=4?"Stabil"
+                  : deepChaos<=6?"Netral"
+                  : deepChaos<=8?"Tinggi"
+                  :"Ekstrem";
+
+  ctx.fillText("Chaos: "+chaosTag, cx+5, cy-h+20);
+}
+
+/* ---------- Heatline v52 ---------- */
+function drawHeat_v52({H,A,leagueProf}){
+  const canvas=document.getElementById("heatChart");
+  if(!canvas) return;
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const w=canvas.width;
+  const h=canvas.height;
+
+  const avgPoss=(H.poss + A.poss)/2;
+  const tempoN=(leagueProf.tempoBias+5)/10;
+
+  const val=Math.floor( (avgPoss/100)*255 * tempoN );
+  const color=`rgba(${val},${120},${255-val},0.55)`;
+
+  ctx.fillStyle=color;
+  ctx.fillRect(0,0,w,h);
+
+  ctx.fillStyle="#000";
+  ctx.font="14px sans-serif";
+  ctx.fillText("Heatline v52",10,20);
+  ctx.fillText("Liga: "+leagueProf.name,10,40);
+  ctx.fillText("Poss avg: "+avgPoss.toFixed(1)+"%",10,60);
+  ctx.fillText("Tempo league: "+leagueProf.tempoBias.toFixed(2),10,80);
+}
+</script>
+<script>
+/* ============================================================
+   v52 PART 6 — ULTRA VISUAL PACK
+   Shot Heatmap • Probability Wheel • Strength Ring • Variance Bar • Tilt Trendline
+   ============================================================ */
+
+/* ============================================================
+   1. Shot Heatmap v52
+   ============================================================ */
+function drawHeatmap_v52({H,A}){
+  const canvas=document.getElementById("ultra_heatmap");
+  if(!canvas) return;
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const w=canvas.width, h=canvas.height;
+
+  function dot(xg,xthreat,f3,i,color){
+    const x=(i%10)*(w/10)+15;
+    const y=Math.floor(i/10)*(h/5)+15;
+    const r = Math.min(20,(xg*6 + xthreat + f3)/5);
+    ctx.beginPath();
+    ctx.fillStyle=color;
+    ctx.globalAlpha=0.55;
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+
+  for(let i=0;i<50;i++){
+    dot(H.xg, H.xthreat, H.f3t, i,"#2ecc71");
+    dot(A.xg, A.xthreat, A.f3t, i,"#e74c3c");
+  }
+
+  ctx.fillStyle="#000";
+  ctx.globalAlpha=0.9;
+  ctx.fillText("Shot Heatmap v52",10,18);
+  ctx.globalAlpha=1;
+}
+
+/* ============================================================
+   2. Probability Wheel Gauge v52 (1X2)
+   ============================================================ */
+function drawWheel_v52({pHome,pDraw,pAway}){
+  const canvas=document.getElementById("ultra_wheel");
+  if(!canvas) return;
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const cx=canvas.width/2, cy=canvas.height/2;
+  const r= Math.min(cx,cy)-5;
+
+  const angleH = pHome*Math.PI*2;
+  const angleD = pDraw*Math.PI*2;
+  const angleA = pAway*Math.PI*2;
+
+  let start= -Math.PI/2;
+
+  function arc(color,ang,label){
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.fillStyle=color;
+    ctx.arc(cx,cy,r,start,start+ang,false);
+    ctx.closePath();
+    ctx.fill();
+
+    const mid=start+ang/2;
+    ctx.fillStyle="#000";
+    ctx.font="12px sans-serif";
+    ctx.fillText(label,cx+Math.cos(mid)*(r/2)-10,cy+Math.sin(mid)*(r/2));
+    start+=ang;
+  }
+
+  arc("#2ecc71",angleH,Math.round(pHome*100)+"%");
+  arc("#bdc3c7",angleD,Math.round(pDraw*100)+"%");
+  arc("#e74c3c",angleA,Math.round(pAway*100)+"%");
+
+  ctx.fillStyle="#000";
+  ctx.fillText("Wheel 1X2",cx-30,cy+r+15);
+}
+
+/* ============================================================
+   3. Strength Ring v52
+   ============================================================ */
+function drawStrengthRing_v52({H,A}){
+  const canvas=document.getElementById("ultra_ring");
+  if(!canvas) return;
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const cx=canvas.width/2, cy=canvas.height/2;
+  const r= Math.min(cx,cy)-10;
+
+  const sH=(H.build + H.xthreat + H.f3t + H.deflvl)/4;
+  const sA=(A.build + A.xthreat + A.f3t + A.deflvl)/4;
+
+  function arc(val,color,startAng){
+    ctx.beginPath();
+    ctx.lineWidth=12;
+    ctx.strokeStyle=color;
+    ctx.arc(cx,cy,r,startAng, startAng + (val/10)*Math.PI*2);
+    ctx.stroke();
+  }
+
+  arc(sH,"#2ecc71",-Math.PI/2);
+  arc(sA,"#e74c3c",-Math.PI/2);
+
+  ctx.fillStyle="#000";
+  ctx.font="13px sans-serif";
+  ctx.fillText("Strength Ring",cx-40,cy+r+18);
+}
+
+/* ============================================================
+   4. Variance Bar v52
+   ============================================================ */
+function drawVarianceBar_v52({deepChaos}){
+  const canvas=document.getElementById("ultra_varbar");
+  if(!canvas) return;
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const w=canvas.width, h=canvas.height;
+
+  ctx.fillStyle="#ccc";
+  ctx.fillRect(5,h/3,w-10,h/3);
+
+  const val = (deepChaos/10)*(w-10);
+  ctx.fillStyle = deepChaos>=7 ? "#e74c3c" :
+                  deepChaos>=5 ? "#f1c40f" : "#2ecc71";
+  ctx.fillRect(5,h/3,val,h/3);
+
+  ctx.fillStyle="#000";
+  ctx.font="13px sans-serif";
+  ctx.fillText("Variance / Chaos Level: "+deepChaos+"/10",10,15);
+}
+
+/* ============================================================
+   5. Tilt Trendline v52
+   ============================================================ */
+function drawTilt_v52({lambdaH,lambdaA,mc}){
+  const canvas=document.getElementById("ultra_tilt");
+  if(!canvas) return;
+  
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  
+  const w=canvas.width,h=canvas.height;
+
+  const avgHome = (lambdaH + mc.avgH)/2;
+  const avgAway = (lambdaA + mc.avgA)/2;
+  const tilt = avgHome - avgAway;
+
+  const midX=w/2, midY=h/2;
+  const scale=35;
+
+  ctx.beginPath();
+  ctx.moveTo(midX,midY);
+  ctx.lineTo(midX + tilt*scale,midY);
+  ctx.strokeStyle = tilt>0 ? "#2ecc71" : "#e74c3c";
+  ctx.lineWidth=4;
+  ctx.stroke();
+
+  ctx.fillStyle="#000";
+  ctx.font="13px sans-serif";
+  ctx.fillText("Tilt: "+tilt.toFixed(2), midX-25,midY-10);
+}
+
+/* ============================================================
+   6. Trigger dari analyze_v52 → setelah panel hasil
+   ============================================================ */
+function visualUltra_v52(pkg){
+  drawHeatmap_v52(pkg);
+  drawWheel_v52({
+    pHome: pkg.mc.pHome,
+    pDraw: pkg.mc.pDraw,
+    pAway: pkg.mc.pAway
+  });
+  drawStrengthRing_v52(pkg);
+  drawVarianceBar_v52(pkg);
+  drawTilt_v52(pkg);
+}
+
+/* Integrasi dengan analyze_v52 (override extension kecil) */
+(function(){
+  const oldAnalyze = analyze_v52;
+  analyze_v52 = function(){
+    const result = oldAnalyze();
+    if(result){
+      try{
+        visualUltra_v52(result);
+      }catch(e){
+        console.warn("Visual Ultra v52 error:",e);
+      }
+    }
+    return result;
+  };
+})();
+</script>
+<script>
+/* ============================================================
+   v52 PART 7 — AUTO+ SHORTCUTS (PREMIUM FLOW)
+   ============================================================ */
+
+/* Paket Auto penting (tanpa ganggu logic ELITE) */
+function autoPlusPrep_v52(){
+  try{
+    // Context dasar
+    autoContextPack();
+    if(get("ctx_stage"))  autoStage();
+    if(get("ctx_weather")) autoPitch();
+
+    // Prioritas tim & kondisi
+    autoImportance();
+    autoRotation();
+    autoAbsence();
+
+    // Form & gaya main
+    autoForm();
+    autoGK();
+    autoStyle();
+
+    // Build-up / xThreat / Transition
+    autoBuildUpAdv();
+    autoPressRes();
+    autoTransition();
+    autoWave();
+    autoCross();
+    autoDefline();
+    autoLowBlock();
+    autoGKDist();
+    autoF3T();
+    autoXThreat();
+
+    // Variance & chaos & momentum
+    autoVariance();
+    autoChaos();
+    autoDM15();
+
+    // Deteksi big match (opsional, tidak memaksa)
+    autoBigMatch();
+
+    alert("AUTO+ Prep v52 selesai.\nSemua Auto penting sudah diisi. Silakan cek angka sebelum ANALYZE.");
+  }catch(e){
+    console.error("AUTO+ Prep error:", e);
+    alert("Terjadi error di AUTO+ Prep (lihat console).");
+  }
+}
+
+/* AUTO+ Full = Auto+ Prep → langsung ANALYZE v52 */
+function autoPlusFull_v52(){
+  try{
+    autoPlusPrep_v52();
+    // langsung analisis penuh (Poisson + Monte Carlo + Visual)
+    if(typeof analyze_v52==="function"){
+      analyze_v52();
+    }else{
+      alert("Engine v52 belum lengkap (analyze_v52 tidak ditemukan).");
+    }
+  }catch(e){
+    console.error("AUTO+ Full error:", e);
+    alert("Terjadi error di AUTO+ Full (lihat console).");
+  }
+}
+
+/* Binding tombol AUTO+ */
+(function(){
+  function bind(id,fn){
+    const el=document.getElementById(id);
+    if(el) el.addEventListener("click",fn);
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded", function(){
+      bind("btn_auto_plus_prep", autoPlusPrep_v52);
+      bind("btn_auto_plus_full", autoPlusFull_v52);
+    });
+  }else{
+    bind("btn_auto_plus_prep", autoPlusPrep_v52);
+    bind("btn_auto_plus_full", autoPlusFull_v52);
+  }
+})();
+</script>
+</body>
+</html>
