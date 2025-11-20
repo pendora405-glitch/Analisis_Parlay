@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Parlay Engine v60 Ultra Clean</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root {
+  --bg: #f5f7fb;
+  --bg-box: #ffffff;
+  --text: #151823;
+  --subtext: #8b92a3;
+  --line: #d5d9e5;
+  --accent: #3a5aff;
+  --accent-soft: #eef2ff;
+}
+.dark {
+  --bg: #0d0f15;
+  --bg-box: #171a21;
+  --text: #e6ebf5;
+  --subtext: #969eb0;
+  --line: #262c3a;
+  --accent: #4f7dff;
+  --accent-soft: #222b44;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont,"Segoe UI",Arial;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+h1 { text-align: center; margin: 18px 0 4px 0; font-size: 24px; }
+.subtitle { text-align: center; font-size: 12px; color: var(--subtext); margin-bottom: 18px; }
+.container { width: 95%; max-width: 1180px; margin: auto; }
+.row { display: flex; flex-wrap: wrap; gap: 16px; }
+.col-2 { flex: 1 1 360px; min-width: 0; }
+.box {
+  background: var(--bg-box); border-radius: 10px; padding: 14px 16px;
+  border: 1px solid var(--line); margin-bottom: 14px;
+}
+.box-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.box-header h2 { font-size: 17px; font-weight: 600; }
+.tag { font-size: 11px; padding: 3px 8px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); }
+label { font-size: 12px; margin-top: 6px; display: block; }
+input,select,textarea {
+  width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--bg-box); color: var(--text); font-size: 13px;
+}
+input:focus,select:focus,textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 2px rgba(58,90,255,0.15);
+}
+textarea { min-height: 52px; resize: vertical; }
+button {
+  padding: 7px 10px; border-radius: 6px; border: none; cursor: pointer;
+  font-size: 12px; font-weight: 600; margin: 4px 4px 4px 0;
+}
+.btn-main { background: var(--accent); color: #fff; width: 100%; }
+.btn-clear { background: #e9ecf4; color: var(--text); width: 100%; }
+.btn-auto { background: #00695c; color: #e0f2f1; }
+.btn-warn { background: #ef6c00; color: #fff3e0; }
+#result_panel {
+  white-space: pre-wrap; font-family: Consolas,Menlo,monospace; font-size: 12px;
+  background: #0c1018; color: #e8f0ff; padding: 10px; border-radius: 8px;
+  min-height: 220px; max-height: 600px; overflow-y: auto;
+}
+.visual-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.visual-col { flex: 1 1 220px; min-width: 0; }
+.visual-title { font-size: 11px; color: var(--subtext); margin-bottom: 4px; }
+.visual-box {
+  border-radius: 8px; border: 1px solid var(--line); padding: 6px;
+  background: var(--bg-box);
+}
+#theme_toggle {
+  position: fixed; right: 16px; bottom: 16px; padding: 8px 14px;
+  background: var(--bg-box); border: 1px solid var(--line);
+  border-radius: 7px; cursor: pointer; font-size: 12px; z-index: 50;
+}
+@media(max-width:768px){
+  h1 { font-size: 20px; }
+}
+</style>
+</head>
+
+<body>
+
+<button id="theme_toggle">Dark Mode</button>
+
+<h1>Parlay Engine v60 Ultra Clean</h1>
+<div class="subtitle">Hybrid-xG v6 • Context Engine • Monte Carlo 4000 • Tanpa Odds • Netral Total</div>
+
+<div class="container">
+
+<!----------------------------- HOME TEAM ---------------------------->
+<div class="row">
+  <div class="col-2">
+    <div class="box">
+      <div class="box-header">
+        <h2>Home Team</h2>
+        <span class="tag">Profil Home</span>
+      </div>
+
+      <label>Nama Tim</label>
+      <input id="h_name">
+
+      <label>ELO Rating</label>
+      <input id="h_elo" type="number">
+
+      <label>Rest Days</label>
+      <input id="h_rest" type="number">
+
+      <label>Total Shots</label>
+      <input id="h_shots" type="number">
+
+      <label>Shots On Target</label>
+      <input id="h_sot" type="number">
+
+      <label>xG</label>
+      <input id="h_xg" type="number" step="0.01">
+
+      <label>Danger Zone xG</label>
+      <input id="h_dzxg" type="number" step="0.01">
+
+      <label>Goals Conceded</label>
+      <input id="h_gc" type="number">
+
+      <label>Shots Conceded</label>
+      <input id="h_shc" type="number">
+
+      <label>GK Saves</label>
+      <input id="h_gksv" type="number">
+
+      <label>Interceptions</label>
+      <input id="h_int" type="number">
+
+      <label>Progressive Pass/Carry</label>
+      <input id="h_prog" type="number">
+
+      <label>Final Third Entries</label>
+      <input id="h_f3" type="number">
+
+      <label>Possession %</label>
+      <input id="h_poss" type="number">
+
+      <label>Build-Up (1–10)</label>
+      <input id="h_build" type="number" step="0.1">
+
+      <label>Defense Level (1–10)</label>
+      <input id="h_deflvl" type="number" step="0.1">
+
+      <label>Pressing Strength (1–10)</label>
+      <input id="h_press" type="number" step="0.1">
+
+      <label>Finishing Quality (1–10)</label>
+      <input id="h_finish" type="number" step="0.1">
+
+      <label>Importance (1–10)</label>
+      <input id="h_imp" type="number" step="0.1">
+
+      <label>Rotation (1–10)</label>
+      <input id="h_rot" type="number" step="0.1">
+
+      <label>Absence (GK:x;DF:x;MD:x;FW:x)</label>
+      <input id="h_abs">
+    </div>
+  </div>
+
+<!----------------------------- AWAY TEAM ---------------------------->
+  <div class="col-2">
+    <div class="box">
+      <div class="box-header">
+        <h2>Away Team</h2>
+        <span class="tag">Profil Away</span>
+      </div>
+
+      <label>Nama Tim</label>
+      <input id="a_name">
+
+      <label>ELO Rating</label>
+      <input id="a_elo" type="number">
+
+      <label>Rest Days</label>
+      <input id="a_rest" type="number">
+
+      <label>Total Shots</label>
+      <input id="a_shots" type="number">
+
+      <label>Shots On Target</label>
+      <input id="a_sot" type="number">
+
+      <label>xG</label>
+      <input id="a_xg" type="number" step="0.01">
+
+      <label>Danger Zone xG</label>
+      <input id="a_dzxg" type="number" step="0.01">
+
+      <label>Goals Conceded</label>
+      <input id="a_gc" type="number">
+
+      <label>Shots Conceded</label>
+      <input id="a_shc" type="number">
+
+      <label>GK Saves</label>
+      <input id="a_gksv" type="number">
+
+      <label>Interceptions</label>
+      <input id="a_int" type="number">
+
+      <label>Progressive Pass/Carry</label>
+      <input id="a_prog" type="number">
+
+      <label>Final Third Entries</label>
+      <input id="a_f3" type="number">
+
+      <label>Possession %</label>
+      <input id="a_poss" type="number">
+
+      <label>Build-Up (1–10)</label>
+      <input id="a_build" type="number" step="0.1">
+
+      <label>Defense Level (1–10)</label>
+      <input id="a_deflvl" type="number" step="0.1">
+
+      <label>Pressing Strength (1–10)</label>
+      <input id="a_press" type="number" step="0.1">
+
+      <label>Finishing Quality (1–10)</label>
+      <input id="a_finish" type="number" step="0.1">
+
+      <label>Importance (1–10)</label>
+      <input id="a_imp" type="number" step="0.1">
+
+      <label>Rotation (1–10)</label>
+      <input id="a_rot" type="number" step="0.1">
+
+      <label>Absence (GK:x;DF:x;MD:x;FW:x)</label>
+      <input id="a_abs">
+    </div>
+  </div>
+</div>
+
+<!----------------------------- ADVANCED HOME ---------------------------->
+<div class="row">
+  <div class="col-2">
+    <div class="box">
+      <div class="box-header">
+        <h2>Advanced Home</h2>
+        <span class="tag">Detail</span>
+      </div>
+
+      <label>Form 5 pertandingan</label>
+      <input id="h_form_raw">
+
+      <label>Form Rating</label>
+      <input id="h_form" type="number" step="0.1">
+
+      <label>Stability</label>
+      <input id="h_stab" type="number" step="0.1">
+
+      <label>Availability %</label>
+      <input id="h_avail" type="number">
+
+      <label>GK Rating</label>
+      <input id="h_gk" type="number" step="0.1">
+
+      <label>Directness</label>
+      <input id="h_style" type="number" step="0.1">
+
+      <label>Possession Tend.</label>
+      <input id="h_poss_t" type="number" step="0.1">
+
+      <label>Cross Accuracy %</label>
+      <input id="h_cross" type="number">
+
+      <label>Big Chances</label>
+      <input id="h_bc" type="number">
+
+      <label>Final Third Threat</label>
+      <input id="h_f3t" type="number" step="0.1">
+
+      <label>GK Distance</label>
+      <input id="h_gkdist" type="number" step="0.1">
+
+      <label>Press Resistance</label>
+      <input id="h_pressres" type="number" step="0.1">
+
+      <label>Transition</label>
+      <input id="h_trans" type="number" step="0.1">
+
+      <label>Low Block</label>
+      <input id="h_lb" type="number" step="0.1">
+
+      <label>Pressure Wave</label>
+      <input id="h_wave" type="number" step="0.1">
+
+      <label>xThreat</label>
+      <input id="h_xthreat" type="number" step="0.1">
+
+      <label>Momentum DM15</label>
+      <input id="h_dm15" type="number" step="0.1">
+    </div>
+  </div>
+
+<!----------------------------- ADVANCED AWAY ---------------------------->
+  <div class="col-2">
+    <div class="box">
+      <div class="box-header">
+        <h2>Advanced Away</h2>
+        <span class="tag">Detail</span>
+      </div>
+
+      <label>Form 5 pertandingan</label>
+      <input id="a_form_raw">
+
+      <label>Form Rating</label>
+      <input id="a_form" type="number" step="0.1">
+
+      <label>Stability</label>
+      <input id="a_stab" type="number" step="0.1">
+
+      <label>Availability %</label>
+      <input id="a_avail" type="number">
+
+      <label>GK Rating</label>
+      <input id="a_gk" type="number" step="0.1">
+
+      <label>Directness</label>
+      <input id="a_style" type="number" step="0.1">
+
+      <label>Possession Tend.</label>
+      <input id="a_poss_t" type="number" step="0.1">
+
+      <label>Cross Accuracy %</label>
+      <input id="a_cross" type="number">
+
+      <label>Big Chances</label>
+      <input id="a_bc" type="number">
+
+      <label>Final Third Threat</label>
+      <input id="a_f3t" type="number" step="0.1">
+
+      <label>GK Distance</label>
+      <input id="a_gkdist" type="number" step="0.1">
+
+      <label>Press Resistance</label>
+      <input id="a_pressres" type="number" step="0.1">
+
+      <label>Transition</label>
+      <input id="a_trans" type="number" step="0.1">
+
+      <label>Low Block</label>
+      <input id="a_lb" type="number" step="0.1">
+
+      <label>Pressure Wave</label>
+      <input id="a_wave" type="number" step="0.1">
+
+      <label>xThreat</label>
+      <input id="a_xthreat" type="number" step="0.1">
+
+      <label>Momentum DM15</label>
+      <input id="a_dm15" type="number" step="0.1">
+    </div>
+  </div>
+</div>
+
+<!----------------------------- MATCH CONTEXT ---------------------------->
+<div class="box">
+  <div class="box-header">
+    <h2>Match Context v60</h2>
+    <span class="tag">Konteks</span>
+  </div>
+
+  <label>Mode</label>
+  <select id="ctx_mode">
+    <option value=""></option>
+    <option value="league">League</option>
+    <option value="cup">Cup</option>
+    <option value="final">Final</option>
+    <option value="derby">Derby</option>
+    <option value="title">Title Race</option>
+    <option value="relegation">Relegation</option>
+    <option value="intl">International</option>
+    <option value="friendly">Friendly</option>
+  </select>
+
+  <label>Weather</label>
+  <select id="ctx_weather">
+    <option value=""></option>
+    <option value="clear">Clear</option>
+    <option value="rain">Rain</option>
+    <option value="heavy_rain">Heavy Rain</option>
+    <option value="snow">Snow</option>
+    <option value="windy">Windy</option>
+  </select>
+
+  <label>Tempo</label>
+  <input id="ctx_tempo" type="number" step="0.1">
+
+  <label>Referee Strictness</label>
+  <input id="ctx_ref" type="number" step="0.1">
+
+  <label>Variance</label>
+  <input id="ctx_var" type="number" step="0.1">
+
+  <label>Chaos</label>
+  <input id="ctx_chaos" type="number" step="0.1">
+
+  <label>Stage</label>
+  <select id="ctx_stage">
+    <option value=""></option>
+    <option value="early">Early</option>
+    <option value="mid">Mid</option>
+    <option value="late">Late</option>
+  </select>
+
+  <label>Liga</label>
+  <input id="ctx_league">
+
+  <label>H2H</label>
+  <textarea id="ctx_h2h_raw"></textarea>
+
+  <label>Catatan</label>
+  <textarea id="ctx_note"></textarea>
+</div>
+
+<!----------------------------- AUTO ENGINE ---------------------------->
+<div class="box">
+  <div class="box-header">
+    <h2>Auto Engine v60</h2>
+    <span class="tag">Auto</span>
+  </div>
+
+  <button class="btn-auto" id="btn_auto_ctx">AUTO Context</button>
+  <button class="btn-auto" id="btn_auto_imp">Auto Importance</button>
+  <button class="btn-auto" id="btn_auto_rot">Auto Rotation</button>
+  <button class="btn-auto" id="btn_auto_abs">Auto Absence</button>
+  <button class="btn-auto" id="btn_auto_pitch">Auto Weather</button>
+  <button class="btn-auto" id="btn_auto_stage">Auto Stage</button>
+  <button class="btn-auto" id="btn_auto_form">Auto Form</button>
+  <button class="btn-auto" id="btn_auto_gk">Auto GK</button>
+  <button class="btn-auto" id="btn_auto_style">Auto Style</button>
+  <button class="btn-auto" id="btn_auto_var">Auto Variance</button>
+  <button class="btn-auto" id="btn_auto_chaos">Auto Chaos</button>
+  <button class="btn-auto" id="btn_auto_dm15">Auto DM15</button>
+  <button class="btn-auto" id="btn_auto_defline">Auto Def Line</button>
+  <button class="btn-auto" id="btn_auto_cross">Auto Cross</button>
+  <button class="btn-auto" id="btn_auto_build">Auto Build</button>
+  <button class="btn-auto" id="btn_auto_bigmatch">Auto Big Match</button>
+  <button class="btn-auto" id="btn_auto_xthreat">Auto xThreat</button>
+  <button class="btn-auto" id="btn_auto_pressres">Auto PressRes</button>
+  <button class="btn-auto" id="btn_auto_trans">Auto Transition</button>
+  <button class="btn-auto" id="btn_auto_wave">Auto Wave</button>
+  <button class="btn-auto" id="btn_auto_lowblock">Auto Low Block</button>
+  <button class="btn-auto" id="btn_auto_gkdist">Auto GK Dist</button>
+  <button class="btn-auto" id="btn_auto_f3t">Auto F3T</button>
+  <button class="btn-warn" id="btn_auto_elite">AUTO ELITE</button>
+
+  <button class="btn-warn" id="btn_auto_plus_prep">AUTO+ Prep</button>
+  <button class="btn-warn" id="btn_auto_plus_full">AUTO+ Full</button>
+</div>
+
+<!----------------------------- OUTPUT + VISUAL ---------------------------->
+<div class="box">
+  <div class="box-header">
+    <h2>Output Analisis v60</h2>
+    <span class="tag">Result</span>
+  </div>
+
+  <div id="result_panel">Hasil akan muncul di sini.</div>
+
+  <div class="visual-row">
+    <div class="visual-col">
+      <div class="visual-title">Radar</div>
+      <div class="visual-box">
+        <canvas id="radarChart" width="260" height="260"></canvas>
+      </div>
+    </div>
+    <div class="visual-col">
+      <div class="visual-title">Momentum</div>
+      <div class="visual-box">
+        <canvas id="momentumChart" width="260" height="120"></canvas>
+      </div>
+    </div>
+    <div class="visual-col">
+      <div class="visual-title">Heatline</div>
+      <div class="visual-box">
+        <canvas id="heatChart" width="260" height="120"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <br>
+
+  <h3>Ultra Visual Pack v60</h3>
+
+  <div class="visual-row">
+    <div class="visual-col">
+      <div class="visual-title">Shot Heatmap</div>
+      <div class="visual-box">
+        <canvas id="ultra_heatmap" width="260" height="150"></canvas>
+      </div>
+    </div>
+
+    <div class="visual-col">
+      <div class="visual-title">Wheel 1X2</div>
+      <div class="visual-box">
+        <canvas id="ultra_wheel" width="200" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="visual-col">
+      <div class="visual-title">Strength • Variance • Tilt</div>
+      <div class="visual-box">
+        <canvas id="ultra_ring" width="200" height="200"></canvas>
+        <canvas id="ultra_varbar" width="200" height="60" style="margin-top:6px;"></canvas>
+        <canvas id="ultra_tilt" width="200" height="80" style="margin-top:6px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <br>
+
+  <button id="btn_analyze_v60" class="btn-main">ANALYZE v60</button>
+  <button id="btn_clear_v60" class="btn-clear">CLEAR</button>
+</div>
+
+</div> <!-- container -->
+<script>
+/* ============================================================
+   PART 2 — HELPER • THEME • CLEAR • BUTTON BINDING (v60 Clean)
+   ============================================================ */
+
+/* ---------- Helper ---------- */
+function $(id){ return document.getElementById(id); }
+function val(id){
+  const el = $(id);
+  if(!el) return "";
+  return el.value;
+}
+function num(id){
+  const v = parseFloat(val(id));
+  return (isNaN(v) ? 0 : v);
+}
+function clamp(v,min,max){
+  return v < min ? min : v > max ? max : v;
+}
+
+/* ---------- Clear All Input ---------- */
+function clearAll_v60(){
+  const inputs = document.querySelectorAll("input, textarea, select");
+  inputs.forEach(el=>{
+    if(el.tagName==="SELECT") el.selectedIndex = 0;
+    else el.value = "";
+  });
+  $("result_panel").textContent = "Hasil telah dibersihkan.";
+  clearCanvas_v60();
+}
+
+/* ---------- Clear all canvas ---------- */
+function clearCanvas_v60(){
+  const ids = [
+    "radarChart","momentumChart","heatChart",
+    "ultra_heatmap","ultra_wheel","ultra_ring",
+    "ultra_varbar","ultra_tilt"
+  ];
+  ids.forEach(id=>{
+    const c = $(id);
+    if(c){
+      const ctx = c.getContext("2d");
+      ctx.clearRect(0,0,c.width,c.height);
+    }
+  });
+}
+
+/* ---------- Theme Toggle ---------- */
+(function(){
+  let dark = false;
+  function apply(){
+    if(dark) document.body.classList.add("dark");
+    else document.body.classList.remove("dark");
+  }
+  apply();
+
+  $("theme_toggle").addEventListener("click",()=>{
+    dark = !dark;
+    apply();
+  });
+})();
+
+/* ============================================================
+   BUTTON BINDING (tanpa isi fungsi engine → Part 3/4/5/6)
+   ============================================================ */
+function bindButton(id, fn){
+  const el = $(id);
+  if(el) el.addEventListener("click", fn);
+}
+
+/* Bind semua button */
+document.addEventListener("DOMContentLoaded", ()=>{
+
+  /* ANALYZE & CLEAR */
+  bindButton("btn_analyze_v60", ()=> analyze_v60 && analyze_v60());
+  bindButton("btn_clear_v60", clearAll_v60);
+
+  /* AUTO CONTEXT */
+  bindButton("btn_auto_ctx", ()=> auto_ctx_v60 && auto_ctx_v60());
+  bindButton("btn_auto_pitch", ()=> auto_pitch_v60 && auto_pitch_v60());
+  bindButton("btn_auto_stage", ()=> auto_stage_v60 && auto_stage_v60());
+
+  /* AUTO DASAR */
+  bindButton("btn_auto_imp", ()=> auto_importance_v60 && auto_importance_v60());
+  bindButton("btn_auto_rot", ()=> auto_rotation_v60 && auto_rotation_v60());
+  bindButton("btn_auto_abs", ()=> auto_absence_v60 && auto_absence_v60());
+
+  /* AUTO ADVANCED */
+  bindButton("btn_auto_form", ()=> auto_form_v60 && auto_form_v60());
+  bindButton("btn_auto_gk", ()=> auto_gk_v60 && auto_gk_v60());
+  bindButton("btn_auto_style", ()=> auto_style_v60 && auto_style_v60());
+  bindButton("btn_auto_var", ()=> auto_variance_v60 && auto_variance_v60());
+  bindButton("btn_auto_chaos", ()=> auto_chaos_v60 && auto_chaos_v60());
+  bindButton("btn_auto_dm15", ()=> auto_dm15_v60 && auto_dm15_v60());
+  bindButton("btn_auto_defline", ()=> auto_defline_v60 && auto_defline_v60());
+  bindButton("btn_auto_cross", ()=> auto_cross_v60 && auto_cross_v60());
+  bindButton("btn_auto_build", ()=> auto_buildup_v60 && auto_buildup_v60());
+  bindButton("btn_auto_bigmatch", ()=> auto_bigmatch_v60 && auto_bigmatch_v60());
+
+  /* AUTO PRO / ELITE */
+  bindButton("btn_auto_xthreat", ()=> auto_xthreat_v60 && auto_xthreat_v60());
+  bindButton("btn_auto_pressres", ()=> auto_pressres_v60 && auto_pressres_v60());
+  bindButton("btn_auto_trans", ()=> auto_transition_v60 && auto_transition_v60());
+  bindButton("btn_auto_wave", ()=> auto_wave_v60 && auto_wave_v60());
+  bindButton("btn_auto_lowblock", ()=> auto_lowblock_v60 && auto_lowblock_v60());
+  bindButton("btn_auto_gkdist", ()=> auto_gkdist_v60 && auto_gkdist_v60());
+  bindButton("btn_auto_f3t", ()=> auto_f3t_v60 && auto_f3t_v60());
+
+  bindButton("btn_auto_elite", ()=> auto_elite_v60 && auto_elite_v60());
+
+  /* AUTO+ SHORTCUTS */
+  bindButton("btn_auto_plus_prep", ()=> auto_plus_prep_v60 && auto_plus_prep_v60());
+  bindButton("btn_auto_plus_full", ()=> auto_plus_full_v60 && auto_plus_full_v60());
+
+});
+</script>
+<script>
+/* ============================================================
+   PART 3 — CORE ENGINE v60 (Hybrid-xG • Attack/Defense • λ)
+   CLEAN • NO ODDS • NO EXAMPLE • PURE STAT INPUT
+   ============================================================ */
+
+/* ----------- Parse Team Data ----------- */
+function parseTeam_v60(prefix){
+
+  return {
+    name: val(prefix+"_name"),
+    elo : num(prefix+"_elo"),
+    rest: num(prefix+"_rest"),
+    shots: num(prefix+"_shots"),
+    sot: num(prefix+"_sot"),
+    xg: num(prefix+"_xg"),
+    dzxg: num(prefix+"_dzxg"),
+    gc: num(prefix+"_gc"),
+    shc: num(prefix+"_shc"),
+    gksv: num(prefix+"_gksv"),
+    intc: num(prefix+"_int"),
+    prog: num(prefix+"_prog"),
+    f3: num(prefix+"_f3"),
+    poss: num(prefix+"_poss"),
+
+    build: num(prefix+"_build"),
+    deflvl: num(prefix+"_deflvl"),
+    press: num(prefix+"_press"),
+    finish: num(prefix+"_finish"),
+
+    imp: num(prefix+"_imp"),
+    rot: num(prefix+"_rot"),
+    abs: val(prefix+"_abs"),
+
+    /* Advanced */
+    form_raw: val(prefix+"_form_raw"),
+    form: num(prefix+"_form"),
+    stab: num(prefix+"_stab"),
+    avail: num(prefix+"_avail"),
+
+    gk: num(prefix+"_gk"),
+    style: num(prefix+"_style"),
+    poss_t: num(prefix+"_poss_t"),
+    cross: num(prefix+"_cross"),
+    bc: num(prefix+"_bc"),
+    f3t: num(prefix+"_f3t"),
+
+    gkdist: num(prefix+"_gkdist"),
+    pressres: num(prefix+"_pressres"),
+    trans: num(prefix+"_trans"),
+    lb: num(prefix+"_lb"),
+    wave: num(prefix+"_wave"),
+    xthreat: num(prefix+"_xthreat"),
+    dm15: num(prefix+"_dm15")
+  };
+}
+
+/* ============================================================
+   Hybrid-xG v6 (Attack Strength Model)
+   ============================================================ */
+function hybrid_xg_v6(T){
+  const base = T.xg + T.dzxg*0.5;
+  const shotQuality = (T.sot/(T.shots||1))*0.6;
+  const f3Impact = T.f3t*0.08;
+  const bcImpact = T.bc*0.07;
+
+  const formBoost = (T.form-5)*0.03;
+  const stabBoost = (T.stab-5)*0.02;
+
+  let score = base + shotQuality + f3Impact + bcImpact + formBoost + stabBoost;
+  return clamp(score, 0.1, 4.5);
+}
+
+/* ============================================================
+   Build-Up Weight v3
+   ============================================================ */
+function buildup_v3(T){
+  const progW = T.prog*0.05;
+  const styleW = (10-T.style)*0.04;
+  const pressResW = T.pressres*0.06;
+
+  let b = (T.build*0.12) + progW + styleW + pressResW;
+  return clamp(b, 0, 3);
+}
+
+/* ============================================================
+   Attack Strength v6
+   ============================================================ */
+function attackStrength_v6(T){
+  const hxg = hybrid_xg_v6(T);
+  const bu = buildup_v3(T);
+  const finish = T.finish*0.06;
+  const wave = T.wave*0.05;
+  const dm = T.dm15*0.05;
+
+  let atk = hxg + bu + finish + wave + dm;
+  return clamp(atk, 0.1, 10);
+}
+
+/* ============================================================
+   xDef Engine v5 (Defensive Resistance)
+   ============================================================ */
+function xdef_v5(T){
+  const base = (10 - T.gc*0.5)*0.12;
+  const shRes = (10 - T.shc*0.3)*0.08;
+  const gkRes = T.gk*0.1 + T.gksv*0.07;
+  const lbW = T.lb*0.07;
+  const pressW = T.press*0.06;
+  const stabW = T.stab*0.05;
+
+  let d = base + shRes + gkRes + lbW + pressW + stabW;
+  return clamp(d, 0.1, 10);
+}
+
+/* ============================================================
+   EDT v3 — Effective Danger Threat
+   ============================================================ */
+function edt_v3(T){
+  const p = T.poss*0.02;
+  const prog = T.prog*0.04;
+  const f3 = T.f3*0.04;
+  const style = (10-T.style)*0.03;
+
+  return clamp(p + prog + f3 + style, 0, 4);
+}
+
+/* ============================================================
+   FINAL λ (LAMBDA) GENERATOR v60
+   ============================================================ */
+function lambda_v60(ATK, DEF_opponent, EDTteam, EDTopp){
+
+  const pure = ATK * (10/DEF_opponent) * 0.35;
+
+  const edtBoost = (EDTteam*0.45) - (EDTopp*0.25);
+
+  const adj = pure + edtBoost;
+  return clamp(adj, 0.05, 4.5);
+}
+
+/* ============================================================
+   MASTER WRAPPER — Build Core v60
+   ============================================================ */
+function core_build_v60(H, A){
+  const atkH = attackStrength_v6(H);
+  const atkA = attackStrength_v6(A);
+
+  const defH = xdef_v5(H);
+  const defA = xdef_v5(A);
+
+  const edtH = edt_v3(H);
+  const edtA = edt_v3(A);
+
+  const lambdaH = lambda_v60(atkH, defA, edtH, edtA);
+  const lambdaA = lambda_v60(atkA, defH, edtA, edtH);
+
+  return {
+    atkH, atkA,
+    defH, defA,
+    edtH, edtA,
+    lambdaH, lambdaA
+  };
+}
+</script>
+<script>
+/* ============================================================
+   PART 4 — CONTEXT • LEAGUE • CHAOS • POISSON • MONTE CARLO
+   v60 ULTRA CLEAN
+   ============================================================ */
+
+/* ---------- Context Parser ---------- */
+function parseH2H_v60(raw){
+  if(!raw) return {has:false,played:0,avgH:0,avgA:0,bal:0};
+  const parts = raw.split(",");
+  let sumH=0,sumA=0,cnt=0;
+  parts.forEach(s=>{
+    const t = s.split("-");
+    if(t.length===2){
+      const h = parseFloat(t[0]);
+      const a = parseFloat(t[1]);
+      if(!isNaN(h) && !isNaN(a)){
+        sumH+=h; sumA+=a; cnt++;
+      }
+    }
+  });
+  if(cnt===0) return {has:false,played:0,avgH:0,avgA:0,bal:0};
+  const avgH = sumH/cnt;
+  const avgA = sumA/cnt;
+  const bal = avgH-avgA;
+  return {has:true,played:cnt,avgH,avgA,bal};
+}
+
+function parseContext_v60(){
+  return {
+    mode   : val("ctx_mode"),
+    weather: val("ctx_weather"),
+    tempo  : num("ctx_tempo") || 5,
+    ref    : num("ctx_ref")   || 5,
+    variance: num("ctx_var")  || 5,
+    chaos  : num("ctx_chaos") || 5,
+    stage  : val("ctx_stage"),
+    league : val("ctx_league"),
+    h2h    : parseH2H_v60(val("ctx_h2h_raw")),
+    note   : val("ctx_note")
+  };
+}
+
+/* ============================================================
+   League Profile v60
+   ============================================================ */
+function league_profile_v60(ctx){
+  const name = (ctx.league || "").toLowerCase();
+
+  let tempoBias = 0;
+  let xgScale   = 1;
+  let defTight  = 0;
+  let cardBias  = 0;
+
+  if(name.includes("premier")){
+    tempoBias=0.8; xgScale=1.08; defTight=0.1; cardBias=0.1;
+  }else if(name.includes("bundesliga")){
+    tempoBias=0.7; xgScale=1.10; defTight=0.1; cardBias=0.05;
+  }else if(name.includes("laliga")){
+    tempoBias=0.4; xgScale=1.00; defTight=0.3; cardBias=0.05;
+  }else if(name.includes("serie")){
+    tempoBias=0.2; xgScale=0.97; defTight=0.4; cardBias=0.08;
+  }else if(name.includes("ligue")){
+    tempoBias=0.3; xgScale=0.98; defTight=0.3; cardBias=0.06;
+  }else if(name.includes("eredivisie")){
+    tempoBias=0.6; xgScale=1.12; defTight=0.1; cardBias=0.04;
+  }else if(name.includes("champions") || name.includes("ucl")){
+    tempoBias=0.6; xgScale=1.05; defTight=0.2; cardBias=0.07;
+  }else if(name.includes("europa")){
+    tempoBias=0.5; xgScale=1.04; defTight=0.2; cardBias=0.06;
+  }else if(name.includes("conference")){
+    tempoBias=0.5; xgScale=1.05; defTight=0.1; cardBias=0.05;
+  }else if(name.includes("liga 1") || name.includes("indonesia")){
+    tempoBias=0.3; xgScale=1.02; defTight=0.2; cardBias=0.08;
+  }
+
+  return {
+    name: ctx.league || "Generic League",
+    tempoBias,
+    xgScale,
+    defTight,
+    cardBias
+  };
+}
+
+/* ============================================================
+   Deep Chaos v7
+   ============================================================ */
+function deep_chaos_v60(ctx, H, A, core, leagueProf){
+  const baseChaos = ctx.chaos || 5;
+  const varc      = ctx.variance || 5;
+  const tempo     = ctx.tempo || 5;
+
+  const deltaElo = (H.elo - A.elo)/400;
+  const eloChaos = Math.abs(deltaElo)*1.0;
+
+  let modeFactor = 0;
+  const m = (ctx.mode || "").toLowerCase();
+  if(m==="derby") modeFactor+=1.0;
+  if(m==="final") modeFactor+=0.9;
+  if(m==="relegation") modeFactor+=0.8;
+  if(m==="title") modeFactor+=0.7;
+  if(m==="cup") modeFactor+=0.4;
+  if(m==="friendly") modeFactor-=0.8;
+
+  let stageFactor = 0;
+  if(ctx.stage==="early") stageFactor+=0.2;
+  if(ctx.stage==="late") stageFactor+=0.4;
+
+  const possGap = Math.abs(H.poss - A.poss)/10;
+  const tiltChaos = possGap*0.25;
+
+  let score =
+    baseChaos*0.4 +
+    varc*0.25 +
+    tempo*0.15 +
+    modeFactor*0.8 +
+    stageFactor*0.5 +
+    leagueProf.tempoBias*0.6 +
+    eloChaos*0.8 +
+    tiltChaos;
+
+  return clamp(score/2.2,1,10);
+}
+
+/* ============================================================
+   Lambda Adjust: Availability • ELO • H2H • Context
+   ============================================================ */
+function availability_adjust_v60(lambdaH, lambdaA, H, A){
+  const fH = clamp(0.85 + (H.avail/100)*0.15,0.85,1.10);
+  const fA = clamp(0.85 + (A.avail/100)*0.15,0.85,1.10);
+  return {lambdaH: lambdaH*fH, lambdaA: lambdaA*fA};
+}
+
+function elo_adjust_v60(lambdaH, lambdaA, H, A){
+  const delta = clamp((H.elo - A.elo)/800,-0.18,0.18);
+  const fH = 1 + delta;
+  const fA = 1 - delta*0.9;
+  return {lambdaH: lambdaH*fH, lambdaA: lambdaA*fA};
+}
+
+function h2h_adjust_v60(lambdaH, lambdaA, ctx){
+  const h2h = ctx.h2h;
+  if(!h2h || !h2h.has) return {lambdaH,lambdaA};
+  const adj = clamp(h2h.bal*0.03,-0.25,0.25);
+  const fH = 1 + adj*0.08;
+  const fA = 1 - adj*0.08;
+  return {lambdaH: lambdaH*fH, lambdaA: lambdaA*fA};
+}
+
+function context_scale_v60(lambdaH, lambdaA, ctx, leagueProf, chaos){
+  let fTempo = 1 + (ctx.tempo-5)*0.03;
+  let fChaos = 1 + (chaos-5)*0.02;
+  let fLeague = leagueProf.xgScale;
+  let fDef = 1 - leagueProf.defTight*0.08;
+
+  let fWeather = 1;
+  const w = (ctx.weather || "").toLowerCase();
+  if(w==="rain") fWeather-=0.04;
+  else if(w==="heavy_rain") fWeather-=0.09;
+  else if(w==="snow") fWeather-=0.11;
+  else if(w==="windy") fWeather-=0.05;
+
+  let f = fTempo * fChaos * fLeague * fDef * fWeather;
+  f = clamp(f,0.75,1.35);
+
+  return {lambdaH: lambdaH*f, lambdaA: lambdaA*f};
+}
+
+/* ============================================================
+   Poisson v60
+   ============================================================ */
+function factorial_v60(n){
+  if(n<=1) return 1;
+  let r=1;
+  for(let i=2;i<=n;i++) r*=i;
+  return r;
+}
+function poisson_v60(lambda,k){
+  if(lambda<=0) lambda=0.000001;
+  return Math.pow(lambda,k)*Math.exp(-lambda)/factorial_v60(k);
+}
+function prob3way_v60(lH,lA,maxG=10){
+  let pH=0,pD=0,pA=0;
+  for(let i=0;i<=maxG;i++){
+    for(let j=0;j<=maxG;j++){
+      const p = poisson_v60(lH,i)*poisson_v60(lA,j);
+      if(i>j) pH+=p; else if(i===j) pD+=p; else pA+=p;
+    }
+  }
+  return {pH,pD,pA};
+}
+function ou_prob_v60(lH,lA,line,maxG=10){
+  let over=0,under=0;
+  for(let i=0;i<=maxG;i++){
+    for(let j=0;j<=maxG;j++){
+      const s=i+j;
+      const p = poisson_v60(lH,i)*poisson_v60(lA,j);
+      if(s>line) over+=p; else under+=p;
+    }
+  }
+  return {over,under};
+}
+function btts_prob_v60(lH,lA,maxG=10){
+  let yes=0,no=0;
+  for(let i=0;i<=maxG;i++){
+    for(let j=0;j<=maxG;j++){
+      const p = poisson_v60(lH,i)*poisson_v60(lA,j);
+      if(i>0 && j>0) yes+=p; else no+=p;
+    }
+  }
+  return {yes,no};
+}
+function top_scores_v60(lH,lA,maxG=6){
+  const arr=[];
+  for(let i=0;i<=maxG;i++){
+    for(let j=0;j<=maxG;j++){
+      const p = poisson_v60(lH,i)*poisson_v60(lA,j);
+      arr.push({score: i+"-"+j, prob:p});
+    }
+  }
+  arr.sort((a,b)=>b.prob-a.prob);
+  return arr.slice(0,8);
+}
+
+/* ============================================================
+   Monte Carlo v60 — 4000 run (lite)
+   ============================================================ */
+function build_cdf_v60(lambda,maxG){
+  const cdf=[];
+  let cum=0;
+  for(let k=0;k<=maxG;k++){
+    const p=poisson_v60(lambda,k);
+    cum+=p;
+    cdf.push(cum);
+  }
+  if(cdf[cdf.length-1]<0.9999) cdf[cdf.length-1]=1;
+  return cdf;
+}
+function sample_cdf_v60(cdf){
+  const u=Math.random();
+  for(let i=0;i<cdf.length;i++){
+    if(u<=cdf[i]) return i;
+  }
+  return cdf.length-1;
+}
+function montecarlo_v60(lH,lA,runs){
+  const N=runs || 4000;
+  const maxG=8;
+  const cdfH = build_cdf_v60(lH,maxG);
+  const cdfA = build_cdf_v60(lA,maxG);
+
+  let winH=0,winA=0,draw=0;
+  let sumH=0,sumA=0;
+  let over25=0,over15=0,over35=0,over45=0;
+  let bttsY=0,bttsN=0;
+  const scoreCnt={};
+
+  for(let n=0;n<N;n++){
+    const gH=sample_cdf_v60(cdfH);
+    const gA=sample_cdf_v60(cdfA);
+    sumH+=gH; sumA+=gA;
+
+    if(gH>gA) winH++; else if(gH<gA) winA++; else draw++;
+
+    const total=gH+gA;
+    if(total>1.5) over15++;
+    if(total>2.5) over25++;
+    if(total>3.5) over35++;
+    if(total>4.5) over45++;
+
+    if(gH>0 && gA>0) bttsY++; else bttsN++;
+
+    const key=gH+"-"+gA;
+    scoreCnt[key]=(scoreCnt[key]||0)+1;
+  }
+
+  const scores = Object.keys(scoreCnt).map(k=>({
+    score:k,
+    prob:scoreCnt[k]/N
+  })).sort((a,b)=>b.prob-a.prob).slice(0,8);
+
+  return {
+    runs:N,
+    avgH:sumH/N,
+    avgA:sumA/N,
+    pH:winH/N,
+    pD:draw/N,
+    pA:winA/N,
+    ou:{
+      "1.5":over15/N,
+      "2.5":over25/N,
+      "3.5":over35/N,
+      "4.5":over45/N
+    },
+    btts:{
+      yes:bttsY/N,
+      no:bttsN/N
+    },
+    scores
+  };
+}
+
+/* ============================================================
+   Multi Scenario v60 (LOW • BASE • HIGH • EXTREME)
+   ============================================================ */
+function multi_scenario_v60(lambdaH, lambdaA, leagueProf, chaos){
+  const baseH = clamp(lambdaH * (0.95 + leagueProf.xgScale*0.05), 0.05, 5.0);
+  const baseA = clamp(lambdaA * (0.95 + leagueProf.xgScale*0.05), 0.05, 5.0);
+
+  const chaosNorm = (chaos-5)/5; // -0.8..+1
+  const lowFactor  = clamp(1 - 0.3 - chaosNorm*0.25 - leagueProf.defTight*0.3,0.45,0.95);
+  const highFactor = clamp(1 + 0.3 + chaosNorm*0.35 + leagueProf.tempoBias*0.2,1.05,1.8);
+  const extFactor  = clamp(highFactor + chaosNorm*0.25,1.1,2.2);
+
+  return {
+    base:{H:baseH,A:baseA},
+    low :{H:baseH*lowFactor,A:baseA*lowFactor},
+    high:{H:baseH*highFactor,A:baseA*highFactor},
+    extreme:{H:baseH*extFactor,A:baseA*extFactor}
+  };
+}
+function scenario_summary_v60(lH,lA){
+  const p3 = prob3way_v60(lH,lA);
+  const ou25 = ou_prob_v60(lH,lA,2.5);
+  const bt = btts_prob_v60(lH,lA);
+
+  return {
+    lambdaH:lH,
+    lambdaA:lA,
+    pH:p3.pH, pD:p3.pD, pA:p3.pA,
+    ouOver:ou25.over,
+    ouUnder:ou25.under,
+    bttsY:bt.yes,
+    bttsN:bt.no
+  };
+}
+
+/* ============================================================
+   Reliability • Risk • Collapse
+   ============================================================ */
+function reliability_v60(T, chaos){
+  const atkCore = (T.xthreat + T.f3t + T.build + T.finish)/4;
+  const defCore = (T.deflvl + T.lb + T.gk + T.pressres)/4;
+  const stab = T.stab || 5;
+
+  let r = atkCore*0.35 + defCore*0.35 + stab*0.25 - chaos*0.15;
+  return clamp(r/1.3,1,10);
+}
+function risk_match_v60(H,A,chaos){
+  const tiltPoss = Math.abs(H.poss - A.poss)/10;
+  const waveGap = Math.abs(H.wave - A.wave)/2;
+  let r = chaos*0.45 + tiltPoss*0.35 + waveGap*0.20;
+  return clamp(r/2.1,1,10);
+}
+function collapse_v60(T,risk){
+  let c = (10-T.deflvl)*0.35 + (10-T.lb)*0.3 + risk*0.35;
+  return clamp(c/2.4,1,10);
+}
+</script>
+<script>
+/* ============================================================
+   PART 5 — ANALYZE v60 (OUTPUT TEXT)
+   ============================================================ */
+
+function fmtPct(x){
+  if(isNaN(x)) return "-";
+  return (x*100).toFixed(1) + "%";
+}
+function fmt3(x,dec){
+  if(isNaN(x)) return "-";
+  return x.toFixed(dec==null?3:dec);
+}
+
+function match_profile_text_v60(ctx,leagueProf,chaos,H,A){
+  let modeTxt = "League match";
+  const m = (ctx.mode||"").toLowerCase();
+  if(m==="cup") modeTxt = "Cup / knock-out match";
+  else if(m==="final") modeTxt = "Final match";
+  else if(m==="derby") modeTxt = "Derby / rivalry";
+  else if(m==="title") modeTxt = "Title race match";
+  else if(m==="relegation") modeTxt = "Relegation battle";
+  else if(m==="intl") modeTxt = "International match";
+  else if(m==="friendly") modeTxt = "Friendly match";
+
+  let tempoTxt="moderate";
+  if(ctx.tempo<=4) tempoTxt="slow / controlled";
+  else if(ctx.tempo>=7) tempoTxt="fast / high intensity";
+
+  let chaosTxt="balanced";
+  if(chaos<=4) chaosTxt="very structured";
+  else if(chaos>=7) chaosTxt="high variance";
+
+  let possTxt="balanced";
+  if(H.poss >= A.poss+8) possTxt="Home likely to see more ball";
+  else if(A.poss >= H.poss+8) possTxt="Away likely to see more ball";
+
+  return modeTxt+
+         " · League: "+(leagueProf.name||"Generic")+
+         " · Tempo: "+tempoTxt+
+         " · Chaos: "+chaosTxt+
+         " · Possession: "+possTxt;
+}
+
+function analyze_v60(){
+  const H = parseTeam_v60("h");
+  const A = parseTeam_v60("a");
+  const ctx = parseContext_v60();
+
+  const core = core_build_v60(H,A); // from Part 3
+
+  let lambdaH = core.lambdaH;
+  let lambdaA = core.lambdaA;
+
+  const leagueProf = league_profile_v60(ctx);
+  const chaos = deep_chaos_v60(ctx,H,A,core,leagueProf);
+
+  let adj;
+
+  adj = availability_adjust_v60(lambdaH,lambdaA,H,A);
+  lambdaH = adj.lambdaH; lambdaA = adj.lambdaA;
+
+  adj = elo_adjust_v60(lambdaH,lambdaA,H,A);
+  lambdaH = adj.lambdaH; lambdaA = adj.lambdaA;
+
+  adj = h2h_adjust_v60(lambdaH,lambdaA,ctx);
+  lambdaH = adj.lambdaH; lambdaA = adj.lambdaA;
+
+  adj = context_scale_v60(lambdaH,lambdaA,ctx,leagueProf,chaos);
+  lambdaH = adj.lambdaH; lambdaA = adj.lambdaA;
+
+  lambdaH = clamp(lambdaH,0.05,5.0);
+  lambdaA = clamp(lambdaA,0.05,5.0);
+
+  const p3 = prob3way_v60(lambdaH,lambdaA);
+  const ou15 = ou_prob_v60(lambdaH,lambdaA,1.5);
+  const ou25 = ou_prob_v60(lambdaH,lambdaA,2.5);
+  const ou35 = ou_prob_v60(lambdaH,lambdaA,3.5);
+  const ou45 = ou_prob_v60(lambdaH,lambdaA,4.5);
+  const btts = btts_prob_v60(lambdaH,lambdaA);
+  const scoresTop = top_scores_v60(lambdaH,lambdaA);
+
+  const mc = montecarlo_v60(lambdaH,lambdaA,4000);
+
+  const scen = multi_scenario_v60(lambdaH,lambdaA,leagueProf,chaos);
+  const sBase = scenario_summary_v60(scen.base.H,scen.base.A);
+  const sLow  = scenario_summary_v60(scen.low.H,scen.low.A);
+  const sHigh = scenario_summary_v60(scen.high.H,scen.high.A);
+  const sExt  = scenario_summary_v60(scen.extreme.H,scen.extreme.A);
+
+  const relH = reliability_v60(H,chaos);
+  const relA = reliability_v60(A,chaos);
+  const risk = risk_match_v60(H,A,chaos);
+  const colH = collapse_v60(H,risk);
+  const colA = collapse_v60(A,risk);
+
+  const profileText = match_profile_text_v60(ctx,leagueProf,chaos,H,A);
+
+  const panel = $("result_panel");
+  if(!panel) return null;
+
+  const lineScoresAnalytic = scoresTop
+    .map(s=>`${s.score} (${fmtPct(s.prob)})`).join(" · ");
+
+  const lineScoresMC = mc.scores
+    .map(s=>`${s.score} (${fmtPct(s.prob)})`).join(" · ");
+
+  const hName = H.name || "HOME";
+  const aName = A.name || "AWAY";
+
+  const h2hLine = ctx.h2h && ctx.h2h.has
+    ? `H2H ${ctx.h2h.played} match · Avg Home: ${ctx.h2h.avgH.toFixed(2)} · Avg Away: ${ctx.h2h.avgA.toFixed(2)} · Balance: ${ctx.h2h.bal.toFixed(2)}`
+    : `H2H: No data / empty.`;
+
+  const header =
+`${hName} vs ${aName}
+League: ${leagueProf.name}
+Mode: ${ctx.mode || "-"} · Stage: ${ctx.stage || "-"} · Weather: ${ctx.weather || "-"}
+Profile: ${profileText}
+
+λ CORE (from stats only):
+  λ Home core : ${fmt3(core.lambdaH)}
+  λ Away core : ${fmt3(core.lambdaA)}
+
+λ FINAL v60 (after availability + ELO + H2H + context):
+  λ Home final : ${fmt3(lambdaH)}
+  λ Away final : ${fmt3(lambdaA)}
+
+`;
+
+  const analyticBlock =
+`=== Poisson Analytic v60 (neutral) ===
+
+3-Way probabilities:
+  Home : ${fmtPct(p3.pH)}
+  Draw : ${fmtPct(p3.pD)}
+  Away : ${fmtPct(p3.pA)}
+
+Over/Under (analytic):
+  O/U 1.5 : Over ${fmtPct(ou15.over)} · Under ${fmtPct(ou15.under)}
+  O/U 2.5 : Over ${fmtPct(ou25.over)} · Under ${fmtPct(ou25.under)}
+  O/U 3.5 : Over ${fmtPct(ou35.over)} · Under ${fmtPct(ou35.under)}
+  O/U 4.5 : Over ${fmtPct(ou45.over)} · Under ${fmtPct(ou45.under)}
+
+BTTS (analytic):
+  Yes : ${fmtPct(btts.yes)}
+  No  : ${fmtPct(btts.no)}
+
+Top scorelines (analytic):
+  ${lineScoresAnalytic}
+`;
+
+  const mcBlock =
+`=== Monte Carlo v60 (4000 simulations) ===
+
+Average goals:
+  Home : ${fmt3(mc.avgH,2)}
+  Away : ${fmt3(mc.avgA,2)}
+
+3-Way (simulated):
+  Home : ${fmtPct(mc.pH)}
+  Draw : ${fmtPct(mc.pD)}
+  Away : ${fmtPct(mc.pA)}
+
+Over/Under (simulated):
+  O/U 1.5 : Over ${fmtPct(mc.ou["1.5"])}
+  O/U 2.5 : Over ${fmtPct(mc.ou["2.5"])}
+  O/U 3.5 : Over ${fmtPct(mc.ou["3.5"])}
+  O/U 4.5 : Over ${fmtPct(mc.ou["4.5"])}
+
+BTTS (simulated):
+  Yes : ${fmtPct(mc.btts.yes)}
+  No  : ${fmtPct(mc.btts.no)}
+
+Top scorelines (simulated):
+  ${lineScoresMC}
+`;
+
+  function scenText(name,s){
+    return `[${name}]
+  λ H/A : ${fmt3(s.lambdaH)} / ${fmt3(s.lambdaA)}
+  1X2   : Home ${fmtPct(s.pH)} · Draw ${fmtPct(s.pD)} · Away ${fmtPct(s.pA)}
+  O/U2.5: Over ${fmtPct(s.ouOver)} · Under ${fmtPct(s.ouUnder)}
+  BTTS  : Yes ${fmtPct(s.bttsY)} · No ${fmtPct(s.bttsN)}
+`;
+  }
+
+  const scenarioBlock =
+`=== Multi Scenario v60 (neutral, non-odds) ===
+
+${scenText("BASE",sBase)}
+${scenText("LOW-EVENT (defensive / careful)",sLow)}
+${scenText("HIGH-EVENT (open / attacking)",sHigh)}
+${scenText("EXTREME (very open, high variance)",sExt)}
+`;
+
+  const extraBlock =
+`=== Reliability • Risk • Collapse (both teams) ===
+
+Reliability (1–10):
+  ${hName} : ${fmt3(relH,2)}
+  ${aName} : ${fmt3(relA,2)}
+
+Match risk level (1–10):
+  Risk : ${fmt3(risk,2)}
+
+Collapse potential (1–10):
+  ${hName} : ${fmt3(colH,2)}
+  ${aName} : ${fmt3(colA,2)}
+`;
+
+  const ctxBlock =
+`=== H2H & Notes ===
+${h2hLine}
+
+Notes:
+${ctx.note || "-"}
+`;
+
+  panel.textContent =
+    header + "\n" +
+    analyticBlock + "\n" +
+    mcBlock + "\n" +
+    scenarioBlock + "\n" +
+    extraBlock + "\n" +
+    ctxBlock;
+
+  const resultPkg = {
+    H,A,ctx,
+    core,
+    leagueProf,
+    chaos,
+    lambdaH,
+    lambdaA,
+    p3,
+    ou:{ou15,ou25,ou35,ou45},
+    btts,
+    scoresTop,
+    mc,
+    scen,
+    scenSummary:{base:sBase,low:sLow,high:sHigh,extreme:sExt},
+    rel:{H:relH,A:relA},
+    risk,
+    collapse:{H:colH,A:colA}
+  };
+
+  try{
+    if(typeof visuals_v60==="function"){
+      visuals_v60(resultPkg);
+    }
+  }catch(e){
+    console.warn("Visual v60 error:",e);
+  }
+
+  return resultPkg;
+}
+</script>
+<script>
+/* ============================================================
+   PART 6 — VISUAL ENGINE v60
+   Radar • Momentum • Heatline • Ultra Pack
+   ============================================================ */
+
+function safeCtx(id){
+  const c = document.getElementById(id);
+  if(!c) return null;
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+  return ctx;
+}
+
+/* ---------------- Radar v60 ---------------- */
+function drawRadar_v60(pkg){
+  const ctx = safeCtx("radarChart");
+  if(!ctx) return;
+
+  const {H,A,core,lambdaH,lambdaA,rel} = pkg;
+  const cx = ctx.canvas.width/2;
+  const cy = ctx.canvas.height/2;
+  const maxR = Math.min(cx,cy)-16;
+
+  const labels=["Attack","Defense","xThreat","Build","Reliability","λ"];
+  const step = (Math.PI*2)/labels.length;
+
+  function norm(v){ return clamp(v,0,10); }
+
+  const dataH = [
+    norm(core.atkH),
+    norm(10-core.defA),
+    norm(H.xthreat),
+    norm(H.build),
+    norm(rel.H),
+    norm(lambdaH*2.0)
+  ];
+  const dataA = [
+    norm(core.atkA),
+    norm(10-core.defH),
+    norm(A.xthreat),
+    norm(A.build),
+    norm(rel.A),
+    norm(lambdaA*2.0)
+  ];
+
+  function toXY(val,i){
+    const ang = -Math.PI/2 + step*i;
+    const r = (val/10)*maxR;
+    return {x:cx + r*Math.cos(ang), y:cy + r*Math.sin(ang)};
+  }
+
+  ctx.strokeStyle="#555";
+  ctx.lineWidth=1;
+  for(let ring=2; ring<=10; ring+=2){
+    const r=(ring/10)*maxR;
+    ctx.beginPath();
+    for(let i=0;i<=labels.length;i++){
+      const ang=-Math.PI/2 + step*i;
+      const x=cx + r*Math.cos(ang);
+      const y=cy + r*Math.sin(ang);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+
+  ctx.fillStyle="#ccc";
+  ctx.font="11px sans-serif";
+  labels.forEach((lb,i)=>{
+    const ang=-Math.PI/2 + step*i;
+    const x=cx + (maxR+10)*Math.cos(ang);
+    const y=cy + (maxR+10)*Math.sin(ang);
+    ctx.fillText(lb,x-16,y+3);
+  });
+
+  function drawSide(data,color,alpha){
+    ctx.beginPath();
+    data.forEach((v,i)=>{
+      const p=toXY(v,i);
+      if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+    });
+    const p0=toXY(data[0],0);
+    ctx.lineTo(p0.x,p0.y);
+    ctx.strokeStyle=color;
+    ctx.lineWidth=2;
+    ctx.stroke();
+
+    ctx.globalAlpha=alpha;
+    ctx.beginPath();
+    data.forEach((v,i)=>{
+      const p=toXY(v,i);
+      if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+    });
+    ctx.lineTo(p0.x,p0.y);
+    ctx.fillStyle=color;
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+
+  drawSide(dataH,"#2ecc71",0.25);
+  drawSide(dataA,"#e74c3c",0.25);
+}
+
+/* ---------------- Momentum Wave v60 ---------------- */
+function drawMomentum_v60(pkg){
+  const ctx = safeCtx("momentumChart");
+  if(!ctx) return;
+
+  const {mc,chaos} = pkg;
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
+  const midY = h/2;
+
+  const tilt = mc.avgH - mc.avgA;
+  const maxTilt = 3;
+  const amp = clamp(tilt/maxTilt,-1,1) * (h/3);
+
+  ctx.beginPath();
+  ctx.moveTo(0,midY);
+  const waves=6;
+  for(let x=0;x<=w;x++){
+    const t = (x/w)*Math.PI*waves;
+    const y = midY - Math.sin(t)*amp;
+    ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle = tilt>=0 ? "#2ecc71" : "#e74c3c";
+  ctx.lineWidth=2;
+  ctx.stroke();
+
+  ctx.strokeStyle="#555";
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(0,midY);
+  ctx.lineTo(w,midY);
+  ctx.stroke();
+
+  ctx.fillStyle="#ccc";
+  ctx.font="11px sans-serif";
+  ctx.fillText("Tilt (avgH - avgA): "+tilt.toFixed(2),6,14);
+
+  let chaosTxt="balanced";
+  if(chaos<=4) chaosTxt="structured";
+  else if(chaos>=7) chaosTxt="high variance";
+  ctx.fillText("Chaos: "+chaos.toFixed(1)+" ("+chaosTxt+")",6,h-6);
+}
+
+/* ---------------- Heatline v60 ---------------- */
+function drawHeat_v60(pkg){
+  const ctx = safeCtx("heatChart");
+  if(!ctx) return;
+
+  const {H,A,leagueProf} = pkg;
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
+
+  const avgPoss = (H.poss + A.poss)/2;
+  const tempoN = (leagueProf.tempoBias+5)/10;
+
+  const base = Math.floor((avgPoss/100)*255*tempoN);
+  const r = base;
+  const g = 120;
+  const b = 255-base;
+
+  ctx.fillStyle = "rgba("+r+","+g+","+b+",0.55)";
+  ctx.fillRect(0,0,w,h);
+
+  ctx.fillStyle="#ccc";
+  ctx.font="11px sans-serif";
+  ctx.fillText("Heatline v60",6,14);
+  ctx.fillText("League: "+leagueProf.name,6,28);
+  ctx.fillText("Poss avg: "+avgPoss.toFixed(1)+"%",6,42);
+  ctx.fillText("Tempo bias: "+leagueProf.tempoBias.toFixed(2),6,56);
+}
+
+/* ---------------- Ultra: Shot Heatmap v60 ---------------- */
+function drawHeatmap_v60(pkg){
+  const ctx = safeCtx("ultra_heatmap");
+  if(!ctx) return;
+
+  const {H,A} = pkg;
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
+
+  function dot(i,rows,cols,val,color){
+    const cw = w/cols;
+    const ch = h/rows;
+    const col = i % cols;
+    const row = Math.floor(i/cols);
+    const x = col*cw + cw/2;
+    const y = row*ch + ch/2;
+    const r = clamp(val,3,18);
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle=color;
+    ctx.globalAlpha=0.45;
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+
+  const baseH = (H.xthreat + H.f3t + H.shots*0.3);
+  const baseA = (A.xthreat + A.f3t + A.shots*0.3);
+
+  const valH = clamp(baseH/5,2,16);
+  const valA = clamp(baseA/5,2,16);
+
+  const cells=30;
+  for(let i=0;i<cells;i++){
+    dot(i,5,6,valH,"#2ecc71");
+    dot(i,5,6,valA,"#e74c3c");
+  }
+
+  ctx.fillStyle="#ccc";
+  ctx.font="11px sans-serif";
+  ctx.fillText("Shot Heatmap v60 (approx)",6,14);
+}
+
+/* ---------------- Ultra: Wheel 1X2 ---------------- */
+function drawWheel_v60(pkg){
+  const ctx = safeCtx("ultra_wheel");
+  if(!ctx) return;
+
+  const {mc} = pkg;
+  const pH = mc.pH;
+  const pD = mc.pD;
+  const pA = mc.pA;
+
+  const cx = ctx.canvas.width/2;
+  const cy = ctx.canvas.height/2;
+  const r = Math.min(cx,cy)-6;
+
+  const total = pH + pD + pA || 1;
+  const nH = pH/total;
+  const nD = pD/total;
+  const nA = pA/total;
+
+  let start = -Math.PI/2;
+
+  function arcPortion(frac,color,label){
+    const ang = frac*Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,start+ang,false);
+    ctx.closePath();
+    ctx.fillStyle=color;
+    ctx.fill();
+
+    const mid = start+ang/2;
+    const lx = cx + Math.cos(mid)*r*0.6;
+    const ly = cy + Math.sin(mid)*r*0.6;
+    ctx.fillStyle="#000";
+    ctx.font="11px sans-serif";
+    ctx.fillText(label,lx-12,ly+3);
+    start+=ang;
+  }
+
+  arcPortion(nH,"#2ecc71",Math.round(pH*100)+"%");
+  arcPortion(nD,"#bdc3c7",Math.round(pD*100)+"%");
+  arcPortion(nA,"#e74c3c",Math.round(pA*100)+"%");
+
+  ctx.fillStyle="#ccc";
+  ctx.font="11px sans-serif";
+  ctx.fillText("Wheel 1X2 (MC)",cx-50,cy+r+12);
+}
+
+/* ---------------- Ultra: Strength Ring ---------------- */
+function drawStrengthRing_v60(pkg){
+  const ctx = safeCtx("ultra_ring");
+  if(!ctx) return;
+
+  const {H,A,core,rel} = pkg;
+  const cx = ctx.canvas.width/2;
+  const cy = ctx.canvas.height/2;
+  const r = Math.min(cx,cy)-12;
+
+  const scoreH = clamp(
+    (core.atkH*0.5 + (10-core.defH)*0.3 + (H.xthreat||0)*0.1 + rel.H*0.1),1,10
+  );
+  const scoreA = clamp(
+    (core.atkA*0.5 + (10-core.defA)*0.3 + (A.xthreat||0)*0.1 + rel.A*0.1),1,10
+  );
+
+  function arc(val,color,offset){
+    const frac = val/10;
+    ctx.beginPath();
+    ctx.lineWidth=10;
+    ctx.strokeStyle=color;
+    ctx.arc(cx,cy,r,offset,offset+frac*Math.PI*2,false);
+    ctx.stroke();
+  }
+
+  arc(scoreH,"#2ecc71",-Math.PI/2);
+  arc(scoreA,"#e74c3c",Math.PI/2);
+
+  ctx.fillStyle="#ccc";
+  ctx.font="11px sans-serif";
+  ctx.fillText("Strength Ring v60",cx-40,cy+r+14);
+}
+
+/* ---------------- Ultra: Variance Bar ---------------- */
+function drawVarianceBar_v60(pkg){
+  const ctx = safeCtx("ultra_varbar");
+  if(!ctx) return;
+
+  const {chaos} = pkg;
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
+
+  ctx.fillStyle="#333";
+  ctx.fillRect(5,h/3,w-10,h/3);
+
+  const val = clamp(chaos/10,0,1);
+  const fillW = val*(w-10);
+
+  let color="#2ecc71";
+  if(chaos>=7) color="#e74c3c";
+  else if(chaos>=5) color="#f1c40f";
+
+  ctx.fillStyle=color;
+  ctx.fillRect(5,h/3,fillW,h/3);
+
+  ctx.fillStyle="#ccc";
+  ctx.font="11px sans-serif";
+  ctx.fillText("Variance / Chaos: "+chaos.toFixed(1)+"/10",8,14);
+}
+
+/* ---------------- Ultra: Tilt Line ---------------- */
+function drawTilt_v60(pkg){
+  const ctx = safeCtx("ultra_tilt");
+  if(!ctx) return;
+
+  const {lambdaH,lambdaA,mc} = pkg;
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
+  const midY = h/2;
+
+  const avgH = (lambdaH + mc.avgH)/2;
+  const avgA = (lambdaA + mc.avgA)/2;
+  const tilt = avgH - avgA;
+  const maxTilt=3;
+  const span = (w-40)/2;
+  const offset = clamp(tilt/maxTilt,-1,1)*span;
+
+  ctx.strokeStyle="#555";
+  ctx.beginPath();
+  ctx.moveTo(20,midY);
+  ctx.lineTo(w-20,midY);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(w/2,midY);
+  ctx.lineTo(w/2+offset,midY);
+  ctx.strokeStyle = tilt>=0 ? "#2ecc71" : "#e74c3c";
+  ctx.lineWidth=4;
+  ctx.stroke();
+
+  ctx.fillStyle="#ccc";
+  ctx.font="11px sans-serif";
+  ctx.fillText("Tilt λ+MC: "+tilt.toFixed(2),8,14);
+}
+
+/* ---------------- Visuals Bridge ---------------- */
+function visuals_v60(pkg){
+  drawRadar_v60(pkg);
+  drawMomentum_v60(pkg);
+  drawHeat_v60(pkg);
+  drawHeatmap_v60(pkg);
+  drawWheel_v60(pkg);
+  drawStrengthRing_v60(pkg);
+  drawVarianceBar_v60(pkg);
+  drawTilt_v60(pkg);
+}
+</script>
+
+</body>
+</html>
